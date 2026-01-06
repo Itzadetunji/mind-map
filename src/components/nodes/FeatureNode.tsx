@@ -22,9 +22,10 @@ import {
 	Position,
 	useReactFlow,
 } from "@xyflow/react";
-import { GripVertical, Plus, X, Zap } from "lucide-react";
+import { GripHorizontal, GripVertical, Lock, Plus, X, Zap } from "lucide-react";
 import { useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { AutoResizeTextarea } from "../shared/AutoResizeTextArea";
 
 type FeatureItem = {
@@ -36,6 +37,7 @@ type FeatureNodeData = Node<
 	{
 		label: string;
 		features?: FeatureItem[];
+		locked?: boolean;
 	},
 	"feature"
 >;
@@ -81,7 +83,7 @@ function SortableFeatureItem({
 				<GripVertical size={14} />
 			</div>
 			<input
-				className="nodrag flex h-7 w-full bg-transparent px-2 py-1 text-xs transition-colors focus:outline-none focus:ring-0"
+				className="nodrag flex h-7 w-full bg-transparent py-1 text-xs transition-colors focus:outline-none focus:ring-0"
 				value={feature.label}
 				onChange={(e) => updateFeature(index, e.target.value)}
 			/>
@@ -155,14 +157,30 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 	);
 
 	return (
-		<div className="min-w-70 ">
+		<div className="min-w-70 group">
 			<Handle
 				type="target"
 				position={Position.Top}
-				className="w-3 h-3 bg-slate-600 dark:bg-slate-400"
+				className="w-3 h-3 bg-slate-600 dark:bg-slate-400 z-50"
 			/>
 
-			<Card className="border-slate-300 shadow-sm bg-white dark:bg-slate-900 border">
+			{data.locked && (
+				<div className="absolute -top-3 -right-3 z-10 bg-white dark:bg-slate-800 p-1 rounded-full border shadow-sm">
+					<Lock size={12} className="text-red-500" />
+				</div>
+			)}
+
+			<Card className="border-slate-300 shadow-sm bg-white dark:bg-slate-900 border relative">
+				<div
+					className={cn(
+						`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
+						{
+							hidden: data.locked,
+						},
+					)}
+				>
+					<GripVertical size={20} className=" size-3.5 text-slate-400" />
+				</div>
 				<CardHeader className="flex flex-row items-center gap-2 p-3 border-b space-y-0">
 					<div className="mt-0.5">
 						<Zap className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
@@ -212,7 +230,7 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 			<Handle
 				type="source"
 				position={Position.Bottom}
-				className="w-3 h-3 bg-slate-600 dark:bg-slate-400"
+				className="w-3 h-3 bg-slate-600 dark:bg-slate-400 z-50"
 			/>
 		</div>
 	);

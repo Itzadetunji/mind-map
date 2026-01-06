@@ -5,25 +5,22 @@ import {
 	Position,
 	useReactFlow,
 } from "@xyflow/react";
-import { GripVertical, Lock, Workflow } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { Cpu, GripVertical, Lock } from "lucide-react";
+import { useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { AutoResizeTextarea } from "../shared/AutoResizeTextArea";
 
-type UserFlowNodeData = Node<
+type CustomNodeData = Node<
 	{
 		label: string;
 		description?: string;
 		locked?: boolean;
 	},
-	"user-flow"
+	"custom-node"
 >;
 
-export default function UserFlowNode({
-	id,
-	data,
-}: NodeProps<UserFlowNodeData>) {
+export default function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
 	const { updateNodeData } = useReactFlow();
 
 	const updateLabel = useCallback(
@@ -54,7 +51,7 @@ export default function UserFlowNode({
 				</div>
 			)}
 
-			<Card className="border-slate-400 shadow-md bg-white dark:bg-slate-900 border-2 relative overflow-hidden">
+			<Card className="border-indigo-400 shadow-md bg-white dark:bg-slate-900 border-2 relative">
 				<div
 					className={cn(
 						`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
@@ -65,13 +62,14 @@ export default function UserFlowNode({
 				>
 					<GripVertical className="size-3.5 text-slate-400" />
 				</div>
-				<CardHeader className="flex flex-row items-center space-y-0 gap-2 p-3 bg-slate-100 dark:bg-slate-800">
-					<Workflow className="w-4 h-4 text-slate-900 dark:text-slate-100" />
+				<CardHeader className="flex flex-row items-center space-y-0 gap-2 p-3 bg-indigo-50 dark:bg-indigo-950">
+					<Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
 					<AutoResizeTextarea
 						className="nodrag flex w-full resize-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 col-auto overflow-hidden"
 						value={data.label}
 						onChange={updateLabel}
 						minRows={1}
+						placeholder="Custom Node"
 					/>
 				</CardHeader>
 				<CardContent className="p-3">
@@ -79,12 +77,9 @@ export default function UserFlowNode({
 						className="nodrag resize-none flex min-h-20 w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0 overflow-hidden"
 						value={data.description || ""}
 						onChange={updateDescription}
-						placeholder="Describe the user journey..."
+						placeholder="Description..."
 						minRows={3}
 					/>
-					<p className="text-[10px] text-muted-foreground mt-2 uppercase select-none">
-						User Journey
-					</p>
 				</CardContent>
 			</Card>
 
