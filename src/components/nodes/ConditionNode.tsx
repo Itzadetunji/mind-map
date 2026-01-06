@@ -7,9 +7,9 @@ import {
 } from "@xyflow/react";
 import { GripVertical, Lock, Plus } from "lucide-react";
 import { useCallback } from "react";
+import { useMindMapContext } from "@/context/MindMapContext";
 import { cn } from "@/lib/utils";
 import { AutoResizeTextarea } from "../shared/AutoResizeTextArea";
-import { useMindMapContext } from "@/context/MindMapContext";
 
 type ConditionNodeData = Node<
 	{
@@ -88,7 +88,6 @@ export default function ConditionNode({
 				</button>
 			</div>
 
-			
 			{/* Output Handles */}
 			<div className="absolute -bottom-2 -left-4 flex items-center gap-1">
 				<span className="text-[10px] font-bold text-slate-500 bg-white dark:bg-slate-900 px-1 rounded border">

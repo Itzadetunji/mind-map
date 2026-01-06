@@ -25,9 +25,9 @@ import {
 import { GripVertical, Lock, Plus, X, Zap } from "lucide-react";
 import { useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useMindMapContext } from "@/context/MindMapContext";
 import { cn } from "@/lib/utils";
 import { AutoResizeTextarea } from "../shared/AutoResizeTextArea";
-import { useMindMapContext } from "@/context/MindMapContext";
 
 type FeatureItem = {
 	id: string;
@@ -165,13 +165,11 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 				position={Position.Top}
 				className="w-3 h-3 bg-slate-600 dark:bg-slate-400 z-50"
 			/>
-
 			{data.locked && (
 				<div className="absolute -top-3 -right-3 z-10 bg-white dark:bg-slate-800 p-1 rounded-full border shadow-sm">
 					<Lock size={12} className="text-red-500" />
 				</div>
 			)}
-
 			<Card className="border-slate-300 shadow-sm bg-white dark:bg-slate-900 border relative">
 				<div
 					className={cn(
@@ -240,7 +238,8 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 				>
 					<Plus size={12} />
 				</button>
-			</div>			<Handle
+			</div>{" "}
+			<Handle
 				type="source"
 				position={Position.Bottom}
 				className="w-3 h-3 bg-slate-600 dark:bg-slate-400 z-50"

@@ -5,12 +5,18 @@ import {
 	Position,
 	useReactFlow,
 } from "@xyflow/react";
-import { GripVertical, Image as ImageIcon, Layout, Lock, Plus } from "lucide-react";
+import {
+	GripVertical,
+	Image as ImageIcon,
+	Layout,
+	Lock,
+	Plus,
+} from "lucide-react";
 import { useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useMindMapContext } from "@/context/MindMapContext";
 import { cn } from "@/lib/utils";
 import { AutoResizeTextarea } from "../shared/AutoResizeTextArea";
-import { useMindMapContext } from "@/context/MindMapContext";
 
 type ScreenUiNodeData = Node<
 	{

@@ -8,9 +8,9 @@ import {
 import { Brain, GripVertical, Lock, Plus } from "lucide-react";
 import { useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useMindMapContext } from "@/context/MindMapContext";
 import { cn } from "@/lib/utils";
 import { AutoResizeTextarea } from "../shared/AutoResizeTextArea";
-import { useMindMapContext } from "@/context/MindMapContext";
 
 type CoreConceptNodeData = Node<
 	{
