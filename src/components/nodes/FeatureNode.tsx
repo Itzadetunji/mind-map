@@ -22,11 +22,12 @@ import {
 	Position,
 	useReactFlow,
 } from "@xyflow/react";
-import { GripHorizontal, GripVertical, Lock, Plus, X, Zap } from "lucide-react";
+import { GripVertical, Lock, Plus, X, Zap } from "lucide-react";
 import { useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { AutoResizeTextarea } from "../shared/AutoResizeTextArea";
+import { useMindMapContext } from "@/context/MindMapContext";
 
 type FeatureItem = {
 	id: string;
@@ -100,6 +101,7 @@ function SortableFeatureItem({
 
 export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 	const { updateNodeData } = useReactFlow();
+	const { openAddMenu } = useMindMapContext();
 	const features = data.features || [];
 
 	const sensors = useSensors(
@@ -226,8 +228,19 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 					</button>
 				</CardContent>
 			</Card>
-
-			<Handle
+			<div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						openAddMenu(id, e.clientX, e.clientY);
+					}}
+					className="bg-blue-500 rounded-full p-0.5 text-white hover:bg-blue-600 shadow-sm cursor-pointer"
+					title="Add Child Node"
+				>
+					<Plus size={12} />
+				</button>
+			</div>			<Handle
 				type="source"
 				position={Position.Bottom}
 				className="w-3 h-3 bg-slate-600 dark:bg-slate-400 z-50"

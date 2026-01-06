@@ -5,11 +5,12 @@ import {
 	Position,
 	useReactFlow,
 } from "@xyflow/react";
-import { Brain, GripVertical, Lock } from "lucide-react";
+import { Brain, GripVertical, Lock, Plus } from "lucide-react";
 import { useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { AutoResizeTextarea } from "../shared/AutoResizeTextArea";
+import { useMindMapContext } from "@/context/MindMapContext";
 
 type CoreConceptNodeData = Node<
 	{
@@ -24,6 +25,7 @@ export default function CoreConceptNode({
 	data,
 }: NodeProps<CoreConceptNodeData>) {
 	const { updateNodeData } = useReactFlow();
+	const { openAddMenu } = useMindMapContext();
 
 	const updateLabel = useCallback(
 		(evt: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -34,6 +36,19 @@ export default function CoreConceptNode({
 
 	return (
 		<div className="min-w-60 group">
+			<div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						openAddMenu(id, e.clientX, e.clientY);
+					}}
+					className="bg-blue-500 rounded-full p-0.5 text-white hover:bg-blue-600 shadow-sm cursor-pointer"
+					title="Add Child Node"
+				>
+					<Plus size={12} />
+				</button>
+			</div>
 			<Handle
 				type="source"
 				position={Position.Bottom}

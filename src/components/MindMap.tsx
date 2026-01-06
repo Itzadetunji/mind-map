@@ -6,7 +6,6 @@ import {
 	type Edge,
 	MiniMap,
 	type Node,
-	type NodeChange,
 	Panel,
 	ReactFlow,
 	SelectionMode,
@@ -17,6 +16,7 @@ import { Hand, MousePointer2, Redo, Undo } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import "@xyflow/react/dist/style.css";
+import { MindMapContext } from "@/context/MindMapContext";
 import { useHistory } from "@/hooks/useHistory";
 import { MindMapContextMenu } from "./MindMapContextMenu";
 import ConditionNode from "./nodes/ConditionNode";
@@ -25,8 +25,7 @@ import CustomNode from "./nodes/CustomNode";
 import FeatureNode from "./nodes/FeatureNode";
 import ScreenUiNode from "./nodes/ScreenUiNode";
 import UserFlowNode from "./nodes/UserFlowNode";
-import { Button } from "./ui/button";
-import { Separator } from "./ui/separator";
+import { Tooltip } from "./ui/tooltip-custom";
 
 const nodeTypes = {
 	"core-concept": CoreConceptNode,
@@ -37,7 +36,7 @@ const nodeTypes = {
 	"custom-node": CustomNode,
 };
 
-const initialNodes = [
+const initialNodes: Node[] = [
 	{
 		id: "1",
 		type: "core-concept",
@@ -77,7 +76,7 @@ const initialNodes = [
 	},
 ];
 
-const initialEdges = [
+const initialEdges: Edge[] = [
 	{ id: "e1-2", source: "1", target: "2" },
 	{ id: "e1-3", source: "1", target: "3" },
 	{ id: "e1-4", source: "1", target: "4" },
@@ -91,41 +90,31 @@ export default function MindMap() {
 		edges,
 	);
 
-	const [mounted, setMounted] = useState(false);
 	const [menu, setMenu] = useState<{
 		id: string;
 		top: number;
 		left: number;
-		type: "pane" | "node";
+		type: "pane" | "node" | "add-child-menu";
 		node?: Node;
 	} | null>(null);
 	const [showGrid, setShowGrid] = useState(true);
 	const [tool, setTool] = useState<"hand" | "select">("hand");
 
-	useEffect(() => {
-		setMounted(true);
-	}, []);
-
-	// Keyboard shortcuts for Undo/Redo
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if ((e.metaKey || e.ctrlKey) && e.key === "z") {
-				e.preventDefault();
-				if (e.shiftKey) {
-					handleRedo();
-				} else {
-					handleUndo();
-				}
+	const handleOpenAddMenu = useCallback(
+		(nodeId: string, x: number, y: number) => {
+			const node = nodes.find((n) => n.id === nodeId);
+			if (node) {
+				setMenu({
+					id: "add-child-menu",
+					top: y,
+					left: x,
+					type: "add-child-menu",
+					node,
+				});
 			}
-			if ((e.metaKey || e.ctrlKey) && e.key === "y") {
-				e.preventDefault();
-				handleRedo();
-			}
-		};
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [undo, redo, nodes, edges]);
+		},
+		[nodes],
+	);
 
 	const handleUndo = useCallback(() => {
 		const previousState = undo(nodes, edges);
@@ -142,6 +131,35 @@ export default function MindMap() {
 			setEdges(nextState.edges);
 		}
 	}, [redo, nodes, edges, setNodes, setEdges]);
+
+	// Keyboard shortcuts
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Tool selection
+			if (e.key.toLowerCase() === "h" && !e.ctrlKey && !e.metaKey) {
+				setTool("hand");
+			}
+			if (e.key.toLowerCase() === "v" && !e.ctrlKey && !e.metaKey) {
+				setTool("select");
+			}
+
+			if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+				e.preventDefault();
+				if (e.shiftKey) {
+					handleRedo();
+				} else {
+					handleUndo();
+				}
+			}
+			if ((e.metaKey || e.ctrlKey) && e.key === "y") {
+				e.preventDefault();
+				handleRedo();
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [handleUndo, handleRedo]);
 
 	const onConnect = useCallback(
 		(params: Edge | Connection) => {
@@ -169,132 +187,112 @@ export default function MindMap() {
 		[],
 	);
 
-	const onPaneContextMenu = useCallback((event: React.MouseEvent) => {
-		event.preventDefault();
-		setMenu({
-			id: "pane",
-			top: event.clientY,
-			left: event.clientX,
-			type: "pane",
-		});
-	}, []);
+	const onPaneContextMenu = useCallback(
+		(event: MouseEvent | React.MouseEvent<Element, MouseEvent>) => {
+			event.preventDefault();
+			setMenu({
+				id: "pane",
+				top: event.clientY,
+				left: event.clientX,
+				type: "pane",
+			});
+		},
+		[],
+	);
 
-	const resetHighlight = useCallback(() => {
-		setEdges((edges) =>
-			edges.map((e) => ({
-				...e,
-				animated: false,
-				style: { ...e.style, stroke: "#b1b1b7", strokeWidth: 1 },
-			})),
-		);
-		setNodes((nodes) =>
-			nodes.map((n) => ({
-				...n,
-				style: { ...n.style, border: "none" },
-			})),
-		);
-	}, [setEdges, setNodes]);
-
-	const onPaneClick = useCallback(() => {
-		if (menu) setMenu(null);
-		resetHighlight();
-	}, [menu, resetHighlight]);
-
-	const onNodeClick = useCallback(() => {
-		resetHighlight();
-	}, [resetHighlight]);
-
-	const onNodeDragStart = useCallback(() => {
-		// Snapshot before dragging starts
-		takeSnapshot(nodes, edges);
-		resetHighlight();
-	}, [takeSnapshot, nodes, edges, resetHighlight]);
-
-	if (!mounted) return null;
+	const onNodeClick = useCallback(() => setMenu(null), []);
+	const onPaneClick = useCallback(() => setMenu(null), []);
+	const onNodeDragStart = useCallback(() => setMenu(null), []);
 
 	return (
-		<div style={{ width: "100%", height: "100%" }}>
-			<ReactFlow
-				nodes={nodes}
-				edges={edges}
-				nodeTypes={nodeTypes}
-				onNodesChange={onNodesChange}
-				onEdgesChange={onEdgesChange}
-				onNodeClick={onNodeClick}
-				onConnect={onConnect}
-				onNodeDragStart={onNodeDragStart}
-				onNodeContextMenu={onNodeContextMenu}
-				onPaneContextMenu={onPaneContextMenu}
-				onPaneClick={onPaneClick}
-				fitView
-				panOnDrag={tool === "hand"}
-				selectionOnDrag={tool === "select"}
-				selectionMode={SelectionMode.Partial}
-				panOnScroll={true}
-			>
-				<Controls />
-				<Panel
-					position="top-center"
-					className="flex items-center gap-1 p-1 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800"
+		<MindMapContext.Provider value={{ openAddMenu: handleOpenAddMenu }}>
+			<div style={{ width: "100%", height: "100%" }}>
+				<ReactFlow
+					nodes={nodes}
+					edges={edges}
+					nodeTypes={nodeTypes}
+					onNodesChange={onNodesChange}
+					onEdgesChange={onEdgesChange}
+					onNodeClick={onNodeClick}
+					onConnect={onConnect}
+					onNodeDragStart={onNodeDragStart}
+					onNodeContextMenu={onNodeContextMenu}
+					onPaneContextMenu={onPaneContextMenu}
+					onPaneClick={onPaneClick}
+					fitView
+					panOnDrag={tool === "hand"}
+					selectionOnDrag={tool === "select"}
+					selectionMode={SelectionMode.Partial}
+					panOnScroll={true}
 				>
-					<button
-						type="button"
-						onClick={() => setTool("hand")}
-						className={`p-2 rounded-md transition-colors ${
-							tool === "hand"
-								? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-								: "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
-						}`}
-						title="Drag / Pan (H)"
+					<Controls />
+					<Panel
+						position="top-center"
+						className="flex items-center gap-1 p-1 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800"
 					>
-						<Hand className="w-4 h-4" />
-					</button>
-					<button
-						type="button"
-						onClick={() => setTool("select")}
-						className={`p-2 rounded-md transition-colors ${
-							tool === "select"
-								? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-								: "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
-						}`}
-						title="Select (V)"
-					>
-						<MousePointer2 className="w-4 h-4" />
-					</button>
-					<div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
-					<button
-						type="button"
-						onClick={handleUndo}
-						disabled={!canUndo}
-						className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
-						title="Undo (Ctrl+Z)"
-					>
-						<Undo className="w-4 h-4" />
-					</button>
-					<button
-						type="button"
-						onClick={handleRedo}
-						disabled={!canRedo}
-						className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
-						title="Redo (Ctrl+Y)"
-					>
-						<Redo className="w-4 h-4" />
-					</button>
-				</Panel>
-				<MiniMap />
-				{showGrid && <Background gap={12} size={1} />}
-				{menu && (
-					<MindMapContextMenu
-						menu={menu}
-						onClose={() => setMenu(null)}
-						onToggleGrid={() => setShowGrid((prev) => !prev)}
-						onToggleTheme={() =>
-							document.documentElement.classList.toggle("dark")
-						}
-						onBeforeAction={onBeforeMenuAction}
-					/>
-				)}
-			</ReactFlow>
-		</div>
+						<Tooltip content="Pan Tool (H)" side="bottom">
+							<button
+								type="button"
+								onClick={() => setTool("hand")}
+								className={`p-2 rounded-md transition-colors ${
+									tool === "hand"
+										? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+										: "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
+								}`}
+							>
+								<Hand className="w-4 h-4" />
+							</button>
+						</Tooltip>
+						<Tooltip content="Select Tool (V)" side="bottom">
+							<button
+								type="button"
+								onClick={() => setTool("select")}
+								className={`p-2 rounded-md transition-colors ${
+									tool === "select"
+										? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+										: "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
+								}`}
+							>
+								<MousePointer2 className="w-4 h-4" />
+							</button>
+						</Tooltip>
+						<div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
+						<Tooltip content="Undo (Ctrl+Z)" side="bottom">
+							<button
+								type="button"
+								onClick={handleUndo}
+								disabled={!canUndo}
+								className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
+							>
+								<Undo className="w-4 h-4" />
+							</button>
+						</Tooltip>
+						<Tooltip content="Redo (Ctrl+Y)" side="bottom">
+							<button
+								type="button"
+								onClick={handleRedo}
+								disabled={!canRedo}
+								className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
+							>
+								<Redo className="w-4 h-4" />
+							</button>
+						</Tooltip>
+					</Panel>
+					<MiniMap />
+					{showGrid && <Background gap={12} size={1} />}
+					{menu && (
+						<MindMapContextMenu
+							menu={menu}
+							onClose={() => setMenu(null)}
+							onToggleGrid={() => setShowGrid((prev) => !prev)}
+							onToggleTheme={() =>
+								document.documentElement.classList.toggle("dark")
+							}
+							onBeforeAction={onBeforeMenuAction}
+						/>
+					)}
+				</ReactFlow>
+			</div>
+		</MindMapContext.Provider>
 	);
 }

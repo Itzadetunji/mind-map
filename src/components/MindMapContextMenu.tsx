@@ -5,6 +5,7 @@ import {
 	Calendar,
 	CheckSquare,
 	Copy,
+	Cpu,
 	Edit,
 	Eye,
 	GitBranch,
@@ -21,6 +22,7 @@ import {
 	Sparkles,
 	Trash,
 	Unlock,
+	Zap,
 } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { ContextMenu, type MenuItem } from "./ui/context-menu-custom";
@@ -30,7 +32,7 @@ interface MindMapContextMenuProps {
 		id: string; // just a unique key or 'pane'
 		top: number;
 		left: number;
-		type: "pane" | "node";
+		type: "pane" | "node" | "add-child-menu";
 		node?: Node;
 	} | null;
 	onClose: () => void;
@@ -294,14 +296,16 @@ export function MindMapContextMenu({
 				case "add-child-feature":
 				case "add-child-screen":
 				case "add-child-tech":
-				case "add-child-custom": {
+				case "add-child-custom":
+				case "add-child-user-flow": {
 					if (menu.node) {
 						const nodeId = menu.node.id;
 						const typeMap: Record<string, string> = {
 							"add-child-feature": "feature",
 							"add-child-screen": "screen-ui",
 							"add-child-tech": "feature",
-							"add-child-custom": "core-concept",
+							"add-child-custom": "custom-node",
+							"add-child-user-flow": "user-flow",
 						};
 						const type = typeMap[actionName] || "core-concept";
 						const id = crypto.randomUUID();
@@ -535,6 +539,31 @@ export function MindMapContextMenu({
 	const items: MenuItem[] = useMemo(() => {
 		if (!menu) return [];
 
+		if (menu.type === "add-child-menu" && menu.node) {
+			return [
+				{
+					label: "Add Feature",
+					icon: <Plus className="w-4 h-4" />,
+					action: () => handleAction("add-child-feature"),
+				},
+				{
+					label: "Add User Flow",
+					icon: <Plus className="w-4 h-4" />,
+					action: () => handleAction("add-child-user-flow"),
+				},
+				{
+					label: "Add Screen UI",
+					icon: <Plus className="w-4 h-4" />,
+					action: () => handleAction("add-child-screen"),
+				},
+				{
+					label: "Add Custom Node",
+					icon: <Plus className="w-4 h-4" />,
+					action: () => handleAction("add-child-custom"),
+				},
+			];
+		}
+
 		if (menu.type === "pane") {
 			return [
 				{
@@ -639,6 +668,31 @@ export function MindMapContextMenu({
 					label: "Paste",
 					action: () => handleAction("paste"),
 					disabled: true, // Check clipboard
+				},
+			];
+		}
+
+		if (menu.type === "add-child-menu" && menu.node) {
+			return [
+				{
+					label: "Add Feature",
+					icon: <Zap className="w-4 h-4" />,
+					action: () => handleAction("add-child-feature"),
+				},
+				{
+					label: "Add User Flow",
+					icon: <GitBranch className="w-4 h-4" />,
+					action: () => handleAction("add-child-user-flow"),
+				},
+				{
+					label: "Add Screen UI",
+					icon: <Smartphone className="w-4 h-4" />,
+					action: () => handleAction("add-child-screen"),
+				},
+				{
+					label: "Add Custom Node",
+					icon: <Cpu className="w-4 h-4" />,
+					action: () => handleAction("add-child-custom"),
 				},
 			];
 		}
