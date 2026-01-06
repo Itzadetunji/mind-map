@@ -538,31 +538,21 @@ export function MindMapContextMenu({
 		if (menu.type === "pane") {
 			return [
 				{
-					label: "Add New Root Node",
+					label: "Add Node",
 					icon: <Plus className="w-4 h-4" />,
-					// Opens AI prompt or manual entry
-					action: () => handleAction("add-root-node"),
-				},
-				{
-					label: "Add New Feature",
-					icon: <Plus className="w-4 h-4" />,
-					action: () => handleAction("add-feature-node"),
-				},
-				{
-					label: "Add Condition",
-					icon: <GitBranch className="w-4 h-4" />,
-					action: () => handleAction("add-condition-node"),
-				},
-				{
-					label: "Generate Mind Map",
-					icon: <Sparkles className="w-4 h-4" />,
 					submenu: [
 						{
-							label: "From Prompt...",
-							action: () => handleAction("gen-prompt"),
+							label: "Add Root Node",
+							icon: <Plus className="w-4 h-4" />,
+							action: () => handleAction("add-root-node"),
 						},
 						{
-							label: "ExUser Flow",
+							label: "Add Feature",
+							icon: <Plus className="w-4 h-4" />,
+							action: () => handleAction("add-feature-node"),
+						},
+						{
+							label: "Add User Flow",
 							icon: <Plus className="w-4 h-4" />,
 							action: () => handleAction("add-user-flow-node"),
 						},
@@ -577,7 +567,22 @@ export function MindMapContextMenu({
 							action: () => handleAction("add-custom-node"),
 						},
 						{
-							label: "Add pand Current Map",
+							label: "Add Condition",
+							icon: <GitBranch className="w-4 h-4" />,
+							action: () => handleAction("add-condition-node"),
+						},
+					],
+				},
+				{
+					label: "Generate Mind Map",
+					icon: <Sparkles className="w-4 h-4" />,
+					submenu: [
+						{
+							label: "From Prompt...",
+							action: () => handleAction("gen-prompt"),
+						},
+						{
+							label: "Expand Current Map",
 							action: () => handleAction("gen-expand"),
 						},
 						{

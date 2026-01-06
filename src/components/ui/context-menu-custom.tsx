@@ -95,13 +95,22 @@ function MenuItemRow({
 }) {
 	const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
 	const itemRef = useRef<HTMLDivElement>(null);
+	const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 	const handleMouseEnter = () => {
+		if (closeTimeoutRef.current) {
+			clearTimeout(closeTimeoutRef.current);
+			closeTimeoutRef.current = null;
+		}
 		if (item.submenu) setIsSubmenuOpen(true);
 	};
 
 	const handleMouseLeave = () => {
-		if (item.submenu) setIsSubmenuOpen(false);
+		if (item.submenu) {
+			closeTimeoutRef.current = setTimeout(() => {
+				setIsSubmenuOpen(false);
+			}, 150);
+		}
 	};
 
 	const handleClick = () => {
@@ -137,7 +146,13 @@ function MenuItemRow({
 			)}
 
 			{isSubmenuOpen && item.submenu && (
-				<SubMenu items={item.submenu} parentRef={itemRef} onClose={onClose} />
+				<SubMenu
+					items={item.submenu}
+					parentRef={itemRef}
+					onClose={onClose}
+					onMouseEnter={handleMouseEnter}
+					onMouseLeave={handleMouseLeave}
+				/>
 			)}
 		</div>
 	);
@@ -147,10 +162,14 @@ function SubMenu({
 	items,
 	parentRef,
 	onClose,
+	onMouseEnter,
+	onMouseLeave,
 }: {
 	items: MenuItem[];
 	parentRef: React.RefObject<HTMLDivElement>;
 	onClose: () => void;
+	onMouseEnter: () => void;
+	onMouseLeave: () => void;
 }) {
 	const [position, setPosition] = useState({ x: 0, y: 0 });
 
@@ -179,7 +198,9 @@ function SubMenu({
 				left: position.x,
 				// Simple positioning logic
 			}}
-			onMouseEnter={() => {}} // Keep interactions on submenu
+			onMouseEnter={onMouseEnter}
+			onMouseLeave={onMouseLeave}
+			onMouseDown={(e) => e.stopPropagation()}
 		>
 			{items.map((item, index) =>
 				item.separator ? (

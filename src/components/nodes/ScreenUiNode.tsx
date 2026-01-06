@@ -69,13 +69,13 @@ export default function ScreenUiNode({
 			<Card className="border-slate-500 overflow-hidden shadow-md bg-white dark:bg-slate-900 border-2 relative">
 				<div
 					className={cn(
-						`absolute -top-6 -right-6 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
+						`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
 						{
 							hidden: data.locked,
 						},
 					)}
 				>
-					<GripVertical size={20} className="text-slate-400" />
+					<GripVertical className="size-3.5 text-slate-400" />
 				</div>
 				<CardHeader className="flex flex-row space-y-0 items-center gap-2 p-3 bg-slate-100 dark:bg-slate-800">
 					<Layout className="w-4 h-4 text-slate-900 dark:text-slate-100" />
