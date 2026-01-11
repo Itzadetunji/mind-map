@@ -17,6 +17,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { MindMapContext } from "@/context/MindMapContext";
 import { useHistory } from "@/hooks/useHistory";
+import { FloatingSearchBar } from "./FloatingSearchBar";
 import { MindMapContextMenu } from "./MindMapContextMenu";
 import ConditionNode from "./nodes/ConditionNode";
 import CoreConceptNode from "./nodes/CoreConceptNode";
@@ -236,6 +237,7 @@ export default function MindMap() {
 					selectionMode={SelectionMode.Partial}
 					panOnScroll={true}
 				>
+					<FloatingSearchBar />
 					<Controls />
 					<Panel
 						position="top-center"
