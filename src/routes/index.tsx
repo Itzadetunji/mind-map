@@ -3,7 +3,7 @@ import MindMap from "@/components/MindMap";
 
 const App = () => {
 	return (
-		<main className="w-full h-screen">
+		<main className="w-full flex-1">
 			<MindMap />
 		</main>
 	);

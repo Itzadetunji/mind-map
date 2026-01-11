@@ -50,7 +50,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<head>
 				<HeadContent />
 			</head>
-			<body>
+			<body className="flex flex-col h-dvh">
 				<Header />
 				{children}
 				{/* <TanStackDevtools

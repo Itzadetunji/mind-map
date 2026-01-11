@@ -32,7 +32,7 @@ export function FloatingSearchBar() {
 	};
 
 	return (
-		<div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4">
+		<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4">
 			<form
 				onSubmit={handleSubmit}
 				className="relative flex items-center w-full shadow-lg rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-all focus-within:ring-2 focus-within:ring-slate-400 dark:focus-within:ring-slate-600 focus-within:ring-offset-2 dark:focus-within:ring-offset-slate-900"
