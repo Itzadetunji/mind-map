@@ -293,6 +293,65 @@ export function MindMapContextMenu({
 					break;
 
 				// Add Child logic
+				case "add-child-condition": {
+					if (menu.node) {
+						const nodeId = menu.node.id;
+						const position = {
+							x: menu.node.position.x,
+							y: menu.node.position.y + 200,
+						};
+						const conditionId = crypto.randomUUID();
+						const yesId = crypto.randomUUID();
+						const noId = crypto.randomUUID();
+
+						const conditionNode = {
+							id: conditionId,
+							type: "condition",
+							position,
+							data: { label: "Condition?" },
+						};
+
+						const yesNode = {
+							id: yesId,
+							type: "user-flow",
+							position: { x: position.x - 200, y: position.y + 200 },
+							data: { label: "Yes" },
+						};
+
+						const noNode = {
+							id: noId,
+							type: "user-flow",
+							position: { x: position.x + 200, y: position.y + 200 },
+							data: { label: "No" },
+						};
+
+						addNodes([conditionNode, yesNode, noNode]);
+
+						setEdges((edges) => [
+							...edges,
+							{
+								id: `e${nodeId}-${conditionId}`,
+								source: nodeId,
+								target: conditionId,
+							},
+							{
+								id: `e${conditionId}-${yesId}`,
+								source: conditionId,
+								target: yesId,
+								sourceHandle: `${conditionId}-true`,
+								label: "True",
+							},
+							{
+								id: `e${conditionId}-${noId}`,
+								source: conditionId,
+								target: noId,
+								sourceHandle: `${conditionId}-false`,
+								label: "False",
+							},
+						]);
+					}
+					break;
+				}
 				case "add-child-feature":
 				case "add-child-screen":
 				case "add-child-tech":
@@ -313,8 +372,8 @@ export function MindMapContextMenu({
 							id,
 							type,
 							position: {
-								x: menu.node.position.x + 250,
-								y: menu.node.position.y,
+								x: menu.node.position.x,
+								y: menu.node.position.y + 250,
 							},
 							data: { label: `New ${type}` },
 						};
@@ -561,6 +620,11 @@ export function MindMapContextMenu({
 					icon: <Plus className="w-4 h-4" />,
 					action: () => handleAction("add-child-custom"),
 				},
+				{
+					label: "Add Condition",
+					icon: <Plus className="w-4 h-4" />,
+					action: () => handleAction("add-child-condition"),
+				},
 			];
 		}
 
@@ -688,6 +752,11 @@ export function MindMapContextMenu({
 					label: "Add Screen UI",
 					icon: <Smartphone className="w-4 h-4" />,
 					action: () => handleAction("add-child-screen"),
+				},
+				{
+					label: "Add Condition",
+					icon: <GitBranch className="w-4 h-4" />,
+					action: () => handleAction("add-child-condition"),
 				},
 				{
 					label: "Add Custom Node",

@@ -21,6 +21,7 @@ import {
 	type NodeProps,
 	Position,
 	useReactFlow,
+	useViewport,
 } from "@xyflow/react";
 import { GripVertical, Lock, Plus, X, Zap } from "lucide-react";
 import { useCallback } from "react";
@@ -62,9 +63,18 @@ function SortableFeatureItem({
 		transition,
 		isDragging,
 	} = useSortable({ id: feature.id });
+	const { zoom } = useViewport();
 
 	const style = {
-		transform: CSS.Transform.toString(transform),
+		transform: CSS.Transform.toString(
+			transform
+				? {
+						...transform,
+						x: transform.x / zoom,
+						y: transform.y / zoom,
+					}
+				: null,
+		),
 		transition,
 		zIndex: isDragging ? 2 : 1,
 		position: "relative" as const,

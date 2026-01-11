@@ -9,6 +9,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { Header } from "../components/Header";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
+import reactFlowCss from "@xyflow/react/dist/style.css?url";
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -32,6 +33,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			{
 				rel: "stylesheet",
 				href: appCss,
+			},
+			{
+				rel: "stylesheet",
+				href: reactFlowCss,
 			},
 		],
 	}),

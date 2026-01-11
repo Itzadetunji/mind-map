@@ -15,7 +15,6 @@ import {
 import { Hand, MousePointer2, Redo, Undo } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
-import "@xyflow/react/dist/style.css";
 import { MindMapContext } from "@/context/MindMapContext";
 import { useHistory } from "@/hooks/useHistory";
 import { MindMapContextMenu } from "./MindMapContextMenu";
@@ -200,8 +199,19 @@ export default function MindMap() {
 		[],
 	);
 
-	const onNodeClick = useCallback(() => setMenu(null), []);
-	const onPaneClick = useCallback(() => setMenu(null), []);
+	const onNodeClick = useCallback(() => {
+		setMenu(null);
+		setEdges((edges) =>
+			edges.map((e) => ({ ...e, animated: false, style: undefined })),
+		);
+	}, [setEdges]);
+
+	const onPaneClick = useCallback(() => {
+		setMenu(null);
+		setEdges((edges) =>
+			edges.map((e) => ({ ...e, animated: false, style: undefined })),
+		);
+	}, [setEdges]);
 	const onNodeDragStart = useCallback(() => setMenu(null), []);
 
 	return (
@@ -219,6 +229,7 @@ export default function MindMap() {
 					onNodeContextMenu={onNodeContextMenu}
 					onPaneContextMenu={onPaneContextMenu}
 					onPaneClick={onPaneClick}
+					onMoveStart={() => setMenu(null)}
 					fitView
 					panOnDrag={tool === "hand"}
 					selectionOnDrag={tool === "select"}
