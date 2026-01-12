@@ -35,7 +35,7 @@ export interface ChatMessage {
 export interface Database {
 	public: {
 		Tables: {
-			mind_map_projects: {
+			mind_maps: {
 				Row: MindMapProject;
 				Insert: Omit<MindMapProject, "id" | "created_at" | "updated_at">;
 				Update: Partial<Omit<MindMapProject, "id" | "created_at">>;

@@ -12,7 +12,7 @@ export function useMindMapProjects() {
 			if (!user) return [];
 
 			const { data, error } = await supabase
-				.from("mind_map_projects")
+				.from("mind_maps")
 				.select("*")
 				.eq("user_id", user.id)
 				.order("updated_at", { ascending: false });
@@ -33,7 +33,7 @@ export function useMindMapProject(projectId: string | null) {
 			if (!user || !projectId) return null;
 
 			const { data, error } = await supabase
-				.from("mind_map_projects")
+				.from("mind_maps")
 				.select("*")
 				.eq("id", projectId)
 				.eq("user_id", user.id)
@@ -60,7 +60,7 @@ export function useCreateMindMapProject() {
 			if (!user) throw new Error("User not authenticated");
 
 			const { data, error } = await supabase
-				.from("mind_map_projects")
+				.from("mind_maps")
 				.insert({
 					...project,
 					user_id: user.id,
@@ -86,7 +86,7 @@ export function useUpdateMindMapProject() {
 			...updates
 		}: Partial<MindMapProject> & { id: string }) => {
 			const { data, error } = await supabase
-				.from("mind_map_projects")
+				.from("mind_maps")
 				.update({ ...updates, updated_at: new Date().toISOString() })
 				.eq("id", id)
 				.select()
@@ -108,7 +108,7 @@ export function useDeleteMindMapProject() {
 	return useMutation({
 		mutationFn: async (projectId: string) => {
 			const { error } = await supabase
-				.from("mind_map_projects")
+				.from("mind_maps")
 				.delete()
 				.eq("id", projectId);
 

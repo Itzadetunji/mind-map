@@ -13,7 +13,7 @@ import {
 	useNodesState,
 } from "@xyflow/react";
 import { Hand, MousePointer2, Redo, Undo } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MindMapContext } from "@/context/MindMapContext";
 import { useHistory } from "@/hooks/useHistory";
@@ -38,76 +38,46 @@ const nodeTypes = {
 	"custom-node": CustomNode,
 };
 
-const initialNodes: Node[] = [
+// Default blank canvas with only root node
+const defaultNodes: Node[] = [
 	{
-		id: "1",
+		id: "root",
 		type: "core-concept",
 		position: { x: 0, y: 0 },
-		data: { label: "Mind Mapper App" },
-	},
-	{
-		id: "2",
-		type: "user-flow",
-		position: { x: -350, y: 150 },
-		data: {
-			label: "Onboarding Flow",
-			description: "User sign up and initial tutorial.",
-		},
-	},
-	{
-		id: "3",
-		type: "feature",
-		position: { x: 0, y: 200 },
-		data: {
-			label: "Canvas Editor",
-			features: [
-				{ id: "f1", label: "Drag & Drop" },
-				{ id: "f2", label: "Zoom/Pan" },
-				{ id: "f3", label: "Custom Nodes" },
-			],
-		},
-	},
-	{
-		id: "4",
-		type: "screen-ui",
-		position: { x: 350, y: 150 },
-		data: {
-			label: "Login Screen",
-			imageUrl: "", // Intentionally empty to show placeholder
-		},
+		data: { label: "New Project" },
 	},
 ];
 
-const initialEdges: Edge[] = [
-	{ id: "e1-2", source: "1", target: "2" },
-	{ id: "e1-3", source: "1", target: "3" },
-	{ id: "e1-4", source: "1", target: "4" },
-];
+const defaultEdges: Edge[] = [];
 
 interface MindMapProps {
 	project?: MindMapProject | null;
+	projectTitle?: string;
 	onNodesChange?: (nodes: Node[]) => void;
 	onEdgesChange?: (edges: Edge[]) => void;
-	showChatSidebar?: boolean;
-	onChatSidebarClose?: () => void;
+	onProjectTitleChange?: (title: string) => void;
+	hasPrompt?: boolean;
+	onPromptSubmitted?: () => void;
 }
 
 export default function MindMap({
 	project,
+	projectTitle = "New Project",
 	onNodesChange: onNodesChangeCallback,
 	onEdgesChange: onEdgesChangeCallback,
-	showChatSidebar = false,
-	onChatSidebarClose,
+	onProjectTitleChange,
+	hasPrompt = false,
+	onPromptSubmitted,
 }: MindMapProps) {
-	// Initialize with project data if available
+	// Initialize with project data if available, otherwise use blank canvas
 	const projectNodes = project?.graph_data?.nodes as Node[] | undefined;
 	const projectEdges = project?.graph_data?.edges as Edge[] | undefined;
 
 	const [nodes, setNodes, onNodesChange] = useNodesState(
-		projectNodes && projectNodes.length > 0 ? projectNodes : initialNodes,
+		projectNodes && projectNodes.length > 0 ? projectNodes : defaultNodes,
 	);
 	const [edges, setEdges, onEdgesChange] = useEdgesState(
-		projectEdges && projectEdges.length > 0 ? projectEdges : initialEdges,
+		projectEdges && projectEdges.length > 0 ? projectEdges : defaultEdges,
 	);
 	const { takeSnapshot, undo, redo, canUndo, canRedo } = useHistory(
 		nodes,
@@ -123,6 +93,39 @@ export default function MindMap({
 	} | null>(null);
 	const [showGrid, setShowGrid] = useState(true);
 	const [tool, setTool] = useState<"hand" | "select">("hand");
+	const [showChatSidebar, setShowChatSidebar] = useState(false);
+	// Track if first prompt was just submitted in this session
+	const [hasLocalPrompt, setHasLocalPrompt] = useState(hasPrompt);
+
+	// Track previous state to detect actual saveable changes
+	const prevNodesRef = useRef<string>("");
+	const prevEdgesRef = useRef<string>("");
+	const isInitialMountRef = useRef(true);
+
+	// Update hasLocalPrompt when hasPrompt prop changes
+	useEffect(() => {
+		setHasLocalPrompt(hasPrompt);
+	}, [hasPrompt]);
+
+	// Helper to extract only saveable node properties (ignore selected, dragging, etc.)
+	const getSaveableNodes = useCallback((nodeList: Node[]) => {
+		return nodeList.map((n) => ({
+			id: n.id,
+			type: n.type,
+			position: n.position,
+			data: n.data,
+		}));
+	}, []);
+
+	// Helper to extract only saveable edge properties
+	const getSaveableEdges = useCallback((edgeList: Edge[]) => {
+		return edgeList.map((e) => ({
+			id: e.id,
+			source: e.source,
+			target: e.target,
+			label: e.label,
+		}));
+	}, []);
 
 	// Update nodes/edges when project changes
 	useEffect(() => {
@@ -131,21 +134,41 @@ export default function MindMap({
 			const pEdges = project.graph_data.edges as Edge[] | undefined;
 			if (pNodes && pNodes.length > 0) {
 				setNodes(pNodes);
+				// Initialize the ref with project data
+				prevNodesRef.current = JSON.stringify(getSaveableNodes(pNodes));
 			}
 			if (pEdges && pEdges.length > 0) {
 				setEdges(pEdges);
+				prevEdgesRef.current = JSON.stringify(getSaveableEdges(pEdges));
 			}
 		}
-	}, [project, setNodes, setEdges]);
+	}, [project, setNodes, setEdges, getSaveableNodes, getSaveableEdges]);
 
-	// Notify parent of changes
+	// Notify parent of changes - only when saveable data actually changes
 	useEffect(() => {
-		onNodesChangeCallback?.(nodes);
-	}, [nodes, onNodesChangeCallback]);
+		// Skip initial mount
+		if (isInitialMountRef.current) {
+			isInitialMountRef.current = false;
+			// Initialize refs on first render
+			prevNodesRef.current = JSON.stringify(getSaveableNodes(nodes));
+			prevEdgesRef.current = JSON.stringify(getSaveableEdges(edges));
+			return;
+		}
 
-	useEffect(() => {
-		onEdgesChangeCallback?.(edges);
-	}, [edges, onEdgesChangeCallback]);
+		const currentNodesJson = JSON.stringify(getSaveableNodes(nodes));
+		const currentEdgesJson = JSON.stringify(getSaveableEdges(edges));
+
+		// Only notify parent if saveable data changed
+		if (currentNodesJson !== prevNodesRef.current) {
+			prevNodesRef.current = currentNodesJson;
+			onNodesChangeCallback?.(nodes);
+		}
+
+		if (currentEdgesJson !== prevEdgesRef.current) {
+			prevEdgesRef.current = currentEdgesJson;
+			onEdgesChangeCallback?.(edges);
+		}
+	}, [nodes, edges, onNodesChangeCallback, onEdgesChangeCallback, getSaveableNodes, getSaveableEdges]);
 
 	const handleOpenAddMenu = useCallback(
 		(nodeId: string, x: number, y: number) => {
@@ -284,7 +307,28 @@ export default function MindMap({
 					selectionMode={SelectionMode.Partial}
 					panOnScroll={true}
 				>
-					<FloatingSearchBar />
+					{/* Show FloatingSearchBar only if no prompt exists yet */}
+					{!hasLocalPrompt && (
+						<FloatingSearchBar
+							projectId={project?.id}
+							onProjectCreated={() => {
+								setHasLocalPrompt(true);
+								onPromptSubmitted?.();
+							}}
+						/>
+					)}
+					{/* Show AI Chat toggle button only if prompt exists */}
+					{hasLocalPrompt && (
+						<Panel position="top-right" className="mr-2 mt-2">
+							<button
+								type="button"
+								onClick={() => setShowChatSidebar(!showChatSidebar)}
+								className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors shadow-sm"
+							>
+								💬 AI Chat
+							</button>
+						</Panel>
+					)}
 					<Controls />
 					<Panel
 						position="top-center"
@@ -352,18 +396,23 @@ export default function MindMap({
 						/>
 					)}
 				</ReactFlow>
-				<AIChatSidebar
-					isOpen={showChatSidebar}
-					onClose={() => onChatSidebarClose?.()}
-					project={project ?? null}
-					nodes={nodes}
-					edges={edges}
-					onApplyChanges={(newNodes, newEdges) => {
-						takeSnapshot(nodes, edges);
-						setNodes(newNodes);
-						setEdges(newEdges);
-					}}
-				/>
+				{/* Only show chat sidebar if prompt exists */}
+				{hasLocalPrompt && (
+					<AIChatSidebar
+						isOpen={showChatSidebar}
+						onClose={() => setShowChatSidebar(false)}
+						project={project ?? null}
+						projectTitle={projectTitle}
+						nodes={nodes}
+						edges={edges}
+						onApplyChanges={(newNodes, newEdges) => {
+							takeSnapshot(nodes, edges);
+							setNodes(newNodes);
+							setEdges(newEdges);
+						}}
+						onProjectTitleChange={onProjectTitleChange}
+					/>
+				)}
 			</div>
 		</MindMapContext.Provider>
 	);

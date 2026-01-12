@@ -1,7 +1,7 @@
 import { Clock, FileText, Loader2, Network, Plus, Trash2 } from "lucide-react";
 import {
-	useMindMapProjects,
 	useDeleteMindMapProject,
+	useMindMapProjects,
 } from "@/hooks/useMindMapProjects";
 import type { MindMapProject } from "@/lib/database.types";
 import { useAuthStore } from "@/stores/authStore";
@@ -9,11 +9,13 @@ import { useAuthStore } from "@/stores/authStore";
 interface ProjectSelectorProps {
 	onSelectProject: (project: MindMapProject) => void;
 	onNewProject: () => void;
+	isCreating?: boolean;
 }
 
 export function ProjectSelector({
 	onSelectProject,
 	onNewProject,
+	isCreating = false,
 }: ProjectSelectorProps) {
 	const { user, loading: authLoading, signInWithGoogle } = useAuthStore();
 	const { data: projects, isLoading } = useMindMapProjects();
@@ -95,10 +97,15 @@ export function ProjectSelector({
 					<button
 						type="button"
 						onClick={onNewProject}
-						className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+						disabled={isCreating}
+						className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 					>
-						<Plus className="w-4 h-4" />
-						New Mind Map
+						{isCreating ? (
+							<Loader2 className="w-4 h-4 animate-spin" />
+						) : (
+							<Plus className="w-4 h-4" />
+						)}
+						{isCreating ? "Creating..." : "New Mind Map"}
 					</button>
 				</div>
 

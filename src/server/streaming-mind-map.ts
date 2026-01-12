@@ -2,17 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import OpenAI from "openai";
 import { z } from "zod";
 
-const streamMindMapInputSchema = z.object({
-	prompt: z.string().min(1, "Prompt is required"),
-	existingContext: z
-		.object({
-			nodes: z.array(z.any()).optional(),
-			edges: z.array(z.any()).optional(),
-		})
-		.optional(),
-});
-
-// System prompt (same as generate-mind-map.ts but exported for reuse)
+// ══════════════════════════════════════════════════════════════════════════════
+// SHARED SYSTEM PROMPT - Same as generate-mind-map.ts
+// ══════════════════════════════════════════════════════════════════════════════
 export const mindMapSystemPrompt = `
 You are an expert UX/product designer and technical architect. Your mission is to generate comprehensive, developer-friendly mind maps that break down app ideas into clear user flows.
 
@@ -45,11 +37,22 @@ Before generating ANY nodes or edges, you MUST work through these 5 steps and do
 └─────────────────────────────────────────────────────────────────────────────┘
 - Identify 3-5 reference apps/patterns you're drawing from
 - For each user flow, cite WHY you structured it that way
+- Example: "The checkout flow follows Amazon's 1-click pattern because..."
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ STEP 4: EVALUATE - Assess Developer-Friendliness                            │
 └─────────────────────────────────────────────────────────────────────────────┘
-Before finalizing, evaluate your output against these criteria for both beginner and intermediate developers.
+Before finalizing, evaluate your output against these criteria:
+
+FOR BEGINNER DEVELOPERS:
+✓ Can they understand the flow by reading node labels alone?
+✓ Are technical terms explained in descriptions?
+✓ Is the progression logical?
+
+FOR INTERMEDIATE DEVELOPERS:
+✓ Are the screen-ui nodes detailed enough to start wireframing?
+✓ Are condition nodes capturing real business logic?
+✓ Could they estimate development time from this map?
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ STEP 5: ITERATE - Refine Using Tree-of-Thoughts                             │
@@ -79,38 +82,127 @@ NODE TYPES (USE ONLY THESE):
 POSITIONING: 700px horizontal spacing between flows, 350px vertical spacing within flows.
 `;
 
-export const streamMindMap = createServerFn({ method: "POST" })
-	.inputValidator(streamMindMapInputSchema)
-	.handler(async ({ data }) => {
-		const apiKey = process.env.OPENAI_API_KEY;
-		if (!apiKey) {
-			throw new Error("Missing OPENAI_API_KEY");
-		}
+// Get the full system prompt for first message (same as generate-mind-map)
+const getFirstMessageSystemPrompt = (projectContext?: {
+	title: string;
+	prompt: string;
+	nodes: unknown[];
+	edges: unknown[];
+}) => `
+${mindMapSystemPrompt}
 
-		const openai = new OpenAI({ apiKey });
+═══════════════════════════════════════════════════════════════════════════════
+CHAT MODE INSTRUCTIONS
+═══════════════════════════════════════════════════════════════════════════════
 
-		// For streaming, we'll return chunks that the client can process
-		const response = await openai.chat.completions.create({
-			model: "gpt-4o-2024-08-06",
-			messages: [
-				{ role: "system", content: mindMapSystemPrompt },
-				{
-					role: "user",
-					content: data.existingContext
-						? `Current mind map context:\n${JSON.stringify(data.existingContext, null, 2)}\n\nUser request: ${data.prompt}`
-						: data.prompt,
-				},
-			],
-			stream: false, // We'll handle streaming differently
-			temperature: 0.7,
-			max_tokens: 8000,
-		});
+You are now in chat mode helping the user build their mind map. Since this is their FIRST message, 
+treat it as if they want to generate a new mind map from scratch.
 
-		const content = response.choices[0].message.content;
-		if (!content) throw new Error("No content returned");
+${
+	projectContext && projectContext.nodes.length > 1
+		? `═══════════════════════════════════════════════════════════════════════════════
+CURRENT PROJECT CONTEXT (existing work to build upon)
+═══════════════════════════════════════════════════════════════════════════════
+Project: "${projectContext.title}"
+Original Prompt: "${projectContext.prompt}"
+Current Structure: ${projectContext.nodes.length} nodes, ${projectContext.edges.length} edges
+Current Nodes: ${JSON.stringify(projectContext.nodes, null, 2)}
+Current Edges: ${JSON.stringify(projectContext.edges, null, 2)}`
+		: `The user is starting fresh with a new project.`
+}
 
-		return JSON.parse(content);
-	});
+YOUR RESPONSE FORMAT:
+
+ALWAYS respond with valid JSON in this format:
+
+{
+  "thinking": {
+    "task": "What does the user want? (1-2 sentences)",
+    "context": "Relevant domain knowledge and patterns (1-2 sentences)",
+    "references": "Apps or patterns I'm drawing from (1-2 sentences)",
+    "evaluation": "How this improves the design (1-2 sentences)",
+    "iteration": "Any alternatives I considered (1-2 sentences)"
+  },
+  "message": "Your conversational response to the user explaining what you did and why",
+  "action": "generate",
+  "graphData": {
+    "nodes": [...],
+    "edges": [...]
+  }
+}
+
+For the first message, ALWAYS use action: "generate" and create a complete mind map.
+`;
+
+// Chat-specific system prompt for conversational AI (subsequent messages)
+const getChatSystemPrompt = (projectContext?: {
+	title: string;
+	prompt: string;
+	nodes: unknown[];
+	edges: unknown[];
+}) => `
+You are an AI assistant helping users build and refine their mind map designs. You use the same 5-step thinking process as the mind map generator.
+
+${
+	projectContext
+		? `═══════════════════════════════════════════════════════════════════════════════
+CURRENT PROJECT CONTEXT
+═══════════════════════════════════════════════════════════════════════════════
+Project: "${projectContext.title}"
+Original Prompt: "${projectContext.prompt}"
+Current Structure: ${projectContext.nodes.length} nodes, ${projectContext.edges.length} edges
+Current Nodes: ${JSON.stringify(projectContext.nodes, null, 2)}
+Current Edges: ${JSON.stringify(projectContext.edges, null, 2)}`
+		: `No existing project - user is starting fresh.`
+}
+
+═══════════════════════════════════════════════════════════════════════════════
+YOUR RESPONSE FORMAT
+═══════════════════════════════════════════════════════════════════════════════
+
+ALWAYS respond with valid JSON in this format:
+
+{
+  "thinking": {
+    "task": "What does the user want? (1-2 sentences)",
+    "context": "Relevant domain knowledge and patterns (1-2 sentences)",
+    "references": "Apps or patterns I'm drawing from (1-2 sentences)",
+    "evaluation": "How this improves the design (1-2 sentences)",
+    "iteration": "Any alternatives I considered (1-2 sentences)"
+  },
+  "message": "Your conversational response to the user explaining what you did and why",
+  "action": "generate" | "modify" | "none",
+  "graphData": {
+    "nodes": [...],
+    "edges": [...]
+  } | null
+}
+
+ACTION TYPES:
+- "generate": Create a complete new mind map from scratch
+- "modify": Update the existing mind map (add/remove/change nodes)
+- "none": Just answering a question, no graph changes needed
+
+WHEN TO USE EACH ACTION:
+- User asks to "create", "build", "generate" a new mind map → "generate"
+- User asks to "add", "change", "remove", "update" something → "modify" 
+- User asks a question or wants explanation → "none"
+
+FOR "generate" ACTION:
+- Include FULL graph structure with root "core-concept" node at {x: 0, y: 0}
+- Follow the same node types and positioning rules as the main generator
+
+FOR "modify" ACTION:
+- Return the COMPLETE updated graph (not just the changes)
+- Preserve existing nodes/edges unless explicitly asked to remove them
+- Keep the root node unless rebuilding from scratch
+
+FOR "none" ACTION:
+- Set graphData to null
+- Just provide a helpful message
+
+${mindMapSystemPrompt}
+`;
 
 // Chat-specific server function for conversational AI
 const chatInputSchema = z.object({
@@ -131,6 +223,7 @@ const chatInputSchema = z.object({
 			}),
 		)
 		.optional(),
+	isFirstMessage: z.boolean().optional(),
 });
 
 export const chatWithAI = createServerFn({ method: "POST" })
@@ -143,29 +236,19 @@ export const chatWithAI = createServerFn({ method: "POST" })
 
 		const openai = new OpenAI({ apiKey });
 
-		const systemMessage = `You are an AI assistant helping users refine their mind map designs. You have access to their current mind map and can suggest improvements, answer questions about UX patterns, and help them think through their app architecture.
-
-${
-	data.projectContext
-		? `Current Project: "${data.projectContext.title}"
-Original Prompt: "${data.projectContext.prompt}"
-Current Structure: ${data.projectContext.nodes.length} nodes, ${data.projectContext.edges.length} edges`
-		: "No project context available."
-}
-
-When suggesting changes to the mind map, format your response with clear sections:
-1. ANALYSIS: Your understanding of the request
-2. SUGGESTIONS: Specific changes to make
-3. REASONING: Why these changes improve the design
-
-If the user wants you to generate/update the mind map, include a JSON block with the new nodes/edges.`;
+		// Use full system prompt for first message, otherwise use chat prompt
+		const isFirstMessage =
+			data.isFirstMessage || !data.chatHistory || data.chatHistory.length === 0;
+		const systemMessage = isFirstMessage
+			? getFirstMessageSystemPrompt(data.projectContext)
+			: getChatSystemPrompt(data.projectContext);
 
 		const messages: Array<{
 			role: "system" | "user" | "assistant";
 			content: string;
 		}> = [{ role: "system", content: systemMessage }];
 
-		// Add chat history
+		// Add chat history (last 10 messages)
 		if (data.chatHistory) {
 			for (const msg of data.chatHistory.slice(-10)) {
 				messages.push({ role: msg.role, content: msg.content });
@@ -175,13 +258,249 @@ If the user wants you to generate/update the mind map, include a JSON block with
 		messages.push({ role: "user", content: data.message });
 
 		const response = await openai.chat.completions.create({
-			model: "gpt-4o",
+			model: "gpt-4o-2024-08-06",
 			messages,
+			response_format: {
+				type: "json_schema",
+				json_schema: {
+					name: "chat_response",
+					strict: true,
+					schema: {
+						type: "object",
+						properties: {
+							thinking: {
+								type: "object",
+								properties: {
+									task: { type: "string" },
+									context: { type: "string" },
+									references: { type: "string" },
+									evaluation: { type: "string" },
+									iteration: { type: "string" },
+								},
+								required: [
+									"task",
+									"context",
+									"references",
+									"evaluation",
+									"iteration",
+								],
+								additionalProperties: false,
+							},
+							message: { type: "string" },
+							action: {
+								type: "string",
+								enum: ["generate", "modify", "none"],
+							},
+							graphData: {
+								type: ["object", "null"],
+								properties: {
+									nodes: {
+										type: "array",
+										items: {
+											type: "object",
+											properties: {
+												id: { type: "string" },
+												type: {
+													type: "string",
+													enum: [
+														"core-concept",
+														"user-flow",
+														"screen-ui",
+														"condition",
+														"feature",
+														"custom-node",
+													],
+												},
+												position: {
+													type: "object",
+													properties: {
+														x: { type: "number" },
+														y: { type: "number" },
+													},
+													required: ["x", "y"],
+													additionalProperties: false,
+												},
+												data: {
+													type: "object",
+													properties: {
+														label: { type: "string" },
+														description: { type: ["string", "null"] },
+														feasibility: {
+															type: ["string", "null"],
+															enum: ["green", "yellow", "red", null],
+														},
+														features: {
+															type: ["array", "null"],
+															items: {
+																type: "object",
+																properties: {
+																	id: { type: "string" },
+																	label: { type: "string" },
+																},
+																required: ["id", "label"],
+																additionalProperties: false,
+															},
+														},
+													},
+													required: [
+														"label",
+														"description",
+														"feasibility",
+														"features",
+													],
+													additionalProperties: false,
+												},
+											},
+											required: ["id", "type", "position", "data"],
+											additionalProperties: false,
+										},
+									},
+									edges: {
+										type: "array",
+										items: {
+											type: "object",
+											properties: {
+												id: { type: "string" },
+												source: { type: "string" },
+												target: { type: "string" },
+												label: { type: ["string", "null"] },
+											},
+											required: ["id", "source", "target", "label"],
+											additionalProperties: false,
+										},
+									},
+								},
+								required: ["nodes", "edges"],
+								additionalProperties: false,
+							},
+						},
+						required: ["thinking", "message", "action", "graphData"],
+						additionalProperties: false,
+					},
+				},
+			},
 			temperature: 0.7,
-			max_tokens: 2000,
+			max_tokens: 8000,
 		});
 
-		return {
-			content: response.choices[0].message.content || "",
-		};
+		const content = response.choices[0].message.content;
+		if (!content) throw new Error("No content returned");
+
+		return JSON.parse(content);
+	});
+
+// Streaming chat function that returns thinking steps as they're detected
+export const chatWithAIStreaming = createServerFn({ method: "POST" })
+	.inputValidator(chatInputSchema)
+	.handler(async ({ data }) => {
+		const apiKey = process.env.OPENAI_API_KEY;
+		if (!apiKey) {
+			throw new Error("Missing OPENAI_API_KEY");
+		}
+
+		const openai = new OpenAI({ apiKey });
+
+		// Use full system prompt for first message
+		const isFirstMessage =
+			data.isFirstMessage || !data.chatHistory || data.chatHistory.length === 0;
+		const systemMessage = isFirstMessage
+			? getFirstMessageSystemPrompt(data.projectContext)
+			: getChatSystemPrompt(data.projectContext);
+
+		const messages: Array<{
+			role: "system" | "user" | "assistant";
+			content: string;
+		}> = [{ role: "system", content: systemMessage }];
+
+		if (data.chatHistory) {
+			for (const msg of data.chatHistory.slice(-10)) {
+				messages.push({ role: msg.role, content: msg.content });
+			}
+		}
+
+		messages.push({ role: "user", content: data.message });
+
+		// Use streaming to get real-time content
+		const stream = await openai.chat.completions.create({
+			model: "gpt-4o-2024-08-06",
+			messages,
+			stream: true,
+			temperature: 0.7,
+			max_tokens: 8000,
+		});
+
+		let fullContent = "";
+		const thinkingSteps: {
+			step: string;
+			content: string;
+			completed: boolean;
+		}[] = [];
+		const stepKeys = [
+			"task",
+			"context",
+			"references",
+			"evaluation",
+			"iteration",
+		];
+		let currentStepIndex = -1;
+
+		// Process the stream and detect thinking steps
+		for await (const chunk of stream) {
+			const delta = chunk.choices[0]?.delta?.content || "";
+			fullContent += delta;
+
+			// Detect which thinking step we're on based on JSON structure
+			for (let i = currentStepIndex + 1; i < stepKeys.length; i++) {
+				const key = stepKeys[i];
+				const pattern = new RegExp(`"${key}"\\s*:\\s*"`);
+				if (
+					pattern.test(fullContent) &&
+					!thinkingSteps.find((s) => s.step === key)
+				) {
+					// Mark previous step as completed
+					if (currentStepIndex >= 0 && thinkingSteps[currentStepIndex]) {
+						thinkingSteps[currentStepIndex].completed = true;
+					}
+					currentStepIndex = i;
+					thinkingSteps.push({
+						step: key,
+						content: "",
+						completed: false,
+					});
+				}
+			}
+
+			// Check if we've moved past the thinking section
+			if (fullContent.includes('"message"')) {
+				// Mark all thinking steps as completed
+				for (const step of thinkingSteps) {
+					step.completed = true;
+				}
+			}
+		}
+
+		// Parse the final JSON
+		try {
+			// Clean up the content if it has markdown code blocks
+			let cleanContent = fullContent.trim();
+			if (cleanContent.startsWith("```json")) {
+				cleanContent = cleanContent.slice(7);
+			}
+			if (cleanContent.startsWith("```")) {
+				cleanContent = cleanContent.slice(3);
+			}
+			if (cleanContent.endsWith("```")) {
+				cleanContent = cleanContent.slice(0, -3);
+			}
+			cleanContent = cleanContent.trim();
+
+			const parsed = JSON.parse(cleanContent);
+			return {
+				...parsed,
+				streamingSteps: thinkingSteps,
+			};
+		} catch (error) {
+			console.error("Failed to parse JSON:", error, fullContent);
+			throw new Error("Failed to parse AI response as JSON");
+		}
 	});

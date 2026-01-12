@@ -501,11 +501,12 @@ FINAL CHECKLIST (Verify Before Output)
 				const supabase = getSupabaseClient();
 
 				if (data.projectId) {
-					// Update existing project
+					// Update existing project - also save prompt if this is first generation
 					const { error: updateError } = await supabase
-						.from("mind_map_projects")
+						.from("mind_maps")
 						.update({
 							graph_data: graphData,
+							prompt: data.prompt, // Save the prompt on updates too
 							updated_at: new Date().toISOString(),
 						})
 						.eq("id", data.projectId)
@@ -514,11 +515,13 @@ FINAL CHECKLIST (Verify Before Output)
 					if (updateError) {
 						console.error("Supabase update error:", updateError);
 					}
+
+					return { ...graphData, projectId: data.projectId };
 				} else {
 					// Create new project
 					const title = data.title || extractTitle(data.prompt);
 					const { data: newProject, error: insertError } = await supabase
-						.from("mind_map_projects")
+						.from("mind_maps")
 						.insert({
 							user_id: data.userId,
 							title,
