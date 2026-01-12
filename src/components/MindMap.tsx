@@ -168,7 +168,14 @@ export default function MindMap({
 			prevEdgesRef.current = currentEdgesJson;
 			onEdgesChangeCallback?.(edges);
 		}
-	}, [nodes, edges, onNodesChangeCallback, onEdgesChangeCallback, getSaveableNodes, getSaveableEdges]);
+	}, [
+		nodes,
+		edges,
+		onNodesChangeCallback,
+		onEdgesChangeCallback,
+		getSaveableNodes,
+		getSaveableEdges,
+	]);
 
 	const handleOpenAddMenu = useCallback(
 		(nodeId: string, x: number, y: number) => {
