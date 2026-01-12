@@ -1,14 +1,14 @@
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
 	HeadContent,
+	Outlet,
 	Scripts,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import reactFlowCss from "@xyflow/react/dist/style.css?url";
+import { useEffect } from "react";
 import { Header } from "../components/Header";
-import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
+import { useAuthStore } from "../stores/authStore";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
@@ -41,8 +41,22 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 		],
 	}),
 
-	shellComponent: RootDocument,
+	component: RootComponent,
 });
+
+function RootComponent() {
+	const initialize = useAuthStore((state) => state.initialize);
+
+	useEffect(() => {
+		initialize();
+	}, [initialize]);
+
+	return (
+		<RootDocument>
+			<Outlet />
+		</RootDocument>
+	);
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
@@ -53,19 +67,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<body className="flex flex-col h-dvh">
 				<Header />
 				{children}
-				{/* <TanStackDevtools
-					config={{
-						position: "bottom-right",
-					}}
-					plugins={[
-						{
-							name: "Tanstack Router",
-							render: <TanStackRouterDevtoolsPanel />,
-
-						},
-						TanStackQueryDevtools,
-					]}
-				/> */}
 				<Scripts />
 			</body>
 		</html>

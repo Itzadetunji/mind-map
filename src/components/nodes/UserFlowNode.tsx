@@ -6,7 +6,7 @@ import {
 	useReactFlow,
 } from "@xyflow/react";
 import { GripVertical, Lock, Plus, Workflow } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useMindMapContext } from "@/context/MindMapContext";
 import { cn } from "@/lib/utils";

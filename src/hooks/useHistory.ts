@@ -1,4 +1,4 @@
-import { Edge, Node } from "@xyflow/react";
+import type { Edge, Node } from "@xyflow/react";
 import { useCallback, useState } from "react";
 
 interface HistoryState {

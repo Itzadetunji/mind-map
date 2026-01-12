@@ -12,6 +12,9 @@ const getSupabaseClient = () => {
 
 const generateMindMapInputSchema = z.object({
 	prompt: z.string().min(1, "Prompt is required"),
+	userId: z.string().optional(),
+	projectId: z.string().optional(),
+	title: z.string().optional(),
 });
 
 export const generateMindMap = createServerFn({ method: "POST" })
@@ -493,17 +496,46 @@ FINAL CHECKLIST (Verify Before Output)
 
 			const graphData = JSON.parse(content);
 
-			// Optional: Save to Supabase
-			const supabase = getSupabaseClient();
-			const { error: dbError } = await supabase.from("mind_maps").insert({
-				prompt: data.prompt,
-				graph_data: graphData,
-				created_at: new Date().toISOString(),
-			});
+			// Save to user's project if authenticated
+			if (data.userId) {
+				const supabase = getSupabaseClient();
 
-			if (dbError) {
-				console.error("Supabase insert error:", dbError);
-				// Still return the graph — don't fail the whole request
+				if (data.projectId) {
+					// Update existing project
+					const { error: updateError } = await supabase
+						.from("mind_map_projects")
+						.update({
+							graph_data: graphData,
+							updated_at: new Date().toISOString(),
+						})
+						.eq("id", data.projectId)
+						.eq("user_id", data.userId);
+
+					if (updateError) {
+						console.error("Supabase update error:", updateError);
+					}
+				} else {
+					// Create new project
+					const title = data.title || extractTitle(data.prompt);
+					const { data: newProject, error: insertError } = await supabase
+						.from("mind_map_projects")
+						.insert({
+							user_id: data.userId,
+							title,
+							description: data.prompt.slice(0, 200),
+							prompt: data.prompt,
+							graph_data: graphData,
+						})
+						.select()
+						.single();
+
+					if (insertError) {
+						console.error("Supabase insert error:", insertError);
+					} else {
+						// Return the project ID so client can track it
+						return { ...graphData, projectId: newProject.id };
+					}
+				}
 			}
 
 			return graphData;
@@ -512,3 +544,11 @@ FINAL CHECKLIST (Verify Before Output)
 			throw error;
 		}
 	});
+
+// Helper to extract a title from the prompt
+function extractTitle(prompt: string): string {
+	// Take first sentence or first 50 chars
+	const firstSentence = prompt.split(/[.!?]/)[0];
+	if (firstSentence.length <= 50) return firstSentence.trim();
+	return `${prompt.slice(0, 47).trim()}...`;
+}

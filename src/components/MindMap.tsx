@@ -17,6 +17,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { MindMapContext } from "@/context/MindMapContext";
 import { useHistory } from "@/hooks/useHistory";
+import type { MindMapProject } from "@/lib/database.types";
+import { AIChatSidebar } from "./AIChatSidebar";
 import { FloatingSearchBar } from "./FloatingSearchBar";
 import { MindMapContextMenu } from "./MindMapContextMenu";
 import ConditionNode from "./nodes/ConditionNode";
@@ -82,9 +84,31 @@ const initialEdges: Edge[] = [
 	{ id: "e1-4", source: "1", target: "4" },
 ];
 
-export default function MindMap() {
-	const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-	const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+interface MindMapProps {
+	project?: MindMapProject | null;
+	onNodesChange?: (nodes: Node[]) => void;
+	onEdgesChange?: (edges: Edge[]) => void;
+	showChatSidebar?: boolean;
+	onChatSidebarClose?: () => void;
+}
+
+export default function MindMap({
+	project,
+	onNodesChange: onNodesChangeCallback,
+	onEdgesChange: onEdgesChangeCallback,
+	showChatSidebar = false,
+	onChatSidebarClose,
+}: MindMapProps) {
+	// Initialize with project data if available
+	const projectNodes = project?.graph_data?.nodes as Node[] | undefined;
+	const projectEdges = project?.graph_data?.edges as Edge[] | undefined;
+
+	const [nodes, setNodes, onNodesChange] = useNodesState(
+		projectNodes && projectNodes.length > 0 ? projectNodes : initialNodes,
+	);
+	const [edges, setEdges, onEdgesChange] = useEdgesState(
+		projectEdges && projectEdges.length > 0 ? projectEdges : initialEdges,
+	);
 	const { takeSnapshot, undo, redo, canUndo, canRedo } = useHistory(
 		nodes,
 		edges,
@@ -99,6 +123,29 @@ export default function MindMap() {
 	} | null>(null);
 	const [showGrid, setShowGrid] = useState(true);
 	const [tool, setTool] = useState<"hand" | "select">("hand");
+
+	// Update nodes/edges when project changes
+	useEffect(() => {
+		if (project?.graph_data) {
+			const pNodes = project.graph_data.nodes as Node[] | undefined;
+			const pEdges = project.graph_data.edges as Edge[] | undefined;
+			if (pNodes && pNodes.length > 0) {
+				setNodes(pNodes);
+			}
+			if (pEdges && pEdges.length > 0) {
+				setEdges(pEdges);
+			}
+		}
+	}, [project, setNodes, setEdges]);
+
+	// Notify parent of changes
+	useEffect(() => {
+		onNodesChangeCallback?.(nodes);
+	}, [nodes, onNodesChangeCallback]);
+
+	useEffect(() => {
+		onEdgesChangeCallback?.(edges);
+	}, [edges, onEdgesChangeCallback]);
 
 	const handleOpenAddMenu = useCallback(
 		(nodeId: string, x: number, y: number) => {
@@ -305,6 +352,18 @@ export default function MindMap() {
 						/>
 					)}
 				</ReactFlow>
+				<AIChatSidebar
+					isOpen={showChatSidebar}
+					onClose={() => onChatSidebarClose?.()}
+					project={project ?? null}
+					nodes={nodes}
+					edges={edges}
+					onApplyChanges={(newNodes, newEdges) => {
+						takeSnapshot(nodes, edges);
+						setNodes(newNodes);
+						setEdges(newEdges);
+					}}
+				/>
 			</div>
 		</MindMapContext.Provider>
 	);
