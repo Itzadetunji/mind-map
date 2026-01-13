@@ -11,7 +11,7 @@ import {
 import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
 
-const AUTOSAVE_DELAY = 200; // 200ms debounce
+const AUTOSAVE_DELAY = 400; // 400ms debounce
 
 const ProjectPage = () => {
 	const { projectId } = Route.useParams();
@@ -213,7 +213,7 @@ const ProjectPage = () => {
 	}
 
 	// Determine if project has a prompt (first AI interaction done)
-	const hasPrompt = Boolean(project.prompt?.trim());
+	const hasPrompt = Boolean(project.first_prompt?.trim());
 
 	return (
 		<main className="w-full flex-1 relative">

@@ -73,11 +73,11 @@ export default function CoreConceptNode({
 					<GripVertical size={20} className=" size-3.5 text-slate-400" />
 				</div>
 				<CardHeader className="flex flex-row gap-2 p-4 pb-2 space-y-0 items-start">
-					<div className="mt-0.5">
+					<div className="mt-0.75">
 						<Brain className="size-6 text-slate-900 dark:text-slate-100" />
 					</div>
 					<AutoResizeTextarea
-						className="nodrag resize-none rounded-none bg-transparent text-lg font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto !h-fit self-center"
+						className="nodrag resize-none rounded-none bg-transparent text-lg font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto h-fit! self-center max-w-80"
 						value={data.label}
 						onChange={updateLabel}
 						rows={1}

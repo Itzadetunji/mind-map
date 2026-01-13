@@ -53,7 +53,7 @@ export default function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
 				</div>
 			)}
 
-			<Card className="border-indigo-400 shadow-md bg-white dark:bg-slate-900 border-2 relative">
+			<Card className="border-indigo-400 shadow-md bg-white dark:bg-slate-900 border-2 relative overflow-hidden">
 				<div
 					className={cn(
 						`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
@@ -64,10 +64,12 @@ export default function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
 				>
 					<GripVertical className="size-3.5 text-slate-400" />
 				</div>
-				<CardHeader className="flex flex-row items-center space-y-0 gap-2 p-3 bg-indigo-50 dark:bg-indigo-950 ">
-					<Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+				<CardHeader className="flex flex-row space-y-0 gap-2 p-3 bg-indigo-50 dark:bg-indigo-950">
+					<div className="mt-0.75">
+						<Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+					</div>
 					<AutoResizeTextarea
-						className="nodrag resize-none rounded-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto overflow-hidden"
+						className="nodrag resize-none rounded-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto overflow-hidden max-w-80"
 						value={data.label}
 						onChange={updateLabel}
 						minRows={1}
@@ -76,7 +78,7 @@ export default function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
 				</CardHeader>
 				<CardContent className="p-3">
 					<AutoResizeTextarea
-						className="nodrag resize-none rounded-none flex min-h-20 w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus-visible:ring-0 overflow-hidden"
+						className="nodrag resize-none rounded-none flex min-h-20 w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus-visible:ring-0 overflow-hidden max-w-80 max-h-80"
 						value={data.description || ""}
 						onChange={updateDescription}
 						placeholder="Description..."

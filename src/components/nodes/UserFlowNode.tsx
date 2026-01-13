@@ -67,10 +67,12 @@ export default function UserFlowNode({
 				>
 					<GripVertical className="size-3.5 text-slate-400" />
 				</div>
-				<CardHeader className="flex flex-row items-center space-y-0 gap-2 p-3 bg-slate-100 dark:bg-slate-800">
-					<Workflow className="w-4 h-4 text-slate-900 dark:text-slate-100" />
+				<CardHeader className="flex flex-row space-y-0 gap-2 p-3 bg-slate-100 dark:bg-slate-800">
+					<div className="mt-0.75">
+						<Workflow className="w-4 h-4 text-slate-900 dark:text-slate-100" />
+					</div>
 					<AutoResizeTextarea
-						className="nodrag resize-none rounded-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto overflow-hidden"
+						className="nodrag resize-none rounded-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto overflow-hidden max-w-80"
 						value={data.label}
 						onChange={updateLabel}
 						minRows={1}
@@ -78,7 +80,7 @@ export default function UserFlowNode({
 				</CardHeader>
 				<CardContent className="p-3">
 					<AutoResizeTextarea
-						className="nodrag resize-none rounded-none flex min-h-20 w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus-visible:ring-0 overflow-hidden"
+						className="nodrag resize-none rounded-none flex min-h-20 w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus-visible:ring-0 overflow-hidden max-w-80 max-h-80"
 						value={data.description || ""}
 						onChange={updateDescription}
 						placeholder="Describe the user journey..."

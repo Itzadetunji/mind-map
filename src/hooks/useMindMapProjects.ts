@@ -71,8 +71,14 @@ export function useCreateMindMapProject() {
 			if (error) throw error;
 			return data as MindMapProject;
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["mindMapProjects"] });
+		onSuccess: (data) => {
+			queryClient.setQueryData<MindMapProject[]>(
+				["mindMapProjects", data.user_id],
+				(oldData) => {
+					if (!oldData) return [data];
+					return [data, ...oldData];
+				},
+			);
 		},
 	});
 }

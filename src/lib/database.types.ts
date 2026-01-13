@@ -3,7 +3,7 @@ export interface MindMapProject {
 	user_id: string;
 	title: string;
 	description: string | null;
-	prompt: string;
+	first_prompt: string;
 	graph_data: {
 		reasoning?: string;
 		nodes: Array<{

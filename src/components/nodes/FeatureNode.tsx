@@ -191,12 +191,12 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 				>
 					<GripVertical size={20} className=" size-3.5 text-slate-400" />
 				</div>
-				<CardHeader className="flex flex-row items-center gap-2 p-3 border-b space-y-0">
-					<div className="mt-0.5">
-						<Zap className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
+				<CardHeader className="flex flex-row gap-2 p-3 border-b space-y-0">
+					<div className="mt-0.75">
+						<Zap className="w-4 h-4 text-slate-700 dark:text-slate-300" />
 					</div>
 					<AutoResizeTextarea
-						className="nodrag resize-none rounded-none bg-transparent text-lg font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto"
+						className="nodrag resize-none rounded-none bg-transparent text-lg font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto max-w-80 max-h-80"
 						value={data.label}
 						onChange={updateLabel}
 						rows={1}

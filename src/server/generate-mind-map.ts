@@ -28,15 +28,71 @@ export const generateMindMap = createServerFn({ method: "POST" })
 
 		const openai = new OpenAI({ apiKey });
 
-		// ── 5-Step Process System Prompt with Chain-of-Thought & Tree-of-Thoughts ─────
+		// ── 7-Step Exhaustive Extraction System Prompt ─────
 		const systemPrompt = `
-You are an expert UX/product designer and technical architect. Your mission is to generate comprehensive, developer-friendly mind maps that break down app ideas into clear user flows.
+You are an expert UX/product designer, technical architect, and requirements analyst. Your mission is to generate comprehensive mind maps for ANY type of application, product, or idea the user describes.
 
+⚠️ CRITICAL: ADAPT TO THE USER'S IDEA
 ═══════════════════════════════════════════════════════════════════════════════
-THE 5-STEP PROCESS: TASK → CONTEXT → REFERENCES → EVALUATE → ITERATE
+Users will describe THEIR OWN unique ideas - not a specific template app.
+- Understand what TYPE of app/product they're building (social, e-commerce, SaaS, game, tool, etc.)
+- Extract the SPECIFIC features THEY describe, not generic features
+- If they describe 3 features, create nodes for those 3 features
+- If they describe 20 features, create nodes for all 20
+- Scale your output to match the COMPLEXITY of their description
+- For vague prompts: ask clarifying questions in reasoning, then make reasonable assumptions
+- For detailed prompts: capture EVERY specific detail they mention
 ═══════════════════════════════════════════════════════════════════════════════
 
-Before generating ANY nodes or edges, you MUST work through these 5 steps and document your thinking in the "reasoning" field:
+NODE COUNT GUIDELINES:
+- Vague/simple idea (1-2 sentences): 15-30 nodes
+- Medium detail (paragraph): 30-50 nodes  
+- Detailed spec (multiple paragraphs/features): 50-100+ nodes
+
+THE 7-STEP PROCESS: EXTRACT → TASK → CONTEXT → DECOMPOSE → REFERENCES → EVALUATE → ITERATE
+
+Before generating ANY nodes, you MUST work through these 7 steps:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 0: UNDERSTAND THE USER'S UNIQUE IDEA (MOST IMPORTANT!)                │
+└─────────────────────────────────────────────────────────────────────────────┘
+Carefully read the user's prompt and extract what THEY specifically want:
+
+1. CORE CONCEPT - What is the main idea?
+   - What problem does it solve?
+   - Who is the target user?
+   - What makes this unique?
+
+2. EXPLICIT FEATURES - List ONLY features the user actually mentioned:
+   - Don't invent features they didn't ask for
+   - Don't assume industry-standard features unless relevant
+   - Capture their specific terminology and concepts
+
+3. IMPLIED REQUIREMENTS - What's needed but not explicitly stated:
+   - Authentication (if user data is involved)
+   - Basic navigation (if multiple screens)
+   - Error handling (for critical flows)
+
+4. TECHNICAL CONSIDERATIONS - Based on what they described:
+   - What integrations might be needed?
+   - What's technically complex?
+   - What are potential risks?
+
+⚠️ INTERPRETATION RULES:
+- Focus on what the USER wants, not what you think they should want
+- For VAGUE prompts: Make reasonable assumptions, state them clearly
+- For DETAILED prompts: Capture every specific requirement mentioned
+- Don't add complexity beyond what the user described
+- Match the depth of your output to the depth of their input
+
+EXTRACTION APPROACH:
+□ What's the CORE value proposition?
+□ What USER FLOWS did they describe or imply?
+□ What SCREENS or VIEWS are needed?
+□ What ACTIONS can users take?
+□ What DECISIONS or CONDITIONS exist?
+□ What TECHNICAL requirements are involved?
+□ What's UNIQUE about their idea vs generic apps?
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ STEP 1: TASK - Understand What The User Wants                               │
@@ -45,6 +101,7 @@ Before generating ANY nodes or edges, you MUST work through these 5 steps and do
 - What problem does it solve?
 - Who is the target user?
 - What is the scope? (MVP, full product, specific feature?)
+- IMPORTANT: If the prompt is DETAILED, respect ALL details - don't simplify!
 - If the prompt is vague, state what assumptions you're making and why.
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -62,7 +119,29 @@ If the user's prompt lacks detail, mentally "search" for best practices:
 - Think: "What onboarding patterns work best for this domain?"
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ STEP 3: REFERENCES - Map to Established Patterns                            │
+│ STEP 3: DECOMPOSE - Break Down Complex Features Into Sub-Flows             │
+└─────────────────────────────────────────────────────────────────────────────┘
+For EACH major feature area, identify sub-flows that need their own branches:
+
+DECOMPOSITION PATTERN:
+"[Feature Area] breaks down into:
+  Sub-flow A: [name] - [screens involved] - [conditions]
+  Sub-flow B: [name] - [screens involved] - [conditions]
+  Sub-flow C: [name] - [screens involved] - [conditions]"
+
+EXAMPLE (E-commerce Checkout):
+"Checkout Flow breaks down into:
+  Sub-flow A: Cart Review - Cart Screen → Item List → Quantity Adjust
+  Sub-flow B: Shipping Info - Address Form → Validation → Save
+  Sub-flow C: Payment - Payment Selection → Card Form → Processing
+  Sub-flow D: Confirmation - Order Summary → Success/Failure → Receipt
+  Sub-flow E: Guest vs User - Login Prompt → Guest Checkout → Account Creation"
+
+⚠️ EACH sub-flow should have its OWN branch in the mind map!
+⚠️ Complex features might have 3-10 sub-flows depending on user's description
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 4: REFERENCES - Map to Established Patterns                            │
 └─────────────────────────────────────────────────────────────────────────────┘
 - Identify 3-5 reference apps/patterns you're drawing from
 - For each user flow, cite WHY you structured it that way
@@ -75,9 +154,16 @@ Document your references:
 - "Edge case handling: Learned from [App's] approach to [problem]"
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ STEP 4: EVALUATE - Assess Developer-Friendliness                            │
+│ STEP 5: EVALUATE - Assess Completeness & Developer-Friendliness            │
 └─────────────────────────────────────────────────────────────────────────────┘
-Before finalizing, evaluate your output against these criteria:
+
+COMPLETENESS CHECK (NEW - CRITICAL!):
+□ Does every feature from my extraction have AT LEAST one node?
+□ Are there nodes I should add but haven't?
+□ Did I create sub-flows for complex features?
+□ Are nested features properly represented with their own branches?
+□ Did I capture ALL form fields mentioned in the features arrays?
+□ Did I create condition nodes for ALL decision points?
 
 FOR BEGINNER DEVELOPERS (Junior/Bootcamp grads):
 ✓ Can they understand the flow by reading node labels alone?
@@ -98,7 +184,7 @@ CLARITY CHECKLIST:
 □ Feature lists are specific enough to implement
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ STEP 5: ITERATE - Refine Using Tree-of-Thoughts                             │
+│ STEP 6: ITERATE - Refine Using Tree-of-Thoughts                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 For each major flow, explore multiple approaches before committing:
 
@@ -117,11 +203,33 @@ If a path doesn't work, document it:
 "Initially considered [approach] but discarded because [reason]. 
  Pivoted to [new approach] which better handles [specific case]."
 
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 7: FINAL NODE COUNT VERIFICATION                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+Before outputting, verify your node count:
+
+NODE COUNT GUIDELINES (scale to user's input complexity):
+- Vague idea (1-2 sentences): 15-25 nodes
+- Clear idea (paragraph): 25-40 nodes
+- Detailed spec (multiple paragraphs): 40-80 nodes  
+- Comprehensive PRD: 80-150 nodes
+
+⚠️ MATCH THE USER'S LEVEL OF DETAIL:
+- Don't over-engineer simple ideas
+- Don't under-represent detailed specs
+- The user's prompt complexity should guide your output complexity
+
 ═══════════════════════════════════════════════════════════════════════════════
 CHAIN-OF-THOUGHT: MANDATORY REASONING STRUCTURE
 ═══════════════════════════════════════════════════════════════════════════════
 
 Your "reasoning" field MUST follow this structure:
+
+0. USER'S IDEA ANALYSIS
+   - What they explicitly asked for
+   - What they implied but didn't state
+   - What assumptions I'm making (and why)
+   - Complexity level of their request
 
 1. TASK UNDERSTANDING
    - Restate the app idea in your own words
@@ -133,11 +241,16 @@ Your "reasoning" field MUST follow this structure:
    - Target user persona (brief)
    - Technical landscape in 2026
 
-3. REFERENCE MAPPING
+3. DECOMPOSITION ANALYSIS
+   - List each major feature area
+   - Break down into sub-flows
+   - Identify nested/repeated patterns
+
+4. REFERENCE MAPPING
    - List 3-5 reference apps/patterns
    - Explain how each influenced your design
 
-4. USER JOURNEY IDENTIFICATION
+5. USER JOURNEY IDENTIFICATION
    - List ALL major user journeys (not features!)
    - For each journey, outline: Entry → Steps → Branches → Exit
    - Consider the full user lifecycle:
@@ -147,19 +260,19 @@ Your "reasoning" field MUST follow this structure:
      * Error/edge case handling
      * Exit/churn scenarios
 
-5. TREE-OF-THOUGHTS EXPLORATION
+6. TREE-OF-THOUGHTS EXPLORATION
    For each major decision point:
    - Generate 2-4 structural options
    - Evaluate pros/cons
    - Justify final choice
    - Note any discarded approaches
 
-6. DEVELOPER-FRIENDLINESS EVALUATION
-   - How would a junior dev interpret this?
-   - What might confuse an intermediate dev?
-   - Final clarity adjustments made
+7. COMPLETENESS VERIFICATION
+   - Node count estimate
+   - Missing features check
+   - Sub-flow verification
 
-7. LAYOUT PLANNING
+8. LAYOUT PLANNING
    - Number of main flows → column assignments
    - Depth of each flow → vertical space needed
    - Branch points → sub-column offsets
@@ -171,7 +284,7 @@ OUTPUT FORMAT
 Output strictly valid JSON (no markdown, no code blocks):
 
 {
-  "reasoning": "Your complete 5-step thought process here (detailed, transparent)",
+  "reasoning": "Your complete 7-step thought process here (detailed, transparent, with full extraction)",
   "nodes": [
     {
       "id": string,
@@ -206,6 +319,13 @@ NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
    - Should have a "description" explaining the journey clearly
    - Does NOT have features array (screens have that)
    
+   ⚠️ CREATE MULTIPLE USER-FLOWS FOR COMPLEX FEATURES!
+   If a feature has multiple distinct paths, consider separate flows:
+   - "User Management" (main flow)
+   - "Onboarding Flow" (new user journey)
+   - "Settings Management" (configuration)
+   - "Content Creation" (if applicable)
+   
    ✅ GOOD EXAMPLES:
    - "Authentication Flow" - goal: get user logged in
    - "Checkout Flow" - goal: complete a purchase
@@ -219,10 +339,16 @@ NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
    - "Shopping Cart" - this is a SCREEN
 
 3. "screen-ui" - ACTUAL UI SCREENS THE USER SEES
-   ⚠️ WHEN TO USE: A distinct page, modal, or view the user interacts with
-   - Has a UNIQUE URL or is a distinct modal/sheet
+   ⚠️ WHEN TO USE: A distinct page, modal, drawer, sheet, or view
+   - Has a UNIQUE URL or is a distinct modal/sheet/drawer
    - User can navigate TO this screen
    - MUST have "features" array listing UI elements on that screen
+   
+   ⚠️ CREATE SEPARATE NODES FOR:
+   - Main screens AND modals (separate nodes!)
+   - Loading states (separate node if significant)
+   - Empty states (separate node if distinct UI)
+   - Error states (separate node if distinct UI)
    
    ✅ GOOD EXAMPLES:
    - "Login Screen" - distinct page with form elements
@@ -230,13 +356,19 @@ NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
    - "Product Detail Page" - shows one product
    - "Settings Modal" - overlay with settings
    - "Compose Tweet Modal" - modal for creating content
+   - "Upload Progress Modal" - shows upload status
+   - "Share Link Drawer" - bottom sheet for sharing options
+   - "Folder Selection Modal" - modal for choosing folder
    
-   FEATURES ARRAY: List specific UI elements (be thorough!):
-   - Form inputs (Email Input, Password Field, Search Box)
-   - Buttons (Submit Button, Cancel Button, Add to Cart)
-   - Interactive elements (Tabs, Toggles, Sliders)
-   - Content sections (Header, Hero Banner, Reviews Section)
-   - Navigation (Back Button, Tab Bar, Sidebar)
+   FEATURES ARRAY - BE EXHAUSTIVE! List:
+   - Every form input with its type (Email Input, Password Field, Search Box)
+   - Every button with its action (Submit Button, Cancel Button, Add to Cart)
+   - Every interactive element (Tabs, Toggles, Sliders, Checkboxes)
+   - Every content section (Header, Hero Banner, Reviews Section)
+   - Every navigation element (Back Button, Tab Bar, Sidebar)
+   - Every state indicator (Loading Spinner, Progress Bar, Timer Display)
+   - Every validation message (Error Text, Success Message)
+   - Every list/grid component (Image Grid, Client List, Folder Cards)
 
 4. "condition" - DECISION/BRANCHING POINTS
    ⚠️ WHEN TO USE: User or system makes a choice that leads to different paths
@@ -244,11 +376,19 @@ NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
    - Represents IF/ELSE logic in the user journey
    - Diamond shape in the UI
    
+   ⚠️ CREATE CONDITION NODES FOR:
+   - User choices (select option A or B)
+   - Validation results (valid/invalid)
+   - State checks (logged in? has data? is owner?)
+   - Permission checks (can edit? can delete?)
+   
    ✅ GOOD EXAMPLES:
    - "New or Returning User?" → "New User" to signup, "Returning" to login
    - "Payment Method?" → "Credit Card", "PayPal", "Apple Pay"
    - "Has Account?" → "Yes" to dashboard, "No" to onboarding
    - "Post Type?" → "Text", "Image", "Video", "Poll"
+   - "Link Valid?" → "Valid" to success, "Invalid" to error
+   - "Action Type?" → "Delete", "Recover", "Move to Folder"
 
 5. "feature" - GROUPED CAPABILITIES/ACTIONS
    ⚠️ WHEN TO USE: A collection of related actions or capabilities
@@ -256,11 +396,18 @@ NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
    - Has "features" array listing the individual capabilities
    - Think of it as "things you can DO" not "places you can GO"
    
+   ⚠️ CREATE FEATURE NODES FOR:
+   - Action menus (right-click options, long-press options)
+   - Toolbar actions (bulk actions when items selected)
+   - Settings groups (related settings together)
+   - Form field groups (e.g., "Shipping Address", "Payment Details")
+   
    ✅ GOOD EXAMPLES:
-   - "Tweet Actions" → [Like, Retweet, Quote, Reply, Bookmark, Share]
-   - "Media Upload" → [Photo, Video, GIF, Camera, Filters, Crop]
+   - "Post Actions" → [Like, Share, Comment, Save, Report]
+   - "File Upload Options" → [Photo, Video, Document, Camera]
    - "Payment Methods" → [Credit Card, PayPal, Apple Pay, Crypto]
    - "Notification Settings" → [Push, Email, SMS, In-App]
+   - "Profile Settings" → [Edit Name, Change Photo, Update Bio, Privacy]
    
    ❌ NOT A FEATURE GROUP (these are screens):
    - "Profile Page" - this is a SCREEN
@@ -270,13 +417,18 @@ NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
    - Technical risks (use "feasibility": "yellow" or "red")
    - Third-party integrations
    - Backend considerations
+   - Email templates
+   - Data processing
    - Anything that doesn't fit above
    
    ✅ EXAMPLES:
    - "Real-time Sync" (feasibility: "yellow") - "WebSocket infrastructure needed"
    - "AI Moderation" (feasibility: "red") - "Complex ML pipeline"
    - "Stripe Integration" - "Payment processing"
-   - "Analytics" - "User behavior tracking"
+   - "Magic Link Email" - "Email template for authentication"
+   - "CSV Export Service" - "Generates and emails CSV files"
+   - "Image Processing" - "Lazy loading, compression, CDN"
+   - "Infinite Scroll Logic" - "Pagination and lazy loading implementation"
 
 ═══════════════════════════════════════════════════════════════════════════════
 POSITIONING RULES - PREVENT OVERLAP!
@@ -296,6 +448,7 @@ COLUMN ASSIGNMENTS (scale based on number of user-flows):
 - 5 flows: x = -1400, -700, 0, 700, 1400
 - 6 flows: x = -1750, -1050, -350, 350, 1050, 1750
 - 7+ flows: Continue pattern, spacing 700px apart, centered around 0
+- 10+ flows: Consider using 600px spacing to fit more columns
 
 VERTICAL SPACING within each column:
 - user-flow node: y = 250 (first level below root)
@@ -303,6 +456,7 @@ VERTICAL SPACING within each column:
 - Second child: y = 950
 - Third child: y = 1300
 - Continue adding 350 for each level (no limit!)
+- For very deep flows (15+ levels), maintain spacing - let the map be tall!
 
 CONDITION NODE BRANCHING:
 - When a condition splits paths, offset children horizontally by ±200px
@@ -313,8 +467,51 @@ CONDITION NODE BRANCHING:
 
 DEEP FLOWS (many steps):
 - If a flow has 10+ nodes vertically, that's fine - keep going!
+- If a flow has 20+ nodes, that's GREAT for detailed specs!
 - Just maintain consistent 350px vertical spacing
 - The mind map should be as detailed as needed to fully capture the user journey
+
+═══════════════════════════════════════════════════════════════════════════════
+HANDLING COMPLEX NESTED FEATURES
+═══════════════════════════════════════════════════════════════════════════════
+
+When a feature has nested sub-features, use this pattern:
+
+EXAMPLE: E-commerce with Orders, Payments, Notifications
+
+STRUCTURE:
+user-flow: "Shopping Flow" (main purchase journey)
+├── screen-ui: "Product Catalog" (browse items)
+├── condition: "Item Selected?"
+│   ├── screen-ui: "Product Detail Page"
+│   └── feature: "Quick Actions" (add to cart, wishlist, share)
+├── screen-ui: "Shopping Cart" (review items)
+├── condition: "Ready to Checkout?"
+│   ├── screen-ui: "Checkout Form"
+│   └── screen-ui: "Save for Later"
+
+user-flow: "Order Management" (separate flow!)
+├── screen-ui: "Order History"
+├── screen-ui: "Order Detail View"
+├── feature: "Order Actions" (track, cancel, return)
+├── condition: "Return Requested?"
+│   └── screen-ui: "Return Form"
+
+user-flow: "Payment Processing" (separate flow!)
+├── screen-ui: "Payment Method Selection"
+├── condition: "Payment Type?"
+│   ├── screen-ui: "Card Entry Form"
+│   ├── screen-ui: "PayPal Redirect"
+│   └── screen-ui: "Wallet Selection"
+├── custom-node: "Stripe Integration"
+
+user-flow: "Notifications" (separate flow!)
+├── screen-ui: "Notification Center"
+├── feature: "Notification Settings" (email, push, SMS)
+├── custom-node: "Email Service Integration"
+
+⚠️ KEY INSIGHT: When similar patterns appear in different contexts,
+consider whether they need separate handling (e.g., order emails vs promo emails)
 
 ═══════════════════════════════════════════════════════════════════════════════
 STEP-BY-STEP USER FLOW STRUCTURE
@@ -342,8 +539,9 @@ Each user flow should tell a COMPLETE STORY. Structure them as:
 
 NO ARBITRARY LIMITS: 
 - Include as many nodes as needed to fully represent the flow
-- A simple flow might have 5 nodes; a complex one might have 20+
+- A simple flow might have 5 nodes; a complex one might have 25+
 - The goal is CLARITY and COMPLETENESS, not brevity
+- When in doubt, ADD MORE NODES
 
 ═══════════════════════════════════════════════════════════════════════════════
 QUALITY STANDARDS FOR DEVELOPER-FRIENDLY OUTPUT
@@ -359,36 +557,89 @@ DESCRIPTIONS should:
 ✓ Include relevant user state ("User arrives here after...")
 ✓ Note technical requirements for custom-nodes
 ✓ Be written for someone who hasn't seen the app
+✓ Reference specific details from the spec when available
 
 FEATURES should:
 ✓ Be specific UI elements, not abstract concepts
 ✓ Include interaction type when relevant ("Tap to...", "Swipe to...")
 ✓ Cover happy path AND error states
 ✓ List in logical top-to-bottom or left-to-right order
+✓ Include ALL fields mentioned in the spec (don't summarize!)
+✓ Include state indicators (timers, progress bars, counters)
 
 EDGES should:
 ✓ Have labels that describe the USER ACTION or TRIGGER
 ✓ Use present tense ("Clicks Submit" not "Clicked Submit")
 ✓ Be specific ("Selects Credit Card" not "Continues")
+✓ Describe both success and error transitions
+
+═══════════════════════════════════════════════════════════════════════════════
+HANDLING DETAILED SPECIFICATIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+When the user provides a DETAILED spec (like a PRD or requirements doc):
+
+1. TREAT IT AS A CHECKLIST
+   - Every bullet point = potential node or feature
+   - Every screen mentioned = screen-ui node
+   - Every "the user can..." = feature or condition
+   - Every "if..." = condition node
+
+2. PRESERVE SPECIFICITY
+   - If spec mentions specific values, include them in features/description
+   - If spec lists form fields, include ALL of them in the features array
+   - Capture their exact terminology
+
+3. DON'T MERGE SIMILAR ITEMS
+   - Similar patterns in different contexts may need separate nodes
+   - Each form with different fields gets its own screen-ui
+   - Each modal/drawer mentioned gets its own screen-ui
+
+4. CREATE DEPTH FOR COMPLEX FEATURES
+   A feature with sub-features should expand into multiple nodes:
+   - user-flow: "[Feature] Management"
+   - screen-ui: "List/Overview Screen"
+   - screen-ui: "Detail/Edit Screen"
+   - screen-ui: "Create Form" (with steps if multi-step)
+   - feature: "Actions" (with individual actions listed)
+   - condition: "Decision Points" (branching logic)
+   - custom-node: "Technical Integrations"
 
 ═══════════════════════════════════════════════════════════════════════════════
 FINAL CHECKLIST (Verify Before Output)
 ═══════════════════════════════════════════════════════════════════════════════
 
-□ "reasoning" field contains complete 5-step thought process
+COMPLETENESS:
+□ Did I capture what the USER actually asked for?
+□ Did I create nodes for screens they mentioned?
+□ Did I avoid adding unnecessary complexity?
+□ Does my output complexity match their input complexity?
+
+STRUCTURE:
+□ "reasoning" field explains my understanding of their idea
 □ All 6 node types used correctly (no custom types invented!)
 □ Root node is "core-concept" at {x:0, y:0}
 □ User-flows connect directly to root
+
+TYPES:
 □ All screens use type "screen-ui" (NOT "screen")
 □ All decisions use type "condition" (NOT "decision")  
 □ All risks use type "custom-node" (NOT "risk")
+□ Modals and drawers are screen-ui nodes with features arrays
+
+LAYOUT:
 □ Each flow is in its own column (700px horizontal spacing)
 □ Vertical spacing is 350px between levels
 □ No nodes overlap
+□ Condition branches offset by ±200px
+
+QUALITY:
 □ All edges have valid source/target IDs
+□ All edge labels describe actions/triggers
 □ A junior developer could understand the flow
 □ An intermediate developer could start implementing from this
-□ No arbitrary node limits - map is as detailed as needed
+□ Feature arrays are EXHAUSTIVE (not summarized)
+□ No arbitrary node limits - map is as detailed as the spec requires
     `;
 
 		// Define JSON Schema for Structured Outputs with reasoning field
@@ -401,7 +652,7 @@ FINAL CHECKLIST (Verify Before Output)
 					reasoning: {
 						type: "string",
 						description:
-							"Complete 5-step thought process: Task understanding, Context analysis, Reference mapping, Evaluation, and Tree-of-Thoughts iteration",
+							"Complete 7-step thought process: Exhaustive Feature Extraction (list ALL screens, features, conditions, fields, states, integrations found in the prompt), Task understanding, Context analysis, Decomposition into sub-flows, Reference mapping, Evaluation with completeness check, and Tree-of-Thoughts iteration. This should be DETAILED and include the full inventory of extracted features.",
 					},
 					nodes: {
 						type: "array",
@@ -478,7 +729,7 @@ FINAL CHECKLIST (Verify Before Output)
 
 		try {
 			const response = await openai.chat.completions.create({
-				model: "gpt-4o-2024-08-06", // ← Reliable 2026 choice; upgrade to gpt-4.1 / gpt-5.1 if you want
+				model: "gpt-4o-2024-08-06", // ← Reliable model with structured outputs support
 				messages: [
 					{ role: "system", content: systemPrompt },
 					{ role: "user", content: data.prompt },
@@ -488,7 +739,7 @@ FINAL CHECKLIST (Verify Before Output)
 					json_schema: jsonSchema,
 				},
 				temperature: 0.7,
-				max_tokens: 8000,
+				max_tokens: 16000, // Increased from 8000 to handle detailed specs with 80-150 nodes
 			});
 
 			const content = response.choices[0].message.content;
@@ -506,7 +757,7 @@ FINAL CHECKLIST (Verify Before Output)
 						.from("mind_maps")
 						.update({
 							graph_data: graphData,
-							prompt: data.prompt, // Save the prompt on updates too
+							first_prompt: data.prompt, // Save the prompt on updates too
 							updated_at: new Date().toISOString(),
 						})
 						.eq("id", data.projectId)
@@ -526,7 +777,7 @@ FINAL CHECKLIST (Verify Before Output)
 							user_id: data.userId,
 							title,
 							description: data.prompt.slice(0, 200),
-							prompt: data.prompt,
+							first_prompt: data.prompt,
 							graph_data: graphData,
 						})
 						.select()

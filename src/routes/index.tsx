@@ -21,7 +21,7 @@ const App = () => {
 			const newProject = await createMutation.mutateAsync({
 				title: "New Project",
 				description: null,
-				prompt: "",
+				first_prompt: "",
 				graph_data: {
 					nodes: [
 						{

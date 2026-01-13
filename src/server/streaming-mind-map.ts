@@ -237,8 +237,9 @@ export const chatWithAI = createServerFn({ method: "POST" })
 		const openai = new OpenAI({ apiKey });
 
 		// Use full system prompt for first message, otherwise use chat prompt
-		const isFirstMessage =
-			data.isFirstMessage || !data.chatHistory || data.chatHistory.length === 0;
+		// Only treat as first message if explicitly marked OR if there's truly no chat history
+		const hasExistingHistory = data.chatHistory && data.chatHistory.length > 0;
+		const isFirstMessage = data.isFirstMessage === true && !hasExistingHistory;
 		const systemMessage = isFirstMessage
 			? getFirstMessageSystemPrompt(data.projectContext)
 			: getChatSystemPrompt(data.projectContext);
@@ -401,8 +402,9 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 		const openai = new OpenAI({ apiKey });
 
 		// Use full system prompt for first message
-		const isFirstMessage =
-			data.isFirstMessage || !data.chatHistory || data.chatHistory.length === 0;
+		// Only treat as first message if explicitly marked OR if there's truly no chat history
+		const hasExistingHistory = data.chatHistory && data.chatHistory.length > 0;
+		const isFirstMessage = data.isFirstMessage === true && !hasExistingHistory;
 		const systemMessage = isFirstMessage
 			? getFirstMessageSystemPrompt(data.projectContext)
 			: getChatSystemPrompt(data.projectContext);

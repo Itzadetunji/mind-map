@@ -35,7 +35,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
 		set({
 			project,
 			projectTitle: project?.title || "New Project",
-			hasPrompt: Boolean(project?.prompt?.trim()),
+			hasPrompt: Boolean(project?.first_prompt?.trim()),
 		}),
 
 	setProjectTitle: (title) => set({ projectTitle: title }),
