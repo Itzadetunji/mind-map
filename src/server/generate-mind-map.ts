@@ -299,7 +299,13 @@ Output strictly valid JSON (no markdown, no code blocks):
     }
   ],
   "edges": [
-    { "id": string, "source": string, "target": string, "label"?: string }
+    { 
+      "id": string, 
+      "source": string, 
+      "target": string, 
+      "label"?: string,
+      "sourceHandle"?: string // REQUIRED for Condition nodes: "nodeId-true" or "nodeId-false"
+    }
   ]
 }
 
@@ -460,9 +466,11 @@ VERTICAL SPACING within each column:
 
 CONDITION NODE BRANCHING:
 - When a condition splits paths, offset children horizontally by ±200px
-- Left path: parent.x - 200
-- Right path: parent.x + 200
-- For 3+ branches: spread evenly (e.g., -200, 0, +200)
+- Left path (Positive/Yes/True): parent.x - 200
+  * MUST set edge.sourceHandle to the node's id + "-true" (e.g., "node_1-true")
+- Right path (Negative/No/False): parent.x + 200
+  * MUST set edge.sourceHandle to the node's id + "-false" (e.g., "node_1-false")
+- For 3+ branches: spread evenly (e.g., -200, 0, +200) and do NOT set sourceHandle (or use closest match logic)
 - Keep same y-level for siblings from same condition
 
 DEEP FLOWS (many steps):
@@ -716,6 +724,7 @@ QUALITY:
 								source: { type: "string" },
 								target: { type: "string" },
 								label: { type: ["string", "null"] },
+								sourceHandle: { type: ["string", "null"] },
 							},
 							required: ["id", "source", "target", "label"],
 							additionalProperties: false,

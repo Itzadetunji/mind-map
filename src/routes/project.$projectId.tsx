@@ -11,7 +11,7 @@ import {
 import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
 
-const AUTOSAVE_DELAY = 400; // 400ms debounce
+const AUTOSAVE_DELAY = 1000; // 1000ms debounce
 
 const ProjectPage = () => {
 	const { projectId } = Route.useParams();

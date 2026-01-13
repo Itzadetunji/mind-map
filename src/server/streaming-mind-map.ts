@@ -79,7 +79,12 @@ NODE TYPES (USE ONLY THESE):
 5. "feature" - Grouped capabilities with features array
 6. "custom-node" - Technical risks/integrations
 
-POSITIONING: 700px horizontal spacing between flows, 350px vertical spacing within flows.
+POSITIONING: 
+- 700px horizontal spacing between flows
+- 350px vertical spacing within flows
+- Condition Nodes: 
+  * Left path (Positive/Yes/True) -> x - 200 (edge.sourceHandle = node.id + "-true")
+  * Right path (Negative/No/False) -> x + 200 (edge.sourceHandle = node.id + "-false")
 `;
 
 // Get the full system prompt for first message (same as generate-mind-map)
@@ -365,6 +370,7 @@ export const chatWithAI = createServerFn({ method: "POST" })
 												source: { type: "string" },
 												target: { type: "string" },
 												label: { type: ["string", "null"] },
+												sourceHandle: { type: ["string", "null"] },
 											},
 											required: ["id", "source", "target", "label"],
 											additionalProperties: false,
