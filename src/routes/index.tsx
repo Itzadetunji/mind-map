@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ProjectSelector } from "@/components/ProjectSelector";
-import { useCreateMindMapProject } from "@/hooks/useMindMapProjects";
+import { useCreateMindMapProject } from "@/hooks/mind-maps.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { useAuthStore } from "@/stores/authStore";
 

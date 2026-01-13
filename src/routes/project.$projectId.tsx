@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import {
 	useMindMapProject,
 	useUpdateMindMapProject,
-} from "@/hooks/useMindMapProjects";
+} from "@/hooks/mind-maps.hooks";
 import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
 

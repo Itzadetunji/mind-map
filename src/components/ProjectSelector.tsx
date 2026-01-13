@@ -2,7 +2,7 @@ import { Clock, FileText, Loader2, Network, Plus, Trash2 } from "lucide-react";
 import {
 	useDeleteMindMapProject,
 	useMindMapProjects,
-} from "@/hooks/useMindMapProjects";
+} from "@/hooks/mind-maps.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatRelativeDate } from "@/lib/date-utils";
 import { useAuthStore } from "@/stores/authStore";

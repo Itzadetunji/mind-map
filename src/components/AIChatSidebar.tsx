@@ -10,13 +10,16 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useChatHistory, useSendChatMessage } from "@/hooks/chats.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatTime } from "@/lib/date-utils";
 import { chatWithAIStreaming } from "@/server/streaming-mind-map";
+import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
 import { Button } from "./ui/button";
+import { Skeleton } from "./ui/skeleton";
 
 interface AIThinking {
 	task: string;
@@ -53,24 +56,86 @@ export function AIChatSidebar({
 	onApplyChanges,
 }: AIChatSidebarProps) {
 	const { projectTitle, setProjectTitle } = useProjectStore();
-	const [messages, setMessages] = useState<ChatMessage[]>([]);
+	const { user } = useAuthStore();
+
+	const {
+		messages: dbMessages,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		isLoading: isHistoryLoading,
+	} = useChatHistory(project?.id);
+
+	const sendMessage = useSendChatMessage();
+
 	const [input, setInput] = useState("");
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
+	const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
 	const projectTitleId = useId();
 
-	const scrollToBottom = useCallback(() => {
-		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, []);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally scroll on message/step changes
+	// Intersection observer for load more
 	useEffect(() => {
-		scrollToBottom();
-	}, [scrollToBottom, messages]);
+		if (!loadMoreTriggerRef.current || !hasNextPage) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0]?.isIntersecting) {
+					fetchNextPage();
+				}
+			},
+			{ threshold: 0.1 },
+		);
+
+		observer.observe(loadMoreTriggerRef.current);
+
+		return () => observer.disconnect();
+	}, [hasNextPage, fetchNextPage]);
+
+	const historyMessages = useMemo(() => {
+		return (dbMessages || []).map(
+			(m) =>
+				({
+					id: m.id,
+					role: m.role === "ai" ? "assistant" : "user",
+					content: m.content,
+					thinking: undefined,
+					hasGraphUpdate: !!m.map_data,
+					timestamp: new Date(m.created_at),
+				}) as ChatMessage,
+		);
+	}, [dbMessages]);
+
+	// Auto-scroll to bottom only on new messages or initial load
+	useEffect(() => {
+		if (historyMessages.length > 0 && !isFetchingNextPage) {
+			// Only scroll if we are near the bottom to avoid disruptive scrolling when reading history
+			if (scrollContainerRef.current) {
+				const { scrollTop, scrollHeight, clientHeight } =
+					scrollContainerRef.current;
+				const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+				if (isNearBottom) {
+					messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+				}
+			}
+		}
+	}, [historyMessages.length, isFetchingNextPage]);
 
 	const chatMutation = useMutation({
 		mutationFn: async (message: string) => {
-			const chatHistory = messages.map((m) => ({
-				role: m.role,
+			if (!project?.id || !user?.id)
+				throw new Error("Project or user not found");
+
+			// 1. Add user message to DB
+			await sendMessage.mutateAsync({
+				mind_map_id: project.id,
+				user_id: user.id,
+				role: "user",
+				content: message,
+			});
+
+			const chatHistory = historyMessages.map((m) => ({
+				role: m.role as "user" | "assistant",
 				content: m.content,
 			}));
 
@@ -82,7 +147,7 @@ export function AIChatSidebar({
 					message,
 					projectContext: {
 						title: projectTitle || "New Project",
-						prompt: project?.prompt || "",
+						prompt: project?.first_prompt || "",
 						nodes: nodes,
 						edges: edges,
 					},
@@ -91,17 +156,21 @@ export function AIChatSidebar({
 				},
 			});
 		},
-		onSuccess: (data) => {
-			// Create assistant message with real thinking
-			const assistantMessage: ChatMessage = {
-				id: Date.now().toString(),
-				role: "assistant",
+		onSuccess: async (data) => {
+			if (!project?.id || !user?.id) return;
+
+			// 2. Add AI response to DB
+			await sendMessage.mutateAsync({
+				mind_map_id: project.id,
+				user_id: user.id,
+				role: "ai",
 				content: data.message,
-				thinking: data.thinking,
-				hasGraphUpdate: data.action !== "none" && data.graphData !== null,
-				timestamp: new Date(),
-			};
-			setMessages((prev) => [...prev, assistantMessage]);
+				map_data:
+					(data.action === "generate" || data.action === "modify") &&
+					data.graphData
+						? data.graphData
+						: null,
+			});
 
 			// Apply graph changes if any
 			if (
@@ -114,35 +183,40 @@ export function AIChatSidebar({
 		},
 		onError: (error) => {
 			console.error("Chat error:", error);
-
-			const errorMessage: ChatMessage = {
-				id: Date.now().toString(),
-				role: "assistant",
-				content:
-					"Sorry, I encountered an error processing your request. Please try again.",
-				timestamp: new Date(),
-			};
-			setMessages((prev) => [...prev, errorMessage]);
 		},
 	});
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!input.trim() || chatMutation.isPending) return;
-
-		const userMessage: ChatMessage = {
-			id: Date.now().toString(),
-			role: "user",
-			content: input.trim(),
-			timestamp: new Date(),
-		};
-
-		setMessages((prev) => [...prev, userMessage]);
+		const msg = input.trim();
 		setInput("");
-
-		// Make the request
-		chatMutation.mutate(userMessage.content);
+		chatMutation.mutate(msg);
 	};
+
+	const displayMessages = useMemo(() => {
+		const msgs = [...historyMessages];
+		if (chatMutation.isPending && chatMutation.variables) {
+			const pendingMsg: ChatMessage = {
+				id: "pending-user",
+				role: "user",
+				content: chatMutation.variables,
+				timestamp: new Date(),
+			};
+			// Prevent duplicate showing if DB update was super fast
+			if (
+				!msgs.some(
+					(m) =>
+						m.content === pendingMsg.content &&
+						m.role === "user" &&
+						m.timestamp.getTime() > Date.now() - 5000,
+				)
+			) {
+				msgs.push(pendingMsg);
+			}
+		}
+		return msgs;
+	}, [historyMessages, chatMutation.isPending, chatMutation.variables]);
 
 	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
 		if (e.key === "Enter" && !e.shiftKey) {
@@ -213,8 +287,32 @@ export function AIChatSidebar({
 				</div>
 
 				{/* Messages */}
-				<div className="flex-1 overflow-y-auto p-4 space-y-4">
-					{messages.length === 0 && (
+				<div
+					ref={scrollContainerRef}
+					className="flex-1 overflow-y-auto p-4 space-y-4"
+				>
+					{/* Load More Skeleton at Top */}
+					{hasNextPage && (
+						<div ref={loadMoreTriggerRef} className="flex justify-center py-2">
+							{isFetchingNextPage && (
+								<div className="space-y-2 w-full">
+									<Skeleton className="h-12 w-3/4" />
+									<Skeleton className="h-12 w-2/3 ml-auto" />
+									<Skeleton className="h-12 w-3/4" />
+								</div>
+							)}
+						</div>
+					)}
+
+					{isHistoryLoading && (
+						<div className="space-y-4">
+							<Skeleton className="h-12 w-3/4" />
+							<Skeleton className="h-12 w-2/3 ml-auto" />
+							<Skeleton className="h-12 w-3/4" />
+						</div>
+					)}
+
+					{displayMessages.length === 0 && !isHistoryLoading && (
 						<div className="text-center py-8">
 							<Sparkles className="w-10 h-10 mx-auto text-indigo-400 mb-3" />
 							<h3 className="font-medium text-slate-900 dark:text-white mb-1">
@@ -244,7 +342,7 @@ export function AIChatSidebar({
 						</div>
 					)}
 
-					{messages.map((message) => (
+					{displayMessages.map((message) => (
 						<div
 							key={message.id}
 							className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}

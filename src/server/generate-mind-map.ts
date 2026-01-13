@@ -467,9 +467,20 @@ VERTICAL SPACING within each column:
 CONDITION NODE BRANCHING:
 - When a condition splits paths, offset children horizontally by ±200px
 - Left path (Positive/Yes/True): parent.x - 200
-  * MUST set edge.sourceHandle to the node's id + "-true" (e.g., "node_1-true")
+  * MUST set edge.sourceHandle to the condition node's id + "-true" (e.g., "condition_node_1-true")
+  * This connects to the "true" handle on the condition node
 - Right path (Negative/No/False): parent.x + 200
-  * MUST set edge.sourceHandle to the node's id + "-false" (e.g., "node_1-false")
+  * MUST set edge.sourceHandle to the condition node's id + "-false" (e.g., "condition_node_1-false")
+  * This connects to the "false" handle on the condition node
+- CRITICAL: Each edge FROM a condition node MUST have sourceHandle set
+- Example edge from condition node "check_auth":
+  {
+    "id": "edge_123",
+    "source": "check_auth",
+    "target": "dashboard_screen",
+    "sourceHandle": "check_auth-true",
+    "label": "Authenticated"
+  }
 - For 3+ branches: spread evenly (e.g., -200, 0, +200) and do NOT set sourceHandle (or use closest match logic)
 - Keep same y-level for siblings from same condition
 

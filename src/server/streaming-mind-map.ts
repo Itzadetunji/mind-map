@@ -83,8 +83,9 @@ POSITIONING:
 - 700px horizontal spacing between flows
 - 350px vertical spacing within flows
 - Condition Nodes: 
-  * Left path (Positive/Yes/True) -> x - 200 (edge.sourceHandle = node.id + "-true")
-  * Right path (Negative/No/False) -> x + 200 (edge.sourceHandle = node.id + "-false")
+  * Left path (Positive/Yes/True) -> x - 200, edge.sourceHandle MUST be nodeId + "-true" (e.g., "node_1-true")
+  * Right path (Negative/No/False) -> x + 200, edge.sourceHandle MUST be nodeId + "-false" (e.g., "node_1-false")
+  * For each edge from a condition node, you MUST set "sourceHandle" field
 `;
 
 // Get the full system prompt for first message (same as generate-mind-map)

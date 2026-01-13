@@ -25,10 +25,11 @@ export interface MindMapProject {
 
 export interface ChatMessage {
 	id: string;
-	project_id: string;
-	role: "user" | "assistant";
+	mind_map_id: string;
+	user_id: string;
+	role: "user" | "ai";
 	content: string;
-	thinking_steps?: string[];
+	map_data?: any;
 	created_at: string;
 }
 

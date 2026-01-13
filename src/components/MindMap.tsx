@@ -16,7 +16,7 @@ import { Hand, MousePointer2, Redo, Undo } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MindMapContext } from "@/context/MindMapContext";
-import { useHistory } from "@/hooks/useHistory";
+import { useHistory } from "@/hooks/mind-maps.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { AIChatSidebar } from "./AIChatSidebar";
 import { FloatingSearchBar } from "./FloatingSearchBar";
