@@ -64,10 +64,10 @@ export default function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
 				>
 					<GripVertical className="size-3.5 text-slate-400" />
 				</div>
-				<CardHeader className="flex flex-row items-center space-y-0 gap-2 p-3 bg-indigo-50 dark:bg-indigo-950">
+				<CardHeader className="flex flex-row items-center space-y-0 gap-2 p-3 bg-indigo-50 dark:bg-indigo-950 ">
 					<Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
 					<AutoResizeTextarea
-						className="nodrag flex w-full resize-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 col-auto overflow-hidden"
+						className="nodrag resize-none rounded-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto overflow-hidden"
 						value={data.label}
 						onChange={updateLabel}
 						minRows={1}
@@ -76,7 +76,7 @@ export default function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
 				</CardHeader>
 				<CardContent className="p-3">
 					<AutoResizeTextarea
-						className="nodrag resize-none flex min-h-20 w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0 overflow-hidden"
+						className="nodrag resize-none rounded-none flex min-h-20 w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus-visible:ring-0 overflow-hidden"
 						value={data.description || ""}
 						onChange={updateDescription}
 						placeholder="Description..."

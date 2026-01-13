@@ -4,6 +4,7 @@ import {
 	useMindMapProjects,
 } from "@/hooks/useMindMapProjects";
 import type { MindMapProject } from "@/lib/database.types";
+import { formatRelativeDate } from "@/lib/date-utils";
 import { useAuthStore } from "@/stores/authStore";
 
 interface ProjectSelectorProps {
@@ -159,7 +160,7 @@ export function ProjectSelector({
 									</span>
 									<span className="flex items-center gap-1">
 										<Clock className="w-3 h-3" />
-										{formatDate(project.updated_at)}
+										{formatRelativeDate(project.updated_at)}
 									</span>
 								</div>
 							</button>
@@ -187,23 +188,4 @@ export function ProjectSelector({
 			</div>
 		</div>
 	);
-}
-
-function formatDate(dateString: string): string {
-	const date = new Date(dateString);
-	const now = new Date();
-	const diffMs = now.getTime() - date.getTime();
-	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-	if (diffDays === 0) {
-		const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-		if (diffHours === 0) {
-			const diffMins = Math.floor(diffMs / (1000 * 60));
-			return diffMins <= 1 ? "Just now" : `${diffMins}m ago`;
-		}
-		return `${diffHours}h ago`;
-	}
-	if (diffDays === 1) return "Yesterday";
-	if (diffDays < 7) return `${diffDays}d ago`;
-	return date.toLocaleDateString();
 }

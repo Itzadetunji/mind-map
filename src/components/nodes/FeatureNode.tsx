@@ -94,7 +94,7 @@ function SortableFeatureItem({
 				<GripVertical size={14} />
 			</div>
 			<input
-				className="nodrag flex h-7 w-full bg-transparent py-1 text-xs transition-colors focus:outline-none focus:ring-0"
+				className="nodrag flex h-7 w-full bg-transparent py-1 text-xs transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0"
 				value={feature.label}
 				onChange={(e) => updateFeature(index, e.target.value)}
 			/>
@@ -196,7 +196,7 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 						<Zap className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
 					</div>
 					<AutoResizeTextarea
-						className="nodrag flex w-full resize-none bg-transparent text-lg font-bold transition-colors focus:outline-none focus:ring-0 col-auto"
+						className="nodrag resize-none rounded-none bg-transparent text-lg font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto"
 						value={data.label}
 						onChange={updateLabel}
 						rows={1}

@@ -1,14 +1,15 @@
-import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { Edge, Node } from "@xyflow/react";
 import { useCallback, useEffect, useRef } from "react";
 import MindMap from "@/components/MindMap";
+import { Input } from "@/components/ui/input";
 import {
 	useMindMapProject,
 	useUpdateMindMapProject,
 } from "@/hooks/useMindMapProjects";
 import { useAuthStore } from "@/stores/authStore";
+import { useProjectStore } from "@/stores/projectStore";
 
 const AUTOSAVE_DELAY = 200; // 200ms debounce
 
@@ -17,6 +18,7 @@ const ProjectPage = () => {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const { user, loading: authLoading } = useAuthStore();
+	const { projectTitle, setProjectTitle } = useProjectStore();
 
 	// Fetch project from Supabase
 	const {
@@ -40,17 +42,10 @@ const ProjectPage = () => {
 	const currentNodesRef = useRef<Node[]>([]);
 	const currentEdgesRef = useRef<Edge[]>([]);
 
-	// TanStack Form for project title
-	const form = useForm({
-		defaultValues: {
-			title: "New Project",
-		},
-	});
-
-	// Update form and refs when project loads
+	// Update store and refs when project loads
 	useEffect(() => {
 		if (project && isInitialLoadRef.current) {
-			form.setFieldValue("title", project.title);
+			setProjectTitle(project.title);
 			const nodes = (project.graph_data?.nodes as Node[]) || [];
 			const edges = (project.graph_data?.edges as Edge[]) || [];
 			currentNodesRef.current = nodes;
@@ -62,7 +57,7 @@ const ProjectPage = () => {
 			};
 			isInitialLoadRef.current = false;
 		}
-	}, [project, form]);
+	}, [project, setProjectTitle]);
 
 	// Redirect to home on error
 	useEffect(() => {
@@ -83,12 +78,11 @@ const ProjectPage = () => {
 	const performAutosave = useCallback(async () => {
 		if (!project?.id) return;
 
-		const currentTitle = form.state.values.title;
 		const currentNodesJson = JSON.stringify(currentNodesRef.current);
 		const currentEdgesJson = JSON.stringify(currentEdgesRef.current);
 
 		// Check if anything actually changed
-		const titleChanged = currentTitle !== lastSavedStateRef.current.title;
+		const titleChanged = projectTitle !== lastSavedStateRef.current.title;
 		const nodesChanged = currentNodesJson !== lastSavedStateRef.current.nodes;
 		const edgesChanged = currentEdgesJson !== lastSavedStateRef.current.edges;
 
@@ -99,7 +93,7 @@ const ProjectPage = () => {
 		try {
 			await updateMutation.mutateAsync({
 				id: project.id,
-				title: currentTitle,
+				title: projectTitle,
 				graph_data: {
 					...project.graph_data,
 					nodes: currentNodesRef.current.map((n) => ({
@@ -118,14 +112,14 @@ const ProjectPage = () => {
 			});
 			// Update last saved state after successful save
 			lastSavedStateRef.current = {
-				title: currentTitle,
+				title: projectTitle,
 				nodes: currentNodesJson,
 				edges: currentEdgesJson,
 			};
 		} catch (error) {
 			console.error("Autosave failed:", error);
 		}
-	}, [project, form, updateMutation]);
+	}, [project, projectTitle, updateMutation]);
 
 	// Trigger autosave with debounce
 	const triggerAutosave = useCallback(() => {
@@ -180,14 +174,15 @@ const ProjectPage = () => {
 		[triggerAutosave],
 	);
 
-	// Handle title change
-	const handleTitleChange = useCallback(
-		(title: string) => {
-			form.setFieldValue("title", title);
-			triggerAutosave();
-		},
-		[form, triggerAutosave],
-	);
+	// Handle title change - trigger autosave when title changes in store
+	useEffect(() => {
+		// Skip initial load
+		if (isInitialLoadRef.current) return;
+		// Skip if title hasn't changed from last saved state
+		if (projectTitle === lastSavedStateRef.current.title) return;
+
+		triggerAutosave();
+	}, [projectTitle, triggerAutosave]);
 
 	const handleBackToProjects = () => {
 		// Save any pending changes before leaving
@@ -231,28 +226,21 @@ const ProjectPage = () => {
 					← All Projects
 				</button>
 				<span className="text-slate-300 dark:text-slate-600">/</span>
-				<form.Field name="title">
-					{(field) => (
-						<input
-							type="text"
-							value={field.state.value}
-							onChange={(e) => handleTitleChange(e.target.value)}
-							onBlur={field.handleBlur}
-							className="text-sm font-medium text-slate-900 dark:text-white bg-transparent border-none outline-none focus:ring-0 max-w-50 truncate hover:bg-slate-100 dark:hover:bg-slate-800 px-2 py-0.5 rounded transition-colors"
-							placeholder="Project name..."
-						/>
-					)}
-				</form.Field>
+				<Input
+					type="text"
+					value={projectTitle}
+					onChange={(e) => setProjectTitle(e.target.value)}
+					className="h-auto border-none shadow-none bg-transparent text-sm font-medium max-w-50 truncate hover:bg-slate-100 dark:hover:bg-slate-800 px-2 py-0.5 rounded transition-colors w-fit focus-visible:ring-0"
+					placeholder="Project name..."
+				/>
 				{updateMutation.isPending && (
 					<span className="text-xs text-slate-400">Saving...</span>
 				)}
 			</div>
 			<MindMap
 				project={project}
-				projectTitle={form.state.values.title}
 				onNodesChange={handleNodesChange}
 				onEdgesChange={handleEdgesChange}
-				onProjectTitleChange={handleTitleChange}
 				hasPrompt={hasPrompt}
 				onPromptSubmitted={handlePromptSubmitted}
 			/>

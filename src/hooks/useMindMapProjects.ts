@@ -96,8 +96,16 @@ export function useUpdateMindMapProject() {
 			return data as MindMapProject;
 		},
 		onSuccess: (data) => {
-			queryClient.invalidateQueries({ queryKey: ["mindMapProjects"] });
-			queryClient.invalidateQueries({ queryKey: ["mindMapProject", data.id] });
+			// Update cache directly instead of invalidating to prevent refetch
+			queryClient.setQueryData(["mindMapProject", data.id], data);
+			// Update the projects list cache as well
+			queryClient.setQueryData<MindMapProject[]>(
+				["mindMapProjects", data.user_id],
+				(oldData) => {
+					if (!oldData) return [data];
+					return oldData.map((p) => (p.id === data.id ? data : p));
+				},
+			);
 		},
 	});
 }

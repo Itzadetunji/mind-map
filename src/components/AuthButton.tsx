@@ -41,7 +41,7 @@ export function AuthButton() {
 			className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
 		>
 			<LogIn className="w-4 h-4" />
-			Sign in with Google
+			<p>Sign in with Google</p>
 		</button>
 	);
 }

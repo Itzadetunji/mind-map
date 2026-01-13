@@ -70,7 +70,7 @@ export default function UserFlowNode({
 				<CardHeader className="flex flex-row items-center space-y-0 gap-2 p-3 bg-slate-100 dark:bg-slate-800">
 					<Workflow className="w-4 h-4 text-slate-900 dark:text-slate-100" />
 					<AutoResizeTextarea
-						className="nodrag flex w-full resize-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 col-auto overflow-hidden"
+						className="nodrag resize-none rounded-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto overflow-hidden"
 						value={data.label}
 						onChange={updateLabel}
 						minRows={1}
@@ -78,7 +78,7 @@ export default function UserFlowNode({
 				</CardHeader>
 				<CardContent className="p-3">
 					<AutoResizeTextarea
-						className="nodrag resize-none flex min-h-20 w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0 overflow-hidden"
+						className="nodrag resize-none rounded-none flex min-h-20 w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus-visible:ring-0 overflow-hidden"
 						value={data.description || ""}
 						onChange={updateDescription}
 						placeholder="Describe the user journey..."

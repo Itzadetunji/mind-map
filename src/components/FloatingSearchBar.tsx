@@ -4,6 +4,7 @@ import { Brain, Loader2, Search, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { generateMindMap } from "@/server/generate-mind-map";
 import { useAuthStore } from "@/stores/authStore";
+import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
 
 interface FloatingSearchBarProps {
 	projectId?: string;
@@ -54,8 +55,6 @@ export function FloatingSearchBar({
 		e.preventDefault();
 		if (!prompt.trim()) return;
 
-		// Start thinking animation
-
 		// Start actual generation
 		mutation.mutate(prompt);
 	};
@@ -65,20 +64,11 @@ export function FloatingSearchBar({
 			{/* Thinking Steps Panel */}
 			{mutation.isPending && (
 				<div className="mb-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-					<div className="flex items-center justify-between mb-3">
-						<div className="flex items-center gap-2">
-							<Brain className="w-4 h-4 text-indigo-500 animate-pulse" />
-							<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-								AI is thinking...
-							</span>
-						</div>
-						{/* <button
-							type="button"
-							onClick={handleCancel}
-							className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
-						>
-							<X className="w-4 h-4 text-slate-400" />
-						</button> */}
+					<div className="flex items-center gap-2">
+						<Brain className="w-4 h-4 text-indigo-500 animate-pulse" />
+						<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+							AI is thinking...
+						</span>
 					</div>
 				</div>
 			)}
@@ -95,8 +85,7 @@ export function FloatingSearchBar({
 						<Sparkles className="w-5 h-5 text-indigo-500" />
 					)}
 				</div>
-				<input
-					type="text"
+				<AutoResizeTextarea
 					value={prompt}
 					onChange={(e) => setPrompt(e.target.value)}
 					placeholder="Describe your app idea..."

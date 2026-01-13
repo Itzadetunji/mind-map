@@ -88,7 +88,7 @@ export default function ScreenUiNode({
 				<CardHeader className="flex flex-row space-y-0 items-center gap-2 p-3 bg-slate-100 dark:bg-slate-800">
 					<Layout className="w-4 h-4 text-slate-900 dark:text-slate-100" />
 					<AutoResizeTextarea
-						className="nodrag flex w-full resize-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 col-auto"
+						className="nodrag resize-none rounded-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto"
 						value={data.label}
 						onChange={updateLabel}
 						rows={1}

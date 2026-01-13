@@ -52,20 +52,16 @@ const defaultEdges: Edge[] = [];
 
 interface MindMapProps {
 	project?: MindMapProject | null;
-	projectTitle?: string;
 	onNodesChange?: (nodes: Node[]) => void;
 	onEdgesChange?: (edges: Edge[]) => void;
-	onProjectTitleChange?: (title: string) => void;
 	hasPrompt?: boolean;
 	onPromptSubmitted?: () => void;
 }
 
 export default function MindMap({
 	project,
-	projectTitle = "New Project",
 	onNodesChange: onNodesChangeCallback,
 	onEdgesChange: onEdgesChangeCallback,
-	onProjectTitleChange,
 	hasPrompt = false,
 	onPromptSubmitted,
 }: MindMapProps) {
@@ -409,7 +405,6 @@ export default function MindMap({
 						isOpen={showChatSidebar}
 						onClose={() => setShowChatSidebar(false)}
 						project={project ?? null}
-						projectTitle={projectTitle}
 						nodes={nodes}
 						edges={edges}
 						onApplyChanges={(newNodes, newEdges) => {
@@ -417,7 +412,6 @@ export default function MindMap({
 							setNodes(newNodes);
 							setEdges(newEdges);
 						}}
-						onProjectTitleChange={onProjectTitleChange}
 					/>
 				)}
 			</div>

@@ -1,16 +1,19 @@
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useRef } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
-export const AutoResizeTextarea = ({
-	value,
-	onChange,
-	placeholder,
-	className,
-	minRows = 1,
-	...props
-}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+export interface AutoResizeTextareaProps
+	extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
 	minRows?: number;
-}) => {
-	const textareaRef = useRef<HTMLTextAreaElement>(null);
+}
+
+export const AutoResizeTextarea = forwardRef<
+	HTMLTextAreaElement,
+	AutoResizeTextareaProps
+>(({ value, onChange, placeholder, className, minRows = 1, ...props }, ref) => {
+	const internalRef = useRef<HTMLTextAreaElement>(null);
+	const textareaRef =
+		(ref as React.RefObject<HTMLTextAreaElement>) || internalRef;
 
 	useEffect(() => {
 		const textarea = textareaRef.current;
@@ -20,12 +23,15 @@ export const AutoResizeTextarea = ({
 			// Set height to scrollHeight
 			textarea.style.height = `${textarea.scrollHeight}px`;
 		}
-	}, [value]);
+	}, [value, textareaRef]);
 
 	return (
-		<textarea
+		<Textarea
 			ref={textareaRef}
-			className={className}
+			className={cn(
+				"min-h-0 no-scrollbar shadow-none border-none p-0 w-fit",
+				className,
+			)}
 			value={value}
 			onChange={onChange}
 			placeholder={placeholder}
@@ -35,4 +41,6 @@ export const AutoResizeTextarea = ({
 			{...props}
 		/>
 	);
-};
+});
+
+AutoResizeTextarea.displayName = "AutoResizeTextarea";

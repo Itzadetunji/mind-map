@@ -366,7 +366,7 @@ export function MindMapContextMenu({
 							"add-child-custom": "custom-node",
 							"add-child-user-flow": "user-flow",
 						};
-						const type = typeMap[actionName] || "core-concept";
+						const type = typeMap[actionName] || "custom-node";
 						const id = crypto.randomUUID();
 						const newNode = {
 							id,

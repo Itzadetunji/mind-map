@@ -66,7 +66,7 @@ export default function ConditionNode({
 
 				<div className="relative z-10 p-2 text-center w-full flex items-center justify-center">
 					<AutoResizeTextarea
-						className="nodrag text-center bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 resize-none min-h-auto overflow-hidden"
+						className="nodrag text-center bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 resize-none min-h-auto overflow-hidden"
 						value={data.label}
 						onChange={updateLabel}
 						minRows={1}

@@ -12,7 +12,11 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { MindMapProject } from "@/lib/database.types";
+import { formatTime } from "@/lib/date-utils";
 import { chatWithAIStreaming } from "@/server/streaming-mind-map";
+import { useProjectStore } from "@/stores/projectStore";
+import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
+import { Button } from "./ui/button";
 
 interface AIThinking {
 	task: string;
@@ -35,23 +39,20 @@ interface AIChatSidebarProps {
 	isOpen: boolean;
 	onClose: () => void;
 	project: MindMapProject | null;
-	projectTitle: string;
 	nodes: Node[];
 	edges: Edge[];
 	onApplyChanges?: (nodes: Node[], edges: Edge[]) => void;
-	onProjectTitleChange?: (title: string) => void;
 }
 
 export function AIChatSidebar({
 	isOpen,
 	onClose,
 	project,
-	projectTitle,
 	nodes,
 	edges,
 	onApplyChanges,
-	onProjectTitleChange,
 }: AIChatSidebarProps) {
+	const { projectTitle, setProjectTitle } = useProjectStore();
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [input, setInput] = useState("");
 	const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -205,7 +206,7 @@ export function AIChatSidebar({
 						id={projectTitleId}
 						type="text"
 						value={projectTitle}
-						onChange={(e) => onProjectTitleChange?.(e.target.value)}
+						onChange={(e) => setProjectTitle(e.target.value)}
 						placeholder="Enter project name..."
 						className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
 					/>
@@ -290,10 +291,7 @@ export function AIChatSidebar({
 											: "text-slate-400 px-1"
 									}`}
 								>
-									{message.timestamp.toLocaleTimeString([], {
-										hour: "2-digit",
-										minute: "2-digit",
-									})}
+									{formatTime(message.timestamp)}
 								</p>
 							</div>
 						</div>
@@ -302,7 +300,7 @@ export function AIChatSidebar({
 					{/* Thinking Indicator with Real-time Steps */}
 					{chatMutation.isPending && (
 						<div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
-							<div className="flex items-center gap-2 mb-3">
+							<div className="flex items-center gap-2">
 								<Brain className="w-4 h-4 text-indigo-500 animate-pulse" />
 								<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
 									Thinking...
@@ -317,7 +315,7 @@ export function AIChatSidebar({
 				{/* Input */}
 				<div className="p-4 border-t border-slate-200 dark:border-slate-800">
 					<form onSubmit={handleSubmit} className="relative">
-						<textarea
+						<AutoResizeTextarea
 							value={input}
 							onChange={(e) => setInput(e.target.value)}
 							onKeyDown={handleKeyDown}
@@ -326,17 +324,18 @@ export function AIChatSidebar({
 							className="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 pr-12 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
 							disabled={chatMutation.isPending}
 						/>
-						<button
+						<Button
 							type="submit"
+							size="icon"
 							disabled={!input.trim() || chatMutation.isPending}
-							className="absolute right-2 bottom-2 p-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+							className="absolute right-2 bottom-2"
 						>
 							{chatMutation.isPending ? (
 								<Loader2 className="w-4 h-4 animate-spin" />
 							) : (
 								<Send className="w-4 h-4" />
 							)}
-						</button>
+						</Button>
 					</form>
 					<p className="text-xs text-slate-400 mt-2 text-center">
 						Press Enter to send, Shift+Enter for new line
