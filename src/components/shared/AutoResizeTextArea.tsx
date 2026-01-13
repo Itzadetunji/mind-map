@@ -28,10 +28,7 @@ export const AutoResizeTextarea = forwardRef<
 	return (
 		<Textarea
 			ref={textareaRef}
-			className={cn(
-				"min-h-0 no-scrollbar shadow-none border-none p-0 w-fit",
-				className,
-			)}
+			className={cn("min-h-0  shadow-none border-none p-0 w-fit", className)}
 			value={value}
 			onChange={onChange}
 			placeholder={placeholder}

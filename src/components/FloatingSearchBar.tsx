@@ -5,6 +5,7 @@ import { useState } from "react";
 import { generateMindMap } from "@/server/generate-mind-map";
 import { useAuthStore } from "@/stores/authStore";
 import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
+import { Button } from "./ui/button";
 
 interface FloatingSearchBarProps {
 	projectId?: string;
@@ -76,7 +77,7 @@ export function FloatingSearchBar({
 			{/* Search Bar */}
 			<form
 				onSubmit={handleSubmit}
-				className="relative flex items-center w-full shadow-lg rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-all focus-within:ring-2 focus-within:ring-slate-400 dark:focus-within:ring-slate-600 focus-within:ring-offset-2 dark:focus-within:ring-offset-slate-900"
+				className="relative flex items-center w-full shadow-lg rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-all focus-within:ring-2 focus-within:ring-slate-400 dark:focus-within:ring-slate-600 focus-within:ring-offset-2 dark:focus-within:ring-offset-slate-900 "
 			>
 				<div className="pl-4 text-slate-400">
 					{mutation.isPending ? (
@@ -89,16 +90,16 @@ export function FloatingSearchBar({
 					value={prompt}
 					onChange={(e) => setPrompt(e.target.value)}
 					placeholder="Describe your app idea..."
-					className="w-full bg-transparent px-3 py-3 outline-none text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-500"
+					className="w-full bg-transparent p-3 h-fit! outline-none text-sm text-slate-900 max-h-20 dark:text-slate-100 placeholder:text-slate-500 border-none resize-none focus-visible:ring-0"
 					disabled={mutation.isPending}
 				/>
-				<button
+				<Button
 					type="submit"
 					disabled={!prompt.trim() || mutation.isPending}
-					className="mr-1.5 p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors disabled:opacity-50"
+					className="mr-1.5 p-2 size-fit rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors disabled:opacity-50"
 				>
 					<Search className="w-4 h-4" />
-				</button>
+				</Button>
 			</form>
 		</div>
 	);
