@@ -47,14 +47,14 @@ interface AIChatSidebarProps {
 	onApplyChanges?: (nodes: Node[], edges: Edge[]) => void;
 }
 
-export function AIChatSidebar({
+export const AIChatSidebar = ({
 	isOpen,
 	onClose,
 	project,
 	nodes,
 	edges,
 	onApplyChanges,
-}: AIChatSidebarProps) {
+}: AIChatSidebarProps) => {
 	const { projectTitle, setProjectTitle } = useProjectStore();
 	const { user } = useAuthStore();
 
@@ -450,4 +450,4 @@ export function AIChatSidebar({
 			`}</style>
 		</>
 	);
-}
+};
