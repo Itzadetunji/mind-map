@@ -111,7 +111,7 @@ function SortableFeatureItem({
 
 export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 	const { updateNodeData } = useReactFlow();
-	const { openAddMenu } = useMindMapContext();
+	const { openAddMenu, takeSnapshotForUndo } = useMindMapContext();
 	const features = data.features || [];
 
 	const sensors = useSensors(
@@ -128,6 +128,11 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 		[id, updateNodeData],
 	);
 
+	// Capture snapshot when user starts editing label
+	const handleFocus = useCallback(() => {
+		takeSnapshotForUndo();
+	}, [takeSnapshotForUndo]);
+
 	const updateFeature = useCallback(
 		(index: number, value: string) => {
 			const newFeatures = [...features];
@@ -138,19 +143,21 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 	);
 
 	const addFeature = useCallback(() => {
+		takeSnapshotForUndo(); // Capture state before adding
 		const newFeature = {
 			id: crypto.randomUUID(),
 			label: "New Feature",
 		};
 		updateNodeData(id, { features: [...features, newFeature] });
-	}, [id, features, updateNodeData]);
+	}, [id, features, updateNodeData, takeSnapshotForUndo]);
 
 	const removeFeature = useCallback(
 		(index: number) => {
+			takeSnapshotForUndo(); // Capture state before removing
 			const newFeatures = features.filter((_, i) => i !== index);
 			updateNodeData(id, { features: newFeatures });
 		},
-		[id, features, updateNodeData],
+		[id, features, updateNodeData, takeSnapshotForUndo],
 	);
 
 	const handleDragEnd = useCallback(
@@ -158,6 +165,7 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 			const { active, over } = event;
 
 			if (active.id !== over?.id) {
+				takeSnapshotForUndo(); // Capture state before reordering
 				const oldIndex = features.findIndex((f) => f.id === active.id);
 				const newIndex = features.findIndex((f) => f.id === over?.id);
 
@@ -165,7 +173,7 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 				updateNodeData(id, { features: newFeatures });
 			}
 		},
-		[features, id, updateNodeData],
+		[features, id, updateNodeData, takeSnapshotForUndo],
 	);
 
 	return (
@@ -199,6 +207,7 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 						className="nodrag resize-none rounded-none bg-transparent text-lg font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto max-w-80 max-h-80"
 						value={data.label}
 						onChange={updateLabel}
+						onFocus={handleFocus}
 						rows={1}
 					/>
 				</CardHeader>

@@ -24,7 +24,7 @@ export default function ConditionNode({
 	data,
 }: NodeProps<ConditionNodeData>) {
 	const { updateNodeData } = useReactFlow();
-	const { openAddMenu } = useMindMapContext();
+	const { openAddMenu, takeSnapshotForUndo } = useMindMapContext();
 
 	const updateLabel = useCallback(
 		(evt: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -32,6 +32,11 @@ export default function ConditionNode({
 		},
 		[id, updateNodeData],
 	);
+
+	// Capture snapshot when user starts editing
+	const handleFocus = useCallback(() => {
+		takeSnapshotForUndo();
+	}, [takeSnapshotForUndo]);
 
 	return (
 		<div className="relative group flex items-center justify-center">
@@ -69,6 +74,7 @@ export default function ConditionNode({
 						className="nodrag text-center bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 resize-none min-h-auto overflow-hidden"
 						value={data.label}
 						onChange={updateLabel}
+						onFocus={handleFocus}
 						minRows={1}
 						placeholder="Condition?"
 					/>

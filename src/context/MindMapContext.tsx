@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 
 interface MindMapContextType {
 	openAddMenu: (nodeId: string, x: number, y: number) => void;
+	takeSnapshotForUndo: () => void;
 }
 
 export const MindMapContext = createContext<MindMapContextType | null>(null);

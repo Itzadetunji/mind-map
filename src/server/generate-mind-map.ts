@@ -15,6 +15,13 @@ const generateMindMapInputSchema = z.object({
 	userId: z.string().optional(),
 	projectId: z.string().optional(),
 	title: z.string().optional(),
+	// Current canvas data for context
+	currentCanvas: z
+		.object({
+			nodes: z.array(z.any()).optional(),
+			edges: z.array(z.any()).optional(),
+		})
+		.optional(),
 });
 
 export const generateMindMap = createServerFn({ method: "POST" })
@@ -28,10 +35,35 @@ export const generateMindMap = createServerFn({ method: "POST" })
 
 		const openai = new OpenAI({ apiKey });
 
+		// Build context for existing canvas data if provided
+		const canvasContext =
+			data.currentCanvas?.nodes && data.currentCanvas.nodes.length > 0
+				? `
+═══════════════════════════════════════════════════════════════════════════════
+EXISTING CANVAS DATA (Build upon this!)
+═══════════════════════════════════════════════════════════════════════════════
+The user already has work on their canvas. Use this as context and build upon it.
+Do NOT discard their existing work - integrate it with the new request.
+
+Current Nodes (${data.currentCanvas.nodes.length}):
+${JSON.stringify(data.currentCanvas.nodes, null, 2)}
+
+Current Edges (${data.currentCanvas.edges?.length || 0}):
+${JSON.stringify(data.currentCanvas.edges || [], null, 2)}
+
+IMPORTANT: 
+- Preserve the user's existing node IDs and positions where possible
+- Add new nodes that complement the existing structure
+- Maintain connections to existing nodes when relevant
+- If the user is asking to regenerate, you may replace, but prefer to enhance
+═══════════════════════════════════════════════════════════════════════════════
+`
+				: "";
+
 		// ── 7-Step Exhaustive Extraction System Prompt ─────
 		const systemPrompt = `
 You are an expert UX/product designer, technical architect, and requirements analyst. Your mission is to generate comprehensive mind maps for ANY type of application, product, or idea the user describes.
-
+${canvasContext}
 ⚠️ CRITICAL: ADAPT TO THE USER'S IDEA
 ═══════════════════════════════════════════════════════════════════════════════
 Users will describe THEIR OWN unique ideas - not a specific template app.
@@ -437,6 +469,98 @@ NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
    - "Infinite Scroll Logic" - "Pagination and lazy loading implementation"
 
 ═══════════════════════════════════════════════════════════════════════════════
+EMAIL & PASSWORD AUTHENTICATION - COMPREHENSIVE FLOWS
+═══════════════════════════════════════════════════════════════════════════════
+
+When the user's app uses "email and password" authentication, you MUST include 
+these COMPLETE authentication flows. This is a CRITICAL feature set that users expect.
+
+⚠️ TRIGGER: If the user mentions any of these, expand authentication fully:
+- "email and password"
+- "traditional auth"
+- "sign up with email"
+- "login with email"
+- "user accounts"
+- "authentication" (without specifying OAuth/social only)
+
+CREATE A DEDICATED "Authentication Flow" (user-flow node) with these sub-flows:
+
+1. REGISTRATION/SIGN UP FLOW:
+   screen-ui: "Sign Up Screen"
+     features: [Email Input, Password Input, Confirm Password Input, 
+                Password Strength Indicator, Terms Checkbox, Sign Up Button,
+                "Already have account?" Link, Social Sign Up Options (if applicable)]
+   condition: "Valid Input?"
+     → TRUE: screen-ui "Email Verification Sent"
+     → FALSE: screen-ui "Validation Errors Display"
+   screen-ui: "Email Verification Screen"
+     features: [Verification Code Input, Resend Code Button, Timer Display,
+                Back to Sign Up Link]
+   condition: "Code Valid?"
+     → TRUE: screen-ui "Account Created Success"
+     → FALSE: screen-ui "Invalid Code Error"
+
+2. LOGIN FLOW:
+   screen-ui: "Login Screen"
+     features: [Email Input, Password Input, Remember Me Checkbox, 
+                Login Button, Forgot Password Link, Create Account Link,
+                Social Login Options (if applicable)]
+   condition: "Credentials Valid?"
+     → TRUE: condition "Has 2FA Enabled?" (if applicable)
+     → FALSE: screen-ui "Login Error Display"
+   
+3. FORGOT PASSWORD FLOW (ALWAYS INCLUDE!):
+   screen-ui: "Forgot Password Screen"
+     features: [Email Input, Send Reset Link Button, Back to Login Link]
+   condition: "Email Found?"
+     → TRUE: screen-ui "Reset Link Sent Confirmation"
+     → FALSE: screen-ui "Email Not Found Error" (with option to sign up)
+   screen-ui: "Password Reset Screen" (accessed via email link)
+     features: [New Password Input, Confirm New Password Input, 
+                Password Requirements List, Reset Password Button,
+                Password Strength Indicator]
+   condition: "Password Valid?"
+     → TRUE: screen-ui "Password Reset Success"
+     → FALSE: screen-ui "Password Validation Errors"
+
+4. CHANGE PASSWORD FLOW (For logged-in users):
+   screen-ui: "Change Password Screen" (in Settings/Profile area)
+     features: [Current Password Input, New Password Input, 
+                Confirm New Password Input, Password Strength Indicator,
+                Password Requirements List, Save Button, Cancel Button]
+   condition: "Current Password Correct?"
+     → TRUE: condition "New Password Valid?"
+     → FALSE: screen-ui "Incorrect Current Password Error"
+   condition: "New Password Valid?"
+     → TRUE: screen-ui "Password Changed Success"
+     → FALSE: screen-ui "Password Validation Errors"
+
+5. SESSION MANAGEMENT (Optional but recommended):
+   screen-ui: "Active Sessions Screen"
+     features: [Sessions List, Current Session Badge, Device Info,
+                Last Active Time, Location Info, "Log Out All" Button,
+                Individual Session Log Out Buttons]
+
+6. ACCOUNT SECURITY (Optional but recommended):
+   screen-ui: "Security Settings Screen"
+     features: [Two-Factor Authentication Toggle, Backup Codes Section,
+                Login History, Trusted Devices List, 
+                Account Activity Log, Delete Account Section]
+
+7. EMAIL TEMPLATES (custom-nodes):
+   custom-node: "Verification Email Template"
+     description: "Welcome email with verification code/link"
+   custom-node: "Password Reset Email Template"
+     description: "Secure password reset link with expiration"
+   custom-node: "Password Changed Notification Email"
+     description: "Security alert when password is changed"
+   custom-node: "New Device Login Alert Email"
+     description: "Notification when logging in from new device"
+
+⚠️ DO NOT skip these flows - users expect complete auth handling!
+⚠️ Position all auth-related flows in their own column for clarity
+
+═══════════════════════════════════════════════════════════════════════════════
 POSITIONING RULES - PREVENT OVERLAP!
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -468,19 +592,36 @@ CONDITION NODE BRANCHING:
 - When a condition splits paths, offset children horizontally by ±200px
 - Left path (Positive/Yes/True): parent.x - 200
   * MUST set edge.sourceHandle to the condition node's id + "-true" (e.g., "condition_node_1-true")
-  * This connects to the "true" handle on the condition node
+  * This connects to the GREEN "true" handle on the LEFT side of the condition node
 - Right path (Negative/No/False): parent.x + 200
   * MUST set edge.sourceHandle to the condition node's id + "-false" (e.g., "condition_node_1-false")
-  * This connects to the "false" handle on the condition node
-- CRITICAL: Each edge FROM a condition node MUST have sourceHandle set
-- Example edge from condition node "check_auth":
+  * This connects to the RED "false" handle on the RIGHT side of the condition node
+
+⚠️ CRITICAL: EVERY edge FROM a condition node MUST have sourceHandle set correctly!
+⚠️ The sourceHandle MUST match the path meaning:
+   - Positive outcomes (success, yes, authenticated, valid) → use "-true" suffix
+   - Negative outcomes (failure, no, not authenticated, invalid) → use "-false" suffix
+
+EXAMPLE edges from condition node "check_auth":
+
+  // TRUE PATH - User IS authenticated → goes to dashboard
   {
-    "id": "edge_123",
+    "id": "edge_auth_success",
     "source": "check_auth",
     "target": "dashboard_screen",
     "sourceHandle": "check_auth-true",
     "label": "Authenticated"
   }
+
+  // FALSE PATH - User is NOT authenticated → goes to login
+  {
+    "id": "edge_auth_fail",
+    "source": "check_auth",
+    "target": "login_screen",
+    "sourceHandle": "check_auth-false",
+    "label": "Not Authenticated"
+  }
+
 - For 3+ branches: spread evenly (e.g., -200, 0, +200) and do NOT set sourceHandle (or use closest match logic)
 - Keep same y-level for siblings from same condition
 
@@ -652,6 +793,13 @@ LAYOUT:
 □ No nodes overlap
 □ Condition branches offset by ±200px
 
+CONDITION NODE EDGES (CRITICAL!):
+□ EVERY edge from a condition node has "sourceHandle" field
+□ Positive/success/yes paths use sourceHandle: "nodeId-true" 
+□ Negative/failure/no paths use sourceHandle: "nodeId-false"
+□ NO edge from a condition node is missing sourceHandle
+□ TRUE ≠ FALSE: verify each edge goes to the correct handle based on meaning
+
 QUALITY:
 □ All edges have valid source/target IDs
 □ All edge labels describe actions/triggers
@@ -737,7 +885,7 @@ QUALITY:
 								label: { type: ["string", "null"] },
 								sourceHandle: { type: ["string", "null"] },
 							},
-							required: ["id", "source", "target", "label"],
+							required: ["id", "source", "target", "label", "sourceHandle"],
 							additionalProperties: false,
 						},
 					},

@@ -141,7 +141,7 @@ interface HistoryState {
 	edges: Edge[];
 }
 
-export function useHistory(initialNodes: Node[], initialEdges: Edge[]) {
+export function useHistory(_initialNodes: Node[], _initialEdges: Edge[]) {
 	const [past, setPast] = useState<HistoryState[]>([]);
 	const [future, setFuture] = useState<HistoryState[]>([]);
 

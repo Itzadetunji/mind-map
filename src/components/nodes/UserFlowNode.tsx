@@ -26,7 +26,7 @@ export default function UserFlowNode({
 	data,
 }: NodeProps<UserFlowNodeData>) {
 	const { updateNodeData } = useReactFlow();
-	const { openAddMenu } = useMindMapContext();
+	const { openAddMenu, takeSnapshotForUndo } = useMindMapContext();
 
 	const updateLabel = useCallback(
 		(evt: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -41,6 +41,11 @@ export default function UserFlowNode({
 		},
 		[id, updateNodeData],
 	);
+
+	// Capture snapshot when user starts editing
+	const handleFocus = useCallback(() => {
+		takeSnapshotForUndo();
+	}, [takeSnapshotForUndo]);
 
 	return (
 		<div className="min-w-75 group">
@@ -75,6 +80,7 @@ export default function UserFlowNode({
 						className="nodrag resize-none rounded-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto overflow-hidden max-w-80"
 						value={data.label}
 						onChange={updateLabel}
+						onFocus={handleFocus}
 						minRows={1}
 					/>
 				</CardHeader>
@@ -83,6 +89,7 @@ export default function UserFlowNode({
 						className="nodrag resize-none rounded-none flex min-h-20 w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus-visible:ring-0 overflow-hidden max-w-80 max-h-80"
 						value={data.description || ""}
 						onChange={updateDescription}
+						onFocus={handleFocus}
 						placeholder="Describe the user journey..."
 						minRows={3}
 					/>

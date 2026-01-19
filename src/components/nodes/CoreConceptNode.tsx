@@ -25,7 +25,7 @@ export default function CoreConceptNode({
 	data,
 }: NodeProps<CoreConceptNodeData>) {
 	const { updateNodeData } = useReactFlow();
-	const { openAddMenu } = useMindMapContext();
+	const { openAddMenu, takeSnapshotForUndo } = useMindMapContext();
 
 	const updateLabel = useCallback(
 		(evt: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -33,6 +33,11 @@ export default function CoreConceptNode({
 		},
 		[id, updateNodeData],
 	);
+
+	// Capture snapshot when user starts editing
+	const handleFocus = useCallback(() => {
+		takeSnapshotForUndo();
+	}, [takeSnapshotForUndo]);
 
 	return (
 		<div className="min-w-60 group">
@@ -80,6 +85,7 @@ export default function CoreConceptNode({
 						className="nodrag resize-none rounded-none bg-transparent text-lg font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto h-fit! self-center max-w-80"
 						value={data.label}
 						onChange={updateLabel}
+						onFocus={handleFocus}
 						rows={1}
 					/>
 				</CardHeader>

@@ -84,8 +84,13 @@ POSITIONING:
 - 350px vertical spacing within flows
 - Condition Nodes: 
   * Left path (Positive/Yes/True) -> x - 200, edge.sourceHandle MUST be nodeId + "-true" (e.g., "node_1-true")
+    - TRUE is for: success, yes, authenticated, valid, found, allowed
   * Right path (Negative/No/False) -> x + 200, edge.sourceHandle MUST be nodeId + "-false" (e.g., "node_1-false")
-  * For each edge from a condition node, you MUST set "sourceHandle" field
+    - FALSE is for: failure, no, not authenticated, invalid, not found, denied
+  * CRITICAL: EVERY edge from a condition MUST have sourceHandle set to either "-true" or "-false"
+  * Example - condition "is_logged_in":
+    - Edge to dashboard: sourceHandle = "is_logged_in-true" (positive outcome)
+    - Edge to login: sourceHandle = "is_logged_in-false" (negative outcome)
 `;
 
 // Get the full system prompt for first message (same as generate-mind-map)

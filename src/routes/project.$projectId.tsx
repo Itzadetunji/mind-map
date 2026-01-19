@@ -107,6 +107,7 @@ const ProjectPage = () => {
 						source: e.source,
 						target: e.target,
 						label: typeof e.label === "string" ? e.label : undefined,
+						sourceHandle: e.sourceHandle,
 					})),
 				},
 			});

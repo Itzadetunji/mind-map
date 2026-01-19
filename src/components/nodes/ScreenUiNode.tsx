@@ -37,7 +37,7 @@ export default function ScreenUiNode({
 	data,
 }: NodeProps<ScreenUiNodeData>) {
 	const { updateNodeData } = useReactFlow();
-	const { openAddMenu } = useMindMapContext();
+	const { openAddMenu, takeSnapshotForUndo } = useMindMapContext();
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isUploading, setIsUploading] = useState(false);
 	const [isImageLoading, setIsImageLoading] = useState(true);
@@ -49,6 +49,7 @@ export default function ScreenUiNode({
 
 			try {
 				setIsUploading(true);
+				takeSnapshotForUndo(); // Capture state before image upload
 				const fileExt = file.name.split(".").pop();
 				const fileName = `${crypto.randomUUID()}.${fileExt}`;
 				const filePath = `${fileName}`;
@@ -71,15 +72,16 @@ export default function ScreenUiNode({
 				if (fileInputRef.current) fileInputRef.current.value = "";
 			}
 		},
-		[id, updateNodeData],
+		[id, updateNodeData, takeSnapshotForUndo],
 	);
 
 	const handleDeleteImage = useCallback(
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
+			takeSnapshotForUndo(); // Capture state before image deletion
 			updateNodeData(id, { imageUrl: undefined });
 		},
-		[id, updateNodeData],
+		[id, updateNodeData, takeSnapshotForUndo],
 	);
 
 	// Reset loading state when image URL changes
@@ -99,6 +101,11 @@ export default function ScreenUiNode({
 		},
 		[id, updateNodeData],
 	);
+
+	// Capture snapshot when user starts editing label
+	const handleFocus = useCallback(() => {
+		takeSnapshotForUndo();
+	}, [takeSnapshotForUndo]);
 
 	return (
 		<div className="min-w-60 group">
@@ -133,6 +140,7 @@ export default function ScreenUiNode({
 						className="nodrag resize-none rounded-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto"
 						value={data.label}
 						onChange={updateLabel}
+						onFocus={handleFocus}
 						rows={1}
 					/>
 				</CardHeader>
