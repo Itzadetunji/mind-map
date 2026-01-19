@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { Edge, Node } from "@xyflow/react";
 import { useCallback, useEffect, useRef } from "react";
-import MindMap from "@/components/MindMap";
+import { MindMap } from "@/components/MindMap";
 import { Input } from "@/components/ui/input";
 import {
 	useMindMapProject,

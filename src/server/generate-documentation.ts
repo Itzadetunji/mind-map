@@ -304,7 +304,7 @@ export const generateDocumentation = createServerFn({ method: "POST" })
 			content,
 			filename:
 				data.format === "readme"
-					? "README.md"
+					? `${sanitizeFilename(data.projectTitle)}_README.md`
 					: `${sanitizeFilename(data.projectTitle)}_PRD.md`,
 		};
 	});

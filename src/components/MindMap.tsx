@@ -4,6 +4,8 @@ import {
 	type Connection,
 	Controls,
 	type Edge,
+	getNodesBounds,
+	getViewportForBounds,
 	MiniMap,
 	type Node,
 	Panel,
@@ -12,11 +14,13 @@ import {
 	useEdgesState,
 	useNodesState,
 } from "@xyflow/react";
+import { toPng } from "html-to-image";
 import {
 	ChevronDown,
 	Download,
 	FileText,
 	Hand,
+	Image as ImageIcon,
 	Loader2,
 	MousePointer2,
 	Redo,
@@ -68,13 +72,13 @@ interface MindMapProps {
 	onPromptSubmitted?: () => void;
 }
 
-export default function MindMap({
+export const MindMap = ({
 	project,
 	onNodesChange: onNodesChangeCallback,
 	onEdgesChange: onEdgesChangeCallback,
 	hasPrompt = false,
 	onPromptSubmitted,
-}: MindMapProps) {
+}: MindMapProps) => {
 	// Initialize with project data if available, otherwise use blank canvas
 	const projectNodes = project?.graph_data?.nodes as Node[] | undefined;
 	const projectEdges = project?.graph_data?.edges as Edge[] | undefined;
@@ -182,6 +186,71 @@ export default function MindMap({
 		},
 		[isDownloading, project, nodes, edges],
 	);
+
+	// Download mind map as image
+	const handleDownloadImage = useCallback(async () => {
+		if (isDownloading || nodes.length === 0) return;
+		setIsDownloading(true);
+		setShowDownloadMenu(false);
+
+		try {
+			// Get the bounds of all nodes with padding
+			const nodesBounds = getNodesBounds(nodes);
+
+			const imageWidth = nodesBounds.width;
+			const imageHeight = nodesBounds.height;
+
+			// Find the React Flow element (includes edges, nodes, and labels)
+			const reactFlowElement = document.querySelector(
+				".react-flow",
+			) as HTMLElement;
+			if (!reactFlowElement)
+				throw new Error("Could not find React Flow element");
+			const viewport = getViewportForBounds(
+				nodesBounds,
+				imageWidth,
+				imageHeight,
+				0.5,
+				2,
+				1,
+			);
+
+			// Generate PNG with proper settings to capture everything
+			const dataUrl = await toPng(
+				document.querySelector(".react-flow__viewport") as HTMLElement,
+				{
+					backgroundColor: "#ffffff",
+					width: imageWidth,
+					height: imageHeight,
+					style: {
+						width: `${imageWidth}px`,
+						height: `${imageHeight}px`,
+						transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+					},
+					pixelRatio: 3,
+				},
+			);
+
+			// Download the image
+			const projectName = project?.title || "mind-map";
+			const sanitizedName = projectName
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, "_")
+				.replace(/^_+|_+$/g, "");
+
+			const a = document.createElement("a");
+			a.href = dataUrl;
+			a.download = `${sanitizedName}.png`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+		} catch (error) {
+			console.error("Failed to download image:", error);
+			alert("Failed to download image. Please try again.");
+		} finally {
+			setIsDownloading(false);
+		}
+	}, [isDownloading, nodes, project?.title]);
 
 	// Helper to extract only saveable node properties (ignore selected, dragging, etc.)
 	const getSaveableNodes = useCallback((nodeList: Node[]) => {
@@ -577,6 +646,20 @@ export default function MindMap({
 										<div className="absolute top-full mt-1 left-0 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-45 z-50">
 											<button
 												type="button"
+												onClick={handleDownloadImage}
+												className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+											>
+												<ImageIcon className="w-4 h-4 text-green-500" />
+												<div>
+													<div className="font-medium">Image (PNG)</div>
+													<div className="text-xs text-slate-500">
+														Export as image
+													</div>
+												</div>
+											</button>
+											<div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
+											<button
+												type="button"
 												onClick={() => handleDownload("readme")}
 												className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
 											>
@@ -639,4 +722,4 @@ export default function MindMap({
 			</div>
 		</MindMapContext.Provider>
 	);
-}
+};
