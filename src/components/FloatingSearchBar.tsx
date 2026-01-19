@@ -89,6 +89,14 @@ export function FloatingSearchBar({
 				<AutoResizeTextarea
 					value={prompt}
 					onChange={(e) => setPrompt(e.target.value)}
+					onKeyDown={(e) => {
+						if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+							e.preventDefault();
+							if (prompt.trim() && !mutation.isPending) {
+								mutation.mutate(prompt);
+							}
+						}
+					}}
 					placeholder="Describe your app idea..."
 					className="w-full bg-transparent p-3 h-fit! outline-none text-sm text-slate-900 max-h-20 dark:text-slate-100 placeholder:text-slate-500 border-none resize-none focus-visible:ring-0"
 					disabled={mutation.isPending}
@@ -96,7 +104,7 @@ export function FloatingSearchBar({
 				<Button
 					type="submit"
 					disabled={!prompt.trim() || mutation.isPending}
-					className="mr-1.5 p-2 size-fit rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors disabled:opacity-50"
+					className="mr-1.5 p-2 size-fit rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-indigo-500 hover:text-white dark:hover:bg-indigo-500 dark:hover:text-white transition-colors disabled:opacity-50 disabled:hover:bg-slate-100 disabled:hover:text-slate-500 dark:disabled:hover:bg-slate-800"
 				>
 					<Search className="w-4 h-4" />
 				</Button>
