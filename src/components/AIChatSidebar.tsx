@@ -14,7 +14,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useChatHistory, useSendChatMessage } from "@/hooks/chats.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatTime } from "@/lib/date-utils";
-import { chatWithAIStreaming } from "@/server/streaming-mind-map";
+import { chatWithAIStreaming } from "@/server/ai-updates-nodes";
 import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";

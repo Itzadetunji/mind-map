@@ -83,14 +83,17 @@ POSITIONING:
 - 700px horizontal spacing between flows
 - 350px vertical spacing within flows
 - Condition Nodes: 
+  * IMPORTANT: Every condition node needs an INCOMING edge from the previous node in the flow!
+  * The previous node (screen-ui, user-flow, or another condition) must have an edge TO the condition node
   * Left path (Positive/Yes/True) -> x - 200, edge.sourceHandle MUST be nodeId + "-true" (e.g., "node_1-true")
     - TRUE is for: success, yes, authenticated, valid, found, allowed
   * Right path (Negative/No/False) -> x + 200, edge.sourceHandle MUST be nodeId + "-false" (e.g., "node_1-false")
     - FALSE is for: failure, no, not authenticated, invalid, not found, denied
-  * CRITICAL: EVERY edge from a condition MUST have sourceHandle set to either "-true" or "-false"
-  * Example - condition "is_logged_in":
-    - Edge to dashboard: sourceHandle = "is_logged_in-true" (positive outcome)
-    - Edge to login: sourceHandle = "is_logged_in-false" (negative outcome)
+  * CRITICAL: EVERY edge FROM a condition MUST have sourceHandle set to either "-true" or "-false"
+  * Example flow with condition "is_logged_in":
+    - Edge from login_screen TO is_logged_in: { source: "login_screen", target: "is_logged_in", label: "Submit Login" }
+    - Edge FROM is_logged_in to dashboard: { source: "is_logged_in", target: "dashboard", sourceHandle: "is_logged_in-true", label: "Authenticated" }
+    - Edge FROM is_logged_in to error: { source: "is_logged_in", target: "login_error", sourceHandle: "is_logged_in-false", label: "Not Authenticated" }
 `;
 
 // Get the full system prompt for first message (same as generate-mind-map)

@@ -589,6 +589,10 @@ VERTICAL SPACING within each column:
 - For very deep flows (15+ levels), maintain spacing - let the map be tall!
 
 CONDITION NODE BRANCHING:
+⚠️ CRITICAL: Every condition node needs TWO types of edges:
+  1. An INCOMING edge FROM the previous node in the flow (e.g., screen → condition)
+  2. OUTGOING edges TO the next nodes with sourceHandle set
+
 - When a condition splits paths, offset children horizontally by ±200px
 - Left path (Positive/Yes/True): parent.x - 200
   * MUST set edge.sourceHandle to the condition node's id + "-true" (e.g., "condition_node_1-true")
@@ -602,7 +606,16 @@ CONDITION NODE BRANCHING:
    - Positive outcomes (success, yes, authenticated, valid) → use "-true" suffix
    - Negative outcomes (failure, no, not authenticated, invalid) → use "-false" suffix
 
-EXAMPLE edges from condition node "check_auth":
+COMPLETE EXAMPLE - Full flow with condition node "check_auth":
+
+  // INCOMING EDGE - From previous screen TO the condition (NO sourceHandle needed)
+  {
+    "id": "edge_to_check_auth",
+    "source": "login_form_screen",
+    "target": "check_auth",
+    "label": "Submit Login",
+    "sourceHandle": null
+  }
 
   // TRUE PATH - User IS authenticated → goes to dashboard
   {
@@ -613,11 +626,11 @@ EXAMPLE edges from condition node "check_auth":
     "label": "Authenticated"
   }
 
-  // FALSE PATH - User is NOT authenticated → goes to login
+  // FALSE PATH - User is NOT authenticated → goes to error
   {
     "id": "edge_auth_fail",
     "source": "check_auth",
-    "target": "login_screen",
+    "target": "login_error_screen",
     "sourceHandle": "check_auth-false",
     "label": "Not Authenticated"
   }
