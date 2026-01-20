@@ -40,6 +40,7 @@ import CustomNode from "./nodes/CustomNode";
 import FeatureNode from "./nodes/FeatureNode";
 import ScreenUiNode from "./nodes/ScreenUiNode";
 import UserFlowNode from "./nodes/UserFlowNode";
+import { ErrorDialog } from "./shared/ErrorDialog";
 import { Button } from "./ui/button";
 import { Tooltip } from "./ui/tooltip-custom";
 
@@ -110,6 +111,9 @@ export const MindMap = ({
 	const [showDownloadMenu, setShowDownloadMenu] = useState(false);
 	const [isDownloading, setIsDownloading] = useState(false);
 	const downloadMenuRef = useRef<HTMLDivElement>(null);
+	// Error dialog states
+	const [showDocErrorDialog, setShowDocErrorDialog] = useState(false);
+	const [showImageErrorDialog, setShowImageErrorDialog] = useState(false);
 
 	// Track previous state to detect actual saveable changes
 	const prevNodesRef = useRef<string>("");
@@ -179,7 +183,7 @@ export const MindMap = ({
 				URL.revokeObjectURL(url);
 			} catch (error) {
 				console.error("Failed to generate documentation:", error);
-				alert("Failed to generate documentation. Please try again.");
+				setShowDocErrorDialog(true);
 			} finally {
 				setIsDownloading(false);
 			}
@@ -219,8 +223,7 @@ export const MindMap = ({
 					height: `${imageHeight}px`,
 					transform: `translate(${-nodesBounds.x + padding}px, ${-nodesBounds.y + padding}px) scale(1)`,
 				},
-				// biome-ignore lint/suspicious/noDuplicateObjectKeys: For some reason this is triggered a lint error and I don't know why
-				pixelRatio: 2,
+				pixelRatio: 1.5,
 			});
 
 			// Download the image
@@ -238,7 +241,7 @@ export const MindMap = ({
 			document.body.removeChild(a);
 		} catch (error) {
 			console.error("Failed to download image:", error);
-			alert("Failed to download image. Please try again.");
+			setShowImageErrorDialog(true);
 		} finally {
 			setIsDownloading(false);
 		}
@@ -712,6 +715,20 @@ export const MindMap = ({
 						}}
 					/>
 				)}
+
+				{/* Error Dialogs */}
+				<ErrorDialog
+					open={showDocErrorDialog}
+					onOpenChange={setShowDocErrorDialog}
+					title="Documentation Generation Failed"
+					description="Failed to generate documentation. Please try again."
+				/>
+				<ErrorDialog
+					open={showImageErrorDialog}
+					onOpenChange={setShowImageErrorDialog}
+					title="Image Download Failed"
+					description="Failed to download image. Please try again."
+				/>
 			</div>
 		</MindMapContext.Provider>
 	);

@@ -341,6 +341,23 @@ Output strictly valid JSON (no markdown, no code blocks):
   ]
 }
 
+⚠️ CRITICAL - EDGE HIERARCHY (DO NOT FORGET!):
+Every node MUST have an incoming edge (except the root core-concept node):
+
+1. ROOT → USER-FLOWS: Create edges from core-concept to EACH user-flow node
+   Example edges (REQUIRED for every user-flow!):
+   { "id": "edge_root_auth", "source": "root", "target": "auth_flow", "label": null, "sourceHandle": null }
+   { "id": "edge_root_shop", "source": "root", "target": "shopping_flow", "label": null, "sourceHandle": null }
+   { "id": "edge_root_profile", "source": "root", "target": "profile_flow", "label": null, "sourceHandle": null }
+
+2. USER-FLOW → SCREENS: Create edges from user-flow to its first screen
+   { "id": "edge_auth_login", "source": "auth_flow", "target": "login_screen", "label": "Start", "sourceHandle": null }
+
+3. SCREEN → SCREEN/CONDITION: Create edges between sequential nodes
+   { "id": "edge_login_check", "source": "login_screen", "target": "auth_check", "label": "Submit", "sourceHandle": null }
+
+⚠️ VERIFY: Count your user-flow nodes. You MUST have that many edges from the root node!
+
 ═══════════════════════════════════════════════════════════════════════════════
 NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
 ═══════════════════════════════════════════════════════════════════════════════
@@ -793,6 +810,8 @@ STRUCTURE:
 □ All 6 node types used correctly (no custom types invented!)
 □ Root node is "core-concept" at {x:0, y:0}
 □ User-flows connect directly to root
+□ ⚠️ EDGE CHECK: Every user-flow has an edge FROM root TO that user-flow
+□ ⚠️ EDGE CHECK: Every screen/condition has an incoming edge from its parent
 
 TYPES:
 □ All screens use type "screen-ui" (NOT "screen")
@@ -813,9 +832,14 @@ CONDITION NODE EDGES (CRITICAL!):
 □ NO edge from a condition node is missing sourceHandle
 □ TRUE ≠ FALSE: verify each edge goes to the correct handle based on meaning
 
+EDGES (MOST IMPORTANT!):
+□ ⚠️ EVERY user-flow node has an edge from the root core-concept node
+□ ⚠️ EVERY screen/condition/feature node has an incoming edge
+□ All edges have valid source/target IDs that match actual node IDs
+□ All edge labels describe actions/triggers (or null for root→user-flow edges)
+□ Edge count should be approximately: (total nodes - 1) or more
+
 QUALITY:
-□ All edges have valid source/target IDs
-□ All edge labels describe actions/triggers
 □ A junior developer could understand the flow
 □ An intermediate developer could start implementing from this
 □ Feature arrays are EXHAUSTIVE (not summarized)
@@ -914,7 +938,7 @@ QUALITY:
 				const supabase = getSupabaseClient();
 
 				// Check user's credits
-				const { data: userCredits, error: creditsError } = await supabase
+				let { data: userCredits, error: creditsError } = await supabase
 					.from("user_credits")
 					.select("credits")
 					.eq("user_id", data.userId)
@@ -927,17 +951,19 @@ QUALITY:
 
 				// If user exists but has no credits record, create one with default
 				if (creditsError?.code === "PGRST116") {
-					const { error: insertError } = await supabase
-						.from("user_credits")
-						.insert({
-							user_id: data.userId,
-							credits: 30,
-							monthly_credits_remaining: 30,
+					const { data: initializedCredits, error: initError } =
+						await supabase.rpc("initialize_user_credits", {
+							p_user_id: data.userId,
 						});
 
-					if (insertError) {
-						console.error("Error creating credits:", insertError);
+					if (initError) {
+						console.error("Error creating credits:", initError);
 						throw new Error("Failed to initialize credits");
+					}
+
+					// Update userCredits with the initialized data
+					if (initializedCredits && initializedCredits.length > 0) {
+						userCredits = { credits: initializedCredits[0].credits };
 					}
 				}
 

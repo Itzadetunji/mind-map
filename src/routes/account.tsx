@@ -13,6 +13,7 @@ import {
 	Star,
 	Zap,
 } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -22,6 +23,14 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import {
 	getTierMonthlyCredits,
 	getTierPrice,
@@ -154,6 +163,15 @@ function AccountPage() {
 	const { data: transactions, isLoading: transactionsLoading } =
 		useCreditTransactions();
 
+	const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
+	const [showCreditsDialog, setShowCreditsDialog] = useState(false);
+	const [selectedTier, setSelectedTier] = useState<SubscriptionTier | null>(
+		null,
+	);
+	const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
+		null,
+	);
+
 	// Redirect to home if not authenticated
 	if (!authLoading && !user) {
 		navigate({ to: "/" });
@@ -162,16 +180,14 @@ function AccountPage() {
 
 	const handleSubscribe = (tier: SubscriptionTier) => {
 		// TODO: Integrate with Stripe for subscription
-		alert(
-			`Subscription to ${tier} plan would be processed via Stripe. This will be implemented with Stripe Checkout.`,
-		);
+		setSelectedTier(tier);
+		setShowSubscriptionDialog(true);
 	};
 
 	const handlePurchaseCredits = (packageId: string) => {
 		// TODO: Integrate with Stripe for one-time purchase
-		alert(
-			`Credit purchase for ${packageId} package would be processed via Stripe. This will be implemented with Stripe Checkout.`,
-		);
+		setSelectedPackageId(packageId);
+		setShowCreditsDialog(true);
 	};
 
 	const currentTier = subscription?.tier || "free";
@@ -501,6 +517,62 @@ function AccountPage() {
 					</Card>
 				</div>
 			</div>
+
+			{/* Subscription Dialog */}
+			<Dialog open={showSubscriptionDialog} onOpenChange={setShowSubscriptionDialog}>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<div className="flex items-center gap-3 mb-2">
+							<div className="p-2 rounded-full bg-[#03045E]/10 dark:bg-[#0077B6]/20">
+								<CreditCard className="w-6 h-6 text-[#03045E] dark:text-[#0077B6]" />
+							</div>
+							<DialogTitle className="text-xl">Subscription</DialogTitle>
+						</div>
+						<DialogDescription className="text-base pt-2">
+							Subscription to {selectedTier} plan would be processed via Stripe.
+							This will be implemented with Stripe Checkout.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowSubscriptionDialog(false)}
+						>
+							Cancel
+						</Button>
+						<Button onClick={() => setShowSubscriptionDialog(false)}>
+							OK
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Credits Purchase Dialog */}
+			<Dialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog}>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<div className="flex items-center gap-3 mb-2">
+							<div className="p-2 rounded-full bg-[#03045E]/10 dark:bg-[#0077B6]/20">
+								<Zap className="w-6 h-6 text-[#03045E] dark:text-[#0077B6]" />
+							</div>
+							<DialogTitle className="text-xl">Credit Purchase</DialogTitle>
+						</div>
+						<DialogDescription className="text-base pt-2">
+							Credit purchase for {selectedPackageId} package would be processed
+							via Stripe. This will be implemented with Stripe Checkout.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowCreditsDialog(false)}
+						>
+							Cancel
+						</Button>
+						<Button onClick={() => setShowCreditsDialog(false)}>OK</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</main>
 	);
 }

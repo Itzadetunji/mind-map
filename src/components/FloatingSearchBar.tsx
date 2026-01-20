@@ -7,6 +7,7 @@ import { generateMindMap } from "@/server/generate-mind-map";
 import { useAuthStore } from "@/stores/authStore";
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
 import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
+import { ErrorDialog } from "./shared/ErrorDialog";
 import { Button } from "./ui/button";
 
 interface FloatingSearchBarProps {
@@ -20,6 +21,7 @@ export function FloatingSearchBar({
 }: FloatingSearchBarProps) {
 	const [prompt, setPrompt] = useState("");
 	const [showCreditsModal, setShowCreditsModal] = useState(false);
+	const [showErrorDialog, setShowErrorDialog] = useState(false);
 	const { setNodes, setEdges, fitView } = useReactFlow();
 	const user = useAuthStore((state) => state.user);
 	const { data: credits } = useUserCredits();
@@ -68,7 +70,7 @@ export function FloatingSearchBar({
 			if (errorMessage.includes("INSUFFICIENT_CREDITS")) {
 				setShowCreditsModal(true);
 			} else {
-				alert("Failed to generate mind map. Check console.");
+				setShowErrorDialog(true);
 			}
 		},
 	});
@@ -149,6 +151,14 @@ export function FloatingSearchBar({
 				open={showCreditsModal}
 				onOpenChange={setShowCreditsModal}
 				currentCredits={credits?.credits ?? 0}
+			/>
+
+			{/* Error Dialog */}
+			<ErrorDialog
+				open={showErrorDialog}
+				onOpenChange={setShowErrorDialog}
+				title="Generation Failed"
+				description="Failed to generate mind map. Please check the console for more details and try again."
 			/>
 		</div>
 	);

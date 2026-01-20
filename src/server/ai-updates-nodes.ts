@@ -428,7 +428,7 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 			const supabase = getSupabaseClient();
 			
 			// Check user's credits
-			const { data: userCredits, error: creditsError } = await supabase
+			let { data: userCredits, error: creditsError } = await supabase
 				.from("user_credits")
 				.select("credits")
 				.eq("user_id", data.userId)
@@ -441,13 +441,19 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 
 			// If user exists but has no credits record, create one with default
 			if (creditsError?.code === "PGRST116") {
-				const { error: insertError } = await supabase
-					.from("user_credits")
-					.insert({ user_id: data.userId, credits: 30, monthly_credits_remaining: 30 });
-				
-				if (insertError) {
-					console.error("Error creating credits:", insertError);
+				const { data: initializedCredits, error: initError } =
+					await supabase.rpc("initialize_user_credits", {
+						p_user_id: data.userId,
+					});
+
+				if (initError) {
+					console.error("Error creating credits:", initError);
 					throw new Error("Failed to initialize credits");
+				}
+
+				// Update userCredits with the initialized data
+				if (initializedCredits && initializedCredits.length > 0) {
+					userCredits = { credits: initializedCredits[0].credits };
 				}
 			}
 
@@ -560,26 +566,16 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 			if (data.userId && (parsed.action === "generate" || parsed.action === "modify")) {
 				const supabase = getSupabaseClient();
 
-				// Deduct 1 credit for this generation
-				const { data: currentCredits } = await supabase
-					.from("user_credits")
-					.select("credits")
-					.eq("user_id", data.userId)
-					.single();
+				// Deduct 1 credit for this generation using RPC function
+				const { error: deductError } = await supabase.rpc("deduct_credits", {
+					p_user_id: data.userId,
+					p_amount: 1,
+					p_description: `AI chat - ${parsed.action} action`,
+				});
 
-				if (currentCredits) {
-					await supabase
-						.from("user_credits")
-						.update({ credits: currentCredits.credits - 1 })
-						.eq("user_id", data.userId);
-
-					// Log transaction
-					await supabase.from("credit_transactions").insert({
-						user_id: data.userId,
-						amount: -1,
-						transaction_type: "usage",
-						description: `AI chat - ${parsed.action} action`,
-					});
+				// If RPC doesn't exist or fails, log error but don't fail the request
+				if (deductError) {
+					console.error("Error deducting credits:", deductError);
 				}
 			}
 
