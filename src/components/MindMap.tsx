@@ -5,7 +5,6 @@ import {
 	Controls,
 	type Edge,
 	getNodesBounds,
-	getViewportForBounds,
 	MiniMap,
 	type Node,
 	Panel,
@@ -194,42 +193,34 @@ export const MindMap = ({
 		setShowDownloadMenu(false);
 
 		try {
-			// Get the bounds of all nodes with padding
+			// Get the bounds of all nodes
 			const nodesBounds = getNodesBounds(nodes);
 
-			const imageWidth = nodesBounds.width;
-			const imageHeight = nodesBounds.height;
+			// Add padding around the content
+			const padding = 100;
 
-			// Find the React Flow element (includes edges, nodes, and labels)
-			const reactFlowElement = document.querySelector(
-				".react-flow",
+			// Calculate the final image dimensions (content + padding on all sides)
+			const imageWidth = nodesBounds.width + padding * 2;
+			const imageHeight = nodesBounds.height + padding * 2;
+
+			const viewportElement = document.querySelector(
+				".react-flow__viewport",
 			) as HTMLElement;
-			if (!reactFlowElement)
-				throw new Error("Could not find React Flow element");
-			const viewport = getViewportForBounds(
-				nodesBounds,
-				imageWidth,
-				imageHeight,
-				0.5,
-				2,
-				1,
-			);
+			if (!viewportElement)
+				throw new Error("Could not find React Flow viewport element");
 
-			// Generate PNG with proper settings to capture everything
-			const dataUrl = await toPng(
-				document.querySelector(".react-flow__viewport") as HTMLElement,
-				{
-					backgroundColor: "#ffffff",
-					width: imageWidth,
-					height: imageHeight,
-					style: {
-						width: `${imageWidth}px`,
-						height: `${imageHeight}px`,
-						transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
-					},
-					pixelRatio: 3,
+			// Generate PNG with proper transform to center and fit content
+			// Translate to position content with padding offset
+			const dataUrl = await toPng(viewportElement, {
+				backgroundColor: "#ffffff",
+				width: imageWidth,
+				height: imageHeight,
+				style: {
+					width: `${imageWidth}px`,
+					height: `${imageHeight}px`,
+					transform: `translate(${-nodesBounds.x + padding}px, ${-nodesBounds.y + padding}px) scale(1)`,
 				},
-			);
+			});
 
 			// Download the image
 			const projectName = project?.title || "mind-map";
