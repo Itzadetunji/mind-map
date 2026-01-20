@@ -203,15 +203,13 @@ export const MindMap = ({
 			const imageWidth = nodesBounds.width + padding * 2;
 			const imageHeight = nodesBounds.height + padding * 2;
 
-			const viewportElement = document.querySelector(
-				".react-flow__viewport",
-			) as HTMLElement;
+			const viewportElement = document.querySelector(".react-flow__viewport");
 			if (!viewportElement)
 				throw new Error("Could not find React Flow viewport element");
 
 			// Generate PNG with proper transform to center and fit content
 			// Translate to position content with padding offset
-			const dataUrl = await toPng(viewportElement, {
+			const dataUrl = await toPng(viewportElement as HTMLElement, {
 				backgroundColor: "#ffffff",
 				width: imageWidth,
 				height: imageHeight,
