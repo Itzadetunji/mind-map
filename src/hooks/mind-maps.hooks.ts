@@ -120,13 +120,17 @@ export function useUpdateMindMapProject() {
 
 export function useDeleteMindMapProject() {
 	const queryClient = useQueryClient();
+	const user = useAuthStore((state) => state.user);
 
 	return useMutation({
 		mutationFn: async (projectId: string) => {
-			const { error } = await supabase
-				.from("mind_maps")
-				.delete()
-				.eq("id", projectId);
+			if (!user) throw new Error("User not authenticated");
+
+			// Use the PostgreSQL function to delete mind map and associated chats
+			const { error } = await supabase.rpc("delete_mind_map_with_chats", {
+				p_mind_map_id: projectId,
+				p_user_id: user.id,
+			});
 
 			if (error) throw error;
 		},
