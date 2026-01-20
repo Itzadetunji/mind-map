@@ -912,7 +912,7 @@ QUALITY:
 			// Check credits before generation (only if user is authenticated)
 			if (data.userId) {
 				const supabase = getSupabaseClient();
-				
+
 				// Check user's credits
 				const { data: userCredits, error: creditsError } = await supabase
 					.from("user_credits")
@@ -929,8 +929,12 @@ QUALITY:
 				if (creditsError?.code === "PGRST116") {
 					const { error: insertError } = await supabase
 						.from("user_credits")
-						.insert({ user_id: data.userId, credits: 30, monthly_credits_remaining: 30 });
-					
+						.insert({
+							user_id: data.userId,
+							credits: 30,
+							monthly_credits_remaining: 30,
+						});
+
 					if (insertError) {
 						console.error("Error creating credits:", insertError);
 						throw new Error("Failed to initialize credits");

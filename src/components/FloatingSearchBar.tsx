@@ -2,11 +2,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
 import { Brain, Loader2, Search, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { generateMindMap } from "@/server/generate-mind-map";
 import { useUserCredits } from "@/hooks/credits.hooks";
+import { generateMindMap } from "@/server/generate-mind-map";
 import { useAuthStore } from "@/stores/authStore";
-import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
+import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
 import { Button } from "./ui/button";
 
 interface FloatingSearchBarProps {
@@ -93,7 +93,7 @@ export function FloatingSearchBar({
 			{mutation.isPending && (
 				<div className="mb-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
 					<div className="flex items-center gap-2">
-						<Brain className="w-4 h-4 text-indigo-500 animate-pulse" />
+						<Brain className="w-4 h-4 text-[#03045E] dark:text-[#0077B6] animate-pulse" />
 						<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
 							AI is thinking...
 						</span>
@@ -104,13 +104,13 @@ export function FloatingSearchBar({
 			{/* Search Bar */}
 			<form
 				onSubmit={handleSubmit}
-				className="relative flex items-center w-full shadow-lg rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-all focus-within:ring-2 focus-within:ring-slate-400 dark:focus-within:ring-slate-600 focus-within:ring-offset-2 dark:focus-within:ring-offset-slate-900 "
+				className="relative flex items-center w-full shadow-lg rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-all focus-within:ring-2 focus-within:ring-[#03045E]/20 dark:focus-within:ring-[#0077B6]/30 focus-within:ring-offset-2 dark:focus-within:ring-offset-slate-900 "
 			>
 				<div className="pl-4 text-slate-400">
 					{mutation.isPending ? (
-						<Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
+						<Loader2 className="w-5 h-5 animate-spin text-[#03045E] dark:text-[#0077B6]" />
 					) : (
-						<Sparkles className="w-5 h-5 text-indigo-500" />
+						<Sparkles className="w-5 h-5 text-[#03045E] dark:text-[#0077B6]" />
 					)}
 				</div>
 				<AutoResizeTextarea
@@ -136,7 +136,9 @@ export function FloatingSearchBar({
 				<Button
 					type="submit"
 					disabled={!prompt.trim() || mutation.isPending}
-					className="mr-1.5 p-2 size-fit rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-indigo-500 hover:text-white dark:hover:bg-indigo-500 dark:hover:text-white transition-colors disabled:opacity-50 disabled:hover:bg-slate-100 disabled:hover:text-slate-500 dark:disabled:hover:bg-slate-800"
+					variant="ghost"
+					size="icon"
+					className="mr-1.5 rounded-full hover:bg-[#03045E] hover:text-white dark:hover:bg-[#0077B6] dark:hover:text-white"
 				>
 					<Search className="w-4 h-4" />
 				</Button>

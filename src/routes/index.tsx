@@ -48,7 +48,7 @@ const App = () => {
 	if (loading) {
 		return (
 			<main className="w-full flex-1 flex items-center justify-center">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#03045E] dark:border-[#0077B6]" />
 			</main>
 		);
 	}

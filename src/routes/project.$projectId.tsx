@@ -204,7 +204,7 @@ const ProjectPage = () => {
 	if (authLoading || projectLoading) {
 		return (
 			<main className="w-full flex-1 flex items-center justify-center">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#03045E] dark:border-[#0077B6]" />
 			</main>
 		);
 	}
@@ -222,7 +222,7 @@ const ProjectPage = () => {
 				<button
 					type="button"
 					onClick={handleBackToProjects}
-					className="text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+					className="text-sm text-slate-600 dark:text-slate-400 hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
 				>
 					← All Projects
 				</button>

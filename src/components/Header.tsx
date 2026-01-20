@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { MessageSquare, Network } from "lucide-react";
 import { AuthButton } from "./AuthButton";
+import { Button } from "./ui/button";
 
 interface HeaderProps {
 	showChatButton?: boolean;
@@ -33,25 +34,25 @@ export function Header({
 					</>
 				)}
 				{onBackToProjects && (
-					<button
-						type="button"
+					<Button
+						variant="link"
 						onClick={onBackToProjects}
-						className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+						className="text-sm text-[#03045E] dark:text-[#0077B6]"
 					>
 						← All Projects
-					</button>
+					</Button>
 				)}
 			</div>
 			<div className="flex items-center gap-3">
 				{showChatButton && onChatToggle && (
-					<button
-						type="button"
+					<Button
+						variant="outline"
 						onClick={onChatToggle}
-						className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors"
+						className="flex items-center gap-2 bg-[#03045E]/10 dark:bg-[#0077B6]/20 text-[#03045E] dark:text-[#0077B6] hover:bg-[#03045E]/20 dark:hover:bg-[#0077B6]/30 border-[#03045E]/20 dark:border-[#0077B6]/30"
 					>
 						<MessageSquare className="w-4 h-4" />
 						<span className="hidden sm:inline">AI Chat</span>
-					</button>
+					</Button>
 				)}
 				<AuthButton />
 			</div>

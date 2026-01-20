@@ -26,8 +26,8 @@ export function InsufficientCreditsModal({
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<div className="flex items-center gap-3 mb-2">
-						<div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30">
-							<AlertCircle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+						<div className="p-2 rounded-full bg-[#03045E]/10 dark:bg-[#0077B6]/20">
+							<AlertCircle className="w-6 h-6 text-[#03045E] dark:text-[#0077B6]" />
 						</div>
 						<DialogTitle className="text-xl">
 							Insufficient Credits
@@ -42,7 +42,7 @@ export function InsufficientCreditsModal({
 				<div className="py-4">
 					<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
 						<div className="flex items-center gap-2">
-							<Zap className="w-5 h-5 text-indigo-500" />
+							<Zap className="w-5 h-5 text-[#03045E] dark:text-[#0077B6]" />
 							<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
 								Current Credits
 							</span>

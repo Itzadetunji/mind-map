@@ -40,6 +40,7 @@ import CustomNode from "./nodes/CustomNode";
 import FeatureNode from "./nodes/FeatureNode";
 import ScreenUiNode from "./nodes/ScreenUiNode";
 import UserFlowNode from "./nodes/UserFlowNode";
+import { Button } from "./ui/button";
 import { Tooltip } from "./ui/tooltip-custom";
 
 const nodeTypes = {
@@ -550,13 +551,14 @@ export const MindMap = ({
 					{/* Show AI Chat toggle button only if prompt exists */}
 					{hasLocalPrompt && (
 						<Panel position="top-right" className="mr-2 mt-2">
-							<button
-								type="button"
+							<Button
 								onClick={() => setShowChatSidebar(!showChatSidebar)}
-								className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors shadow-sm"
+								variant="outline"
+								size="sm"
+								className="bg-[#03045E]/10 dark:bg-[#0077B6]/20 text-[#03045E] dark:text-[#0077B6] hover:bg-[#03045E]/20 dark:hover:bg-[#0077B6]/30 border-[#03045E]/20 dark:border-[#0077B6]/30 shadow-sm"
 							>
 								💬 AI Chat
-							</button>
+							</Button>
 						</Panel>
 					)}
 					<Controls />
@@ -665,7 +667,7 @@ export const MindMap = ({
 												onClick={() => handleDownload("prd")}
 												className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
 											>
-												<FileText className="w-4 h-4 text-purple-500" />
+												<FileText className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />
 												<div>
 													<div className="font-medium">PRD Document</div>
 													<div className="text-xs text-slate-500">

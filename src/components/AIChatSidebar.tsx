@@ -18,8 +18,8 @@ import { formatTime } from "@/lib/date-utils";
 import { chatWithAIStreaming } from "@/server/ai-updates-nodes";
 import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
-import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
+import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 
@@ -278,8 +278,8 @@ export const AIChatSidebar = ({
 				{/* Header */}
 				<div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
 					<div className="flex items-center gap-2">
-						<div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-950">
-							<Bot className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+						<div className="p-1.5 rounded-lg bg-[#03045E]/10 dark:bg-[#0077B6]/20">
+							<Bot className="w-5 h-5 text-[#03045E] dark:text-[#0077B6]" />
 						</div>
 						<div>
 							<h2 className="font-semibold text-slate-900 dark:text-white">
@@ -290,13 +290,9 @@ export const AIChatSidebar = ({
 							</p>
 						</div>
 					</div>
-					<button
-						type="button"
-						onClick={onClose}
-						className="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-					>
+					<Button variant="ghost" size="icon" onClick={onClose}>
 						<X className="w-5 h-5 text-slate-500" />
-					</button>
+					</Button>
 				</div>
 
 				{/* Project Title Input */}
@@ -313,7 +309,7 @@ export const AIChatSidebar = ({
 						value={projectTitle}
 						onChange={(e) => setProjectTitle(e.target.value)}
 						placeholder="Enter project name..."
-						className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+						className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#03045E]/50 dark:focus:ring-[#0077B6]/50"
 					/>
 				</div>
 
@@ -345,7 +341,7 @@ export const AIChatSidebar = ({
 
 					{displayMessages.length === 0 && !isHistoryLoading && (
 						<div className="text-center py-8">
-							<Sparkles className="w-10 h-10 mx-auto text-indigo-400 mb-3" />
+							<Sparkles className="w-10 h-10 mx-auto text-[#03045E] dark:text-[#0077B6] mb-3" />
 							<h3 className="font-medium text-slate-900 dark:text-white mb-1">
 								Ready to build your mind map
 							</h3>
@@ -359,15 +355,15 @@ export const AIChatSidebar = ({
 									"Build an e-commerce checkout flow",
 									"Design a fitness tracking app",
 								].map((suggestion) => (
-									<button
+									<Button
 										key={suggestion}
-										type="button"
+										variant="ghost"
 										onClick={() => setInput(suggestion)}
-										className="w-full text-left text-sm px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
+										className="w-full justify-start text-sm"
 									>
-										<ChevronRight className="w-3 h-3 inline mr-1" />
+										<ChevronRight className="w-3 h-3 mr-1" />
 										{suggestion}
-									</button>
+									</Button>
 								))}
 							</div>
 						</div>
@@ -381,14 +377,14 @@ export const AIChatSidebar = ({
 							<div
 								className={`max-w-[90%] ${
 									message.role === "user"
-										? "bg-indigo-600 text-white rounded-2xl px-4 py-2"
+										? "bg-[#03045E] dark:bg-[#0077B6] text-white rounded-2xl px-4 py-2"
 										: "space-y-2"
 								}`}
 							>
 								{message.role === "assistant" && message.thinking && (
 									<button
 										type="button"
-										className="flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+										className="flex items-center gap-2 text-xs text-[#03045E] dark:text-[#0077B6] hover:text-[#023E8A] dark:hover:text-[#0096C7] transition-colors"
 									>
 										<Brain className="w-3 h-3" />
 									</button>
@@ -416,7 +412,7 @@ export const AIChatSidebar = ({
 								<p
 									className={`text-xs mt-1 ${
 										message.role === "user"
-											? "text-indigo-200"
+											? "text-white/70"
 											: "text-slate-400 px-1"
 									}`}
 								>
@@ -430,7 +426,7 @@ export const AIChatSidebar = ({
 					{chatMutation.isPending && (
 						<div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
 							<div className="flex items-center gap-2">
-								<Brain className="w-4 h-4 text-indigo-500 animate-pulse" />
+								<Brain className="w-4 h-4 text-[#03045E] dark:text-[#0077B6] animate-pulse" />
 								<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
 									Thinking...
 								</span>
@@ -443,21 +439,23 @@ export const AIChatSidebar = ({
 
 				{/* Input */}
 				<div className="p-4 border-t border-slate-200 dark:border-slate-800">
-					<form onSubmit={handleSubmit} className="relative">
+					<form
+						onSubmit={handleSubmit}
+						className="relative flex items-center p-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus-within:ring-2 focus-within:ring-[#03045E]/50 dark:focus-within:ring-[#0077B6]/50"
+					>
 						<AutoResizeTextarea
 							value={input}
 							onChange={(e) => setInput(e.target.value)}
 							onKeyDown={handleKeyDown}
-							placeholder="Describe your app idea or ask for changes..."
+							placeholder="What do you want to add?"
 							rows={3}
-							className="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 pr-12 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+							className="w-full resize-none bg-transparent px-4 py-3 pr-12 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus-visible:ring-0 no-scrollbar max-h-30"
 							disabled={chatMutation.isPending}
 						/>
 						<Button
 							type="submit"
 							size="icon"
 							disabled={!input.trim() || chatMutation.isPending}
-							className="absolute right-2 bottom-2"
 						>
 							{chatMutation.isPending ? (
 								<Loader2 className="w-4 h-4 animate-spin" />
@@ -471,14 +469,6 @@ export const AIChatSidebar = ({
 					</p>
 				</div>
 			</div>
-
-			{/* Animation Keyframes */}
-			<style>{`
-				@keyframes fadeIn {
-					from { opacity: 0; transform: translateX(-10px); }
-					to { opacity: 1; transform: translateX(0); }
-				}
-			`}</style>
 
 			{/* Insufficient Credits Modal */}
 			<InsufficientCreditsModal

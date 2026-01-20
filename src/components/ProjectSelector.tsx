@@ -6,6 +6,7 @@ import {
 import type { MindMapProject } from "@/lib/database.types";
 import { formatRelativeDate } from "@/lib/date-utils";
 import { useAuthStore } from "@/stores/authStore";
+import { Button } from "./ui/button";
 
 interface ProjectSelectorProps {
 	onSelectProject: (project: MindMapProject) => void;
@@ -35,7 +36,7 @@ export function ProjectSelector({
 			<div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
 				<div className="max-w-md w-full text-center">
 					<div className="mb-8">
-						<Network className="w-16 h-16 mx-auto text-indigo-500 mb-4" />
+						<Network className="w-16 h-16 mx-auto text-[#03045E] dark:text-[#0077B6] mb-4" />
 						<h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
 							Mind Mapper
 						</h1>
@@ -44,10 +45,11 @@ export function ProjectSelector({
 						</p>
 					</div>
 
-					<button
-						type="button"
+					<Button
 						onClick={signInWithGoogle}
-						className="flex items-center justify-center gap-3 w-full px-6 py-3 text-base font-medium rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+						variant="outline"
+						className="w-full"
+						size="lg"
 					>
 						<svg
 							className="w-5 h-5"
@@ -73,7 +75,7 @@ export function ProjectSelector({
 							/>
 						</svg>
 						Continue with Google
-					</button>
+					</Button>
 
 					<p className="mt-6 text-sm text-slate-500 dark:text-slate-500">
 						Sign in to save and manage your mind maps
@@ -95,11 +97,10 @@ export function ProjectSelector({
 							Select a project to continue or create a new one
 						</p>
 					</div>
-					<button
-						type="button"
+					<Button
 						onClick={onNewProject}
 						disabled={isCreating}
-						className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+						className="bg-[#03045E] hover:bg-[#023E8A] text-white dark:bg-[#0077B6] dark:hover:bg-[#0096C7]"
 					>
 						{isCreating ? (
 							<Loader2 className="w-4 h-4 animate-spin" />
@@ -107,7 +108,7 @@ export function ProjectSelector({
 							<Plus className="w-4 h-4" />
 						)}
 						{isCreating ? "Creating..." : "New Mind Map"}
-					</button>
+					</Button>
 				</div>
 
 				{isLoading ? (
@@ -120,15 +121,16 @@ export function ProjectSelector({
 							<button
 								type="button"
 								key={project.id}
-								className="group relative bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg transition-all cursor-pointer text-left w-full"
+								className="group relative bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 hover:border-[#03045E]/30 dark:hover:border-[#0077B6]/50 hover:shadow-lg transition-all cursor-pointer text-left w-full"
 								onClick={() => onSelectProject(project)}
 							>
 								<div className="flex items-start justify-between mb-3">
-									<div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950">
-										<Network className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+									<div className="p-2 rounded-lg bg-[#03045E]/10 dark:bg-[#0077B6]/20">
+										<Network className="w-5 h-5 text-[#03045E] dark:text-[#0077B6]" />
 									</div>
-									<button
-										type="button"
+									<Button
+										variant="ghost"
+										size="icon-sm"
 										onClick={(e) => {
 											e.stopPropagation();
 											if (
@@ -137,10 +139,10 @@ export function ProjectSelector({
 												deleteMutation.mutate(project.id);
 											}
 										}}
-										className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950 text-slate-400 hover:text-red-500 transition-all"
+										className="opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-950 text-slate-400 hover:text-red-500"
 									>
 										<Trash2 className="w-4 h-4" />
-									</button>
+									</Button>
 								</div>
 
 								<h3 className="font-semibold text-slate-900 dark:text-white mb-1 line-clamp-1">
@@ -175,14 +177,13 @@ export function ProjectSelector({
 						<p className="text-slate-600 dark:text-slate-400 mb-6">
 							Create your first mind map to get started
 						</p>
-						<button
-							type="button"
+						<Button
 							onClick={onNewProject}
-							className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+							className="bg-[#03045E] hover:bg-[#023E8A] text-white dark:bg-[#0077B6] dark:hover:bg-[#0096C7]"
 						>
 							<Plus className="w-4 h-4" />
 							Create Mind Map
-						</button>
+						</Button>
 					</div>
 				)}
 			</div>

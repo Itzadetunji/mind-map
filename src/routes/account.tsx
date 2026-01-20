@@ -114,17 +114,21 @@ function getTransactionIcon(type: CreditTransaction["transaction_type"]) {
 		case "initial":
 			return <Gift className="w-4 h-4 text-green-500" />;
 		case "subscription":
-			return <Star className="w-4 h-4 text-indigo-500" />;
+			return <Star className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />;
 		case "purchase":
 			return <CreditCard className="w-4 h-4 text-blue-500" />;
 		case "usage":
 			return <Minus className="w-4 h-4 text-orange-500" />;
 		case "bonus":
-			return <Sparkles className="w-4 h-4 text-purple-500" />;
+			return (
+				<Sparkles className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />
+			);
 		case "refund":
 			return <RefreshCw className="w-4 h-4 text-green-500" />;
 		case "monthly_reset":
-			return <RefreshCw className="w-4 h-4 text-indigo-500" />;
+			return (
+				<RefreshCw className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />
+			);
 		default:
 			return <Zap className="w-4 h-4 text-slate-500" />;
 	}
@@ -176,7 +180,7 @@ function AccountPage() {
 	if (isLoading) {
 		return (
 			<main className="w-full flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#03045E] dark:border-[#0077B6]" />
 			</main>
 		);
 	}
@@ -204,10 +208,10 @@ function AccountPage() {
 				</div>
 
 				{/* Credits overview */}
-				<Card className="mb-8 bg-linear-to-br from-indigo-500 to-purple-600 text-white border-0">
+				<Card className="mb-8 bg-gradient-to-br from-[#03045E] to-[#023E8A] dark:from-[#0077B6] dark:to-[#0096C7] text-white border-0">
 					<CardHeader className="pb-2">
 						<div className="flex items-center justify-between">
-							<CardDescription className="text-indigo-100">
+							<CardDescription className="text-white/80">
 								Available Credits
 							</CardDescription>
 							<span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium capitalize">
@@ -216,13 +220,13 @@ function AccountPage() {
 						</div>
 						<CardTitle className="text-5xl font-bold">
 							{credits?.credits ?? 0}
-							<span className="text-2xl font-normal ml-2 text-indigo-200">
+							<span className="text-2xl font-normal ml-2 text-white/80">
 								credits
 							</span>
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<div className="flex items-center gap-4 text-indigo-100">
+						<div className="flex items-center gap-4 text-white/80">
 							<div className="flex items-center gap-2">
 								<RefreshCw className="w-4 h-4" />
 								<span>
@@ -248,11 +252,11 @@ function AccountPage() {
 							return (
 								<Card
 									key={plan.id}
-									className={`relative ${plan.popular ? "border-indigo-500 border-2" : ""} ${isCurrentPlan ? "ring-2 ring-indigo-500 ring-offset-2" : ""}`}
+									className={`relative ${plan.popular ? "border-[#03045E] dark:border-[#0077B6] border-2" : ""} ${isCurrentPlan ? "ring-2 ring-[#03045E] dark:ring-[#0077B6] ring-offset-2" : ""}`}
 								>
 									{plan.popular && (
 										<div className="absolute -top-3 left-1/2 -translate-x-1/2">
-											<span className="bg-indigo-500 text-white text-xs font-medium px-3 py-1 rounded-full">
+											<span className="bg-[#03045E] dark:bg-[#0077B6] text-white text-xs font-medium px-3 py-1 rounded-full">
 												Most Popular
 											</span>
 										</div>
@@ -269,7 +273,9 @@ function AccountPage() {
 											<span className="flex items-center gap-2">
 												<span
 													className={
-														plan.popular ? "text-indigo-500" : "text-slate-400"
+														plan.popular
+															? "text-[#03045E] dark:text-[#0077B6]"
+															: "text-slate-400"
 													}
 												>
 													{plan.icon}
@@ -285,9 +291,9 @@ function AccountPage() {
 										</CardDescription>
 									</CardHeader>
 									<CardContent>
-										<div className="flex items-center gap-2 mb-4 p-2 bg-indigo-50 dark:bg-indigo-950 rounded-lg">
-											<Zap className="w-4 h-4 text-indigo-500" />
-											<span className="font-semibold text-indigo-700 dark:text-indigo-300">
+										<div className="flex items-center gap-2 mb-4 p-2 bg-[#03045E]/10 dark:bg-[#0077B6]/20 rounded-lg">
+											<Zap className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />
+											<span className="font-semibold text-[#03045E] dark:text-[#0077B6]">
 												{plan.credits} credits/month
 											</span>
 										</div>
@@ -345,7 +351,7 @@ function AccountPage() {
 						Purchase additional credits anytime. These don't expire and stack
 						with your monthly allowance.
 						{currentTier === "pro" && (
-							<span className="ml-1 text-indigo-600 dark:text-indigo-400 font-medium">
+							<span className="ml-1 text-[#03045E] dark:text-[#0077B6] font-medium">
 								Pro members get 20% bonus credits on all purchases!
 							</span>
 						)}
@@ -353,17 +359,19 @@ function AccountPage() {
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
 						{creditPackages.map((pkg) => {
 							const bonusMultiplier = 1 + getTierTopUpBonus(currentTier);
-							const totalCredits = Math.floor(pkg.baseCredits * bonusMultiplier);
+							const totalCredits = Math.floor(
+								pkg.baseCredits * bonusMultiplier,
+							);
 							const bonusCredits = totalCredits - pkg.baseCredits;
 
 							return (
 								<Card
 									key={pkg.id}
-									className={`relative ${pkg.popular ? "border-indigo-500 border-2" : ""}`}
+									className={`relative ${pkg.popular ? "border-[#03045E] dark:border-[#0077B6] border-2" : ""}`}
 								>
 									{pkg.popular && (
 										<div className="absolute -top-3 left-1/2 -translate-x-1/2">
-											<span className="bg-indigo-500 text-white text-xs font-medium px-3 py-1 rounded-full">
+											<span className="bg-[#03045E] dark:bg-[#0077B6] text-white text-xs font-medium px-3 py-1 rounded-full">
 												Best Value
 											</span>
 										</div>
@@ -372,7 +380,7 @@ function AccountPage() {
 										<CardTitle className="flex items-center justify-between">
 											<span className="flex items-center gap-2">
 												<Zap
-													className={`w-5 h-5 ${pkg.popular ? "text-indigo-500" : "text-slate-400"}`}
+													className={`w-5 h-5 ${pkg.popular ? "text-[#03045E] dark:text-[#0077B6]" : "text-slate-400"}`}
 												/>
 												<span>
 													{totalCredits} Credits
@@ -417,7 +425,7 @@ function AccountPage() {
 						<CardContent className="p-0">
 							{transactionsLoading ? (
 								<div className="p-8 text-center">
-									<div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto" />
+									<div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#03045E] dark:border-[#0077B6] mx-auto" />
 								</div>
 							) : transactions && transactions.length > 0 ? (
 								<div className="divide-y divide-slate-200 dark:divide-slate-800">
