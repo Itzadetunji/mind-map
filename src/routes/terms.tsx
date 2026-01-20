@@ -8,7 +8,7 @@ export const Route = createFileRoute("/terms")({
 
 function TermsPage() {
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+		<main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex-1">
 			<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 				{/* Header */}
 				<div className="mb-8">
@@ -36,7 +36,7 @@ function TermsPage() {
 				</div>
 
 				{/* Content */}
-				<div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-8 space-y-8">
+				<div className="bg-slate-50 dark:bg-slate-950 p-8 space-y-8">
 					<section>
 						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
 							Acceptance of Terms
@@ -303,6 +303,6 @@ function TermsPage() {
 					</section>
 				</div>
 			</div>
-		</div>
+		</main>
 	);
 }

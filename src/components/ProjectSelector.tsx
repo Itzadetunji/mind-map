@@ -1,4 +1,5 @@
 import { Clock, FileText, Loader2, Network, Plus, Trash2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
 	useDeleteMindMapProject,
@@ -67,6 +68,25 @@ export function ProjectSelector({
 					<p className="mt-6 text-sm text-slate-500 dark:text-slate-500">
 						Sign in to save and manage your mind maps
 					</p>
+
+					{/* Footer Links */}
+					<footer className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800">
+						<div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600 dark:text-slate-400">
+							<Link
+								to="/privacy"
+								className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
+							>
+								Privacy Policy
+							</Link>
+							<span className="text-slate-400 dark:text-slate-600">•</span>
+							<Link
+								to="/terms"
+								className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
+							>
+								Terms and Conditions
+							</Link>
+						</div>
+					</footer>
 				</div>
 			</div>
 		);
@@ -197,6 +217,25 @@ export function ProjectSelector({
 						}
 					}}
 				/>
+
+				{/* Footer Links */}
+				<footer className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">
+					<div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600 dark:text-slate-400">
+						<Link
+							to="/privacy"
+							className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
+						>
+							Privacy Policy
+						</Link>
+						<span className="text-slate-400 dark:text-slate-600">•</span>
+						<Link
+							to="/terms"
+							className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
+						>
+							Terms and Conditions
+						</Link>
+					</div>
+				</footer>
 			</div>
 		</div>
 	);
