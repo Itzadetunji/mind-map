@@ -8,7 +8,7 @@ export const Route = createFileRoute("/terms")({
 
 function TermsPage() {
 	return (
-		<main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex-1">
+		<main className="min-h-dvh bg-slate-50 dark:bg-slate-950 flex-1 overflow-scroll">
 			<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 				{/* Header */}
 				<div className="mb-8">
@@ -27,7 +27,8 @@ function TermsPage() {
 						</h1>
 					</div>
 					<p className="text-slate-600 dark:text-slate-400">
-						Last updated: {new Date().toLocaleDateString("en-US", {
+						Last updated:{" "}
+						{new Date().toLocaleDateString("en-US", {
 							year: "numeric",
 							month: "long",
 							day: "numeric",
@@ -55,9 +56,9 @@ function TermsPage() {
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
 							Proto Map is a web-based application that allows users to create,
-							manage, and visualize mind maps and user flow diagrams. The Service
-							includes AI-powered features that generate and modify mind maps based
-							on user prompts.
+							manage, and visualize mind maps and user flow diagrams. The
+							Service includes AI-powered features that generate and modify mind
+							maps based on user prompts.
 						</p>
 					</section>
 
@@ -82,8 +83,8 @@ function TermsPage() {
 								</h3>
 								<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
 									You are responsible for all activities that occur under your
-									account. You agree to notify us immediately of any unauthorized
-									use of your account.
+									account. You agree to notify us immediately of any
+									unauthorized use of your account.
 								</p>
 							</div>
 						</div>
@@ -115,19 +116,13 @@ function TermsPage() {
 									<li>
 										Use the Service for any illegal or unauthorized purpose
 									</li>
-									<li>
-										Violate any laws in your jurisdiction
-									</li>
-									<li>
-										Transmit any malicious code, viruses, or harmful data
-									</li>
+									<li>Violate any laws in your jurisdiction</li>
+									<li>Transmit any malicious code, viruses, or harmful data</li>
 									<li>
 										Attempt to gain unauthorized access to the Service or its
 										systems
 									</li>
-									<li>
-										Interfere with or disrupt the Service or servers
-									</li>
+									<li>Interfere with or disrupt the Service or servers</li>
 									<li>
 										Use the Service to create content that is defamatory,
 										harassing, or violates others' rights
@@ -170,9 +165,9 @@ function TermsPage() {
 									Content Accuracy
 								</h3>
 								<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-									AI-generated content may contain errors or inaccuracies. You are
-									responsible for reviewing and verifying any AI-generated content
-									before using it. We do not guarantee the accuracy,
+									AI-generated content may contain errors or inaccuracies. You
+									are responsible for reviewing and verifying any AI-generated
+									content before using it. We do not guarantee the accuracy,
 									completeness, or usefulness of AI-generated mind maps.
 								</p>
 							</div>
@@ -210,9 +205,9 @@ function TermsPage() {
 									Service Intellectual Property
 								</h3>
 								<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-									The Service, including its design, features, and functionality,
-									is owned by us and protected by copyright, trademark, and other
-									intellectual property laws.
+									The Service, including its design, features, and
+									functionality, is owned by us and protected by copyright,
+									trademark, and other intellectual property laws.
 								</p>
 							</div>
 						</div>
@@ -223,11 +218,11 @@ function TermsPage() {
 							Service Availability
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-							We strive to provide reliable service but do not guarantee that the
-							Service will be available at all times. The Service may be
-							unavailable due to maintenance, updates, or circumstances beyond our
-							control. We are not liable for any loss or damage resulting from
-							Service unavailability.
+							We strive to provide reliable service but do not guarantee that
+							the Service will be available at all times. The Service may be
+							unavailable due to maintenance, updates, or circumstances beyond
+							our control. We are not liable for any loss or damage resulting
+							from Service unavailability.
 						</p>
 					</section>
 
@@ -239,8 +234,8 @@ function TermsPage() {
 							To the maximum extent permitted by law, we shall not be liable for
 							any indirect, incidental, special, consequential, or punitive
 							damages, or any loss of profits or revenues, whether incurred
-							directly or indirectly, or any loss of data, use, goodwill, or other
-							intangible losses resulting from your use of the Service.
+							directly or indirectly, or any loss of data, use, goodwill, or
+							other intangible losses resulting from your use of the Service.
 						</p>
 					</section>
 
@@ -251,7 +246,8 @@ function TermsPage() {
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
 							The Service is provided "as is" and "as available" without
 							warranties of any kind, either express or implied. We do not
-							warrant that the Service will be uninterrupted, secure, or error-free.
+							warrant that the Service will be uninterrupted, secure, or
+							error-free.
 						</p>
 					</section>
 
@@ -260,11 +256,11 @@ function TermsPage() {
 							Termination
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-							We reserve the right to terminate or suspend your account and access
-							to the Service at our sole discretion, without notice, for conduct
-							that we believe violates these Terms or is harmful to other users,
-							us, or third parties. You may also terminate your account at any
-							time by deleting it through the Service.
+							We reserve the right to terminate or suspend your account and
+							access to the Service at our sole discretion, without notice, for
+							conduct that we believe violates these Terms or is harmful to
+							other users, us, or third parties. You may also terminate your
+							account at any time by deleting it through the Service.
 						</p>
 					</section>
 
@@ -274,9 +270,10 @@ function TermsPage() {
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
 							We reserve the right to modify these Terms at any time. We will
-							notify you of any changes by posting the new Terms on this page and
-							updating the "Last updated" date. Your continued use of the Service
-							after such changes constitutes acceptance of the new Terms.
+							notify you of any changes by posting the new Terms on this page
+							and updating the "Last updated" date. Your continued use of the
+							Service after such changes constitutes acceptance of the new
+							Terms.
 						</p>
 					</section>
 
@@ -286,8 +283,8 @@ function TermsPage() {
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
 							These Terms shall be governed by and construed in accordance with
-							the laws of the jurisdiction in which we operate, without regard to
-							its conflict of law provisions.
+							the laws of the jurisdiction in which we operate, without regard
+							to its conflict of law provisions.
 						</p>
 					</section>
 

@@ -8,7 +8,7 @@ export const Route = createFileRoute("/privacy")({
 
 function PrivacyPage() {
 	return (
-		<main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex-1">
+		<main className="min-h-dvh bg-slate-50 dark:bg-slate-950 flex-1 overflow-scroll">
 			<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 				{/* Header */}
 				<div className="mb-8">
@@ -27,7 +27,8 @@ function PrivacyPage() {
 						</h1>
 					</div>
 					<p className="text-slate-600 dark:text-slate-400">
-						Last updated: {new Date().toLocaleDateString("en-US", {
+						Last updated:{" "}
+						{new Date().toLocaleDateString("en-US", {
 							year: "numeric",
 							month: "long",
 							day: "numeric",
@@ -45,8 +46,8 @@ function PrivacyPage() {
 							Welcome to Proto Map ("we," "our," or "us"). We are committed to
 							protecting your privacy and ensuring transparency about how we
 							collect, use, and protect your information. This Privacy Policy
-							explains our practices regarding data collection and usage when you
-							use our service to create and manage mind maps and user flow
+							explains our practices regarding data collection and usage when
+							you use our service to create and manage mind maps and user flow
 							diagrams.
 						</p>
 					</section>
@@ -64,8 +65,8 @@ function PrivacyPage() {
 									When you sign in with Google, we receive basic profile
 									information including your email address and name. This
 									information is managed by Google OAuth and Supabase, our
-									authentication provider. We do not store your Google password or
-									have direct access to your Google account.
+									authentication provider. We do not store your Google password
+									or have direct access to your Google account.
 								</p>
 							</div>
 							<div>
@@ -101,19 +102,13 @@ function PrivacyPage() {
 								To provide and maintain our service, including storing and
 								retrieving your mind maps
 							</li>
-							<li>
-								To authenticate your identity and manage your account
-							</li>
+							<li>To authenticate your identity and manage your account</li>
 							<li>
 								To process your requests for AI-generated mind maps and
 								modifications
 							</li>
-							<li>
-								To improve our service and develop new features
-							</li>
-							<li>
-								To communicate with you about your account or our service
-							</li>
+							<li>To improve our service and develop new features</li>
+							<li>To communicate with you about your account or our service</li>
 						</ul>
 					</section>
 
@@ -182,9 +177,7 @@ function PrivacyPage() {
 							<li>
 								Comply with legal obligations or respond to lawful requests
 							</li>
-							<li>
-								Protect our rights, privacy, safety, or property
-							</li>
+							<li>Protect our rights, privacy, safety, or property</li>
 						</ul>
 					</section>
 
@@ -226,8 +219,8 @@ function PrivacyPage() {
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
 							We retain your data for as long as your account is active or as
-							needed to provide our services. If you delete your account, we will
-							delete your personal data and projects, subject to any legal
+							needed to provide our services. If you delete your account, we
+							will delete your personal data and projects, subject to any legal
 							obligations to retain certain information.
 						</p>
 					</section>
@@ -239,8 +232,8 @@ function PrivacyPage() {
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
 							Our service is not intended for children under 13 years of age. We
 							do not knowingly collect personal information from children under
-							13. If you believe we have collected information from a child under
-							13, please contact us immediately.
+							13. If you believe we have collected information from a child
+							under 13, please contact us immediately.
 						</p>
 					</section>
 
@@ -249,10 +242,10 @@ function PrivacyPage() {
 							Changes to This Privacy Policy
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-							We may update this Privacy Policy from time to time. We will notify
-							you of any changes by posting the new Privacy Policy on this page
-							and updating the "Last updated" date. You are advised to review
-							this Privacy Policy periodically for any changes.
+							We may update this Privacy Policy from time to time. We will
+							notify you of any changes by posting the new Privacy Policy on
+							this page and updating the "Last updated" date. You are advised to
+							review this Privacy Policy periodically for any changes.
 						</p>
 					</section>
 
@@ -261,9 +254,9 @@ function PrivacyPage() {
 							Contact Us
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-							If you have any questions about this Privacy Policy, please contact
-							us through the application or at the contact information provided
-							in your account settings.
+							If you have any questions about this Privacy Policy, please
+							contact us through the application or at the contact information
+							provided in your account settings.
 						</p>
 					</section>
 				</div>
