@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Edge, Node } from "@xyflow/react";
 import {
 	Bot,
@@ -12,12 +12,14 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useChatHistory, useSendChatMessage } from "@/hooks/chats.hooks";
+import { useUserCredits } from "@/hooks/credits.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatTime } from "@/lib/date-utils";
 import { chatWithAIStreaming } from "@/server/ai-updates-nodes";
 import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
+import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 
@@ -57,6 +59,9 @@ export const AIChatSidebar = ({
 }: AIChatSidebarProps) => {
 	const { projectTitle, setProjectTitle } = useProjectStore();
 	const { user } = useAuthStore();
+	const { data: credits } = useUserCredits();
+	const [showCreditsModal, setShowCreditsModal] = useState(false);
+	const queryClient = useQueryClient();
 
 	const {
 		messages: dbMessages,
@@ -145,6 +150,7 @@ export const AIChatSidebar = ({
 			return await chatWithAIStreaming({
 				data: {
 					message,
+					userId: user.id,
 					projectContext: {
 						title: projectTitle || "New Project",
 						prompt: project?.first_prompt || "",
@@ -158,6 +164,14 @@ export const AIChatSidebar = ({
 		},
 		onSuccess: async (data) => {
 			if (!project?.id || !user?.id) return;
+
+			// Refresh credits if action was generate or modify (credits were deducted)
+			if (data.action === "generate" || data.action === "modify") {
+				queryClient.invalidateQueries({ queryKey: ["userCredits", user.id] });
+				queryClient.invalidateQueries({
+					queryKey: ["creditTransactions", user.id],
+				});
+			}
 
 			// 2. Add AI response to DB
 			await sendMessage.mutateAsync({
@@ -183,12 +197,29 @@ export const AIChatSidebar = ({
 		},
 		onError: (error) => {
 			console.error("Chat error:", error);
+			// Show credits modal if insufficient credits
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: typeof error === "string"
+						? error
+						: String(error);
+			if (errorMessage.includes("INSUFFICIENT_CREDITS")) {
+				setShowCreditsModal(true);
+			}
 		},
 	});
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!input.trim() || chatMutation.isPending) return;
+
+		// Check if user has enough credits (1 credit per generation)
+		if (!credits || credits.credits < 1) {
+			setShowCreditsModal(true);
+			return;
+		}
+
 		const msg = input.trim();
 		setInput("");
 		chatMutation.mutate(msg);
@@ -448,6 +479,13 @@ export const AIChatSidebar = ({
 					to { opacity: 1; transform: translateX(0); }
 				}
 			`}</style>
+
+			{/* Insufficient Credits Modal */}
+			<InsufficientCreditsModal
+				open={showCreditsModal}
+				onOpenChange={setShowCreditsModal}
+				currentCredits={credits?.credits ?? 0}
+			/>
 		</>
 	);
 };

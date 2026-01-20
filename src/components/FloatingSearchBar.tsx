@@ -1,10 +1,12 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
 import { Brain, Loader2, Search, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { generateMindMap } from "@/server/generate-mind-map";
+import { useUserCredits } from "@/hooks/credits.hooks";
 import { useAuthStore } from "@/stores/authStore";
 import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
+import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
 import { Button } from "./ui/button";
 
 interface FloatingSearchBarProps {
@@ -17,8 +19,11 @@ export function FloatingSearchBar({
 	onProjectCreated,
 }: FloatingSearchBarProps) {
 	const [prompt, setPrompt] = useState("");
+	const [showCreditsModal, setShowCreditsModal] = useState(false);
 	const { setNodes, setEdges, fitView } = useReactFlow();
 	const user = useAuthStore((state) => state.user);
+	const { data: credits } = useUserCredits();
+	const queryClient = useQueryClient();
 
 	const mutation = useMutation({
 		mutationFn: async (text: string) => {
@@ -31,8 +36,13 @@ export function FloatingSearchBar({
 			});
 		},
 		onSuccess: (data) => {
-			// Mark all steps as completed
+			// Refresh credits after successful generation
+			queryClient.invalidateQueries({ queryKey: ["userCredits", user?.id] });
+			queryClient.invalidateQueries({
+				queryKey: ["creditTransactions", user?.id],
+			});
 
+			// Mark all steps as completed
 			setTimeout(() => {
 				if (data?.nodes && data?.edges) {
 					setNodes(data.nodes);
@@ -48,13 +58,30 @@ export function FloatingSearchBar({
 		},
 		onError: (error) => {
 			console.error("Failed to generate:", error);
-			alert("Failed to generate mind map. Check console.");
+			// Show credits modal if insufficient credits
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: typeof error === "string"
+						? error
+						: String(error);
+			if (errorMessage.includes("INSUFFICIENT_CREDITS")) {
+				setShowCreditsModal(true);
+			} else {
+				alert("Failed to generate mind map. Check console.");
+			}
 		},
 	});
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!prompt.trim()) return;
+
+		// Check if user has enough credits (1 credit per generation)
+		if (!credits || credits.credits < 1) {
+			setShowCreditsModal(true);
+			return;
+		}
 
 		// Start actual generation
 		mutation.mutate(prompt);
@@ -93,6 +120,11 @@ export function FloatingSearchBar({
 						if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
 							e.preventDefault();
 							if (prompt.trim() && !mutation.isPending) {
+								// Check credits before submitting
+								if (!credits || credits.credits < 1) {
+									setShowCreditsModal(true);
+									return;
+								}
 								mutation.mutate(prompt);
 							}
 						}
@@ -109,6 +141,13 @@ export function FloatingSearchBar({
 					<Search className="w-4 h-4" />
 				</Button>
 			</form>
+
+			{/* Insufficient Credits Modal */}
+			<InsufficientCreditsModal
+				open={showCreditsModal}
+				onOpenChange={setShowCreditsModal}
+				currentCredits={credits?.credits ?? 0}
+			/>
 		</div>
 	);
 }

@@ -909,6 +909,40 @@ QUALITY:
 		};
 
 		try {
+			// Check credits before generation (only if user is authenticated)
+			if (data.userId) {
+				const supabase = getSupabaseClient();
+				
+				// Check user's credits
+				const { data: userCredits, error: creditsError } = await supabase
+					.from("user_credits")
+					.select("credits")
+					.eq("user_id", data.userId)
+					.single();
+
+				if (creditsError && creditsError.code !== "PGRST116") {
+					console.error("Error checking credits:", creditsError);
+					throw new Error("Failed to check credits");
+				}
+
+				// If user exists but has no credits record, create one with default
+				if (creditsError?.code === "PGRST116") {
+					const { error: insertError } = await supabase
+						.from("user_credits")
+						.insert({ user_id: data.userId, credits: 30, monthly_credits_remaining: 30 });
+					
+					if (insertError) {
+						console.error("Error creating credits:", insertError);
+						throw new Error("Failed to initialize credits");
+					}
+				}
+
+				// Check if user has enough credits (1 credit per generation)
+				if (!userCredits || userCredits.credits < 1) {
+					throw new Error("INSUFFICIENT_CREDITS");
+				}
+			}
+
 			const response = await openai.chat.completions.create({
 				model: "gpt-4o-2024-08-06", // ← Reliable model with structured outputs support
 				messages: [
@@ -928,9 +962,40 @@ QUALITY:
 
 			const graphData = JSON.parse(content);
 
-			// Save to user's project if authenticated
+			// Deduct credits and save to user's project if authenticated
 			if (data.userId) {
 				const supabase = getSupabaseClient();
+
+				// Deduct 1 credit for this generation
+				const { error: deductError } = await supabase.rpc("deduct_credits", {
+					p_user_id: data.userId,
+					p_amount: 1,
+					p_description: "AI mind map generation",
+				});
+
+				// If RPC doesn't exist, manually deduct
+				if (deductError) {
+					const { data: currentCredits } = await supabase
+						.from("user_credits")
+						.select("credits")
+						.eq("user_id", data.userId)
+						.single();
+
+					if (currentCredits) {
+						await supabase
+							.from("user_credits")
+							.update({ credits: currentCredits.credits - 1 })
+							.eq("user_id", data.userId);
+
+						// Log transaction
+						await supabase.from("credit_transactions").insert({
+							user_id: data.userId,
+							amount: -1,
+							transaction_type: "usage",
+							description: "AI mind map generation",
+						});
+					}
+				}
 
 				if (data.projectId) {
 					// Update existing project - also save prompt if this is first generation
@@ -976,6 +1041,10 @@ QUALITY:
 			return graphData;
 		} catch (error) {
 			console.error("Error in generateMindMap:", error);
+			// Re-throw insufficient credits error so client can handle it
+			if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
+				throw error;
+			}
 			throw error;
 		}
 	});

@@ -1,6 +1,14 @@
+import { createClient } from "@supabase/supabase-js";
 import { createServerFn } from "@tanstack/react-start";
 import OpenAI from "openai";
 import { z } from "zod";
+
+// Server-side Supabase client
+const getSupabaseClient = () => {
+	const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
+	const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || "";
+	return createClient(supabaseUrl, supabaseAnonKey);
+};
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SHARED SYSTEM PROMPT - Same as generate-mind-map.ts
@@ -221,6 +229,7 @@ ${mindMapSystemPrompt}
 // Chat-specific server function for conversational AI
 const chatInputSchema = z.object({
 	message: z.string().min(1),
+	userId: z.string().optional(),
 	projectContext: z
 		.object({
 			title: z.string(),
@@ -414,6 +423,40 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 			throw new Error("Missing OPENAI_API_KEY");
 		}
 
+		// Check credits before generation (only if user is authenticated)
+		if (data.userId) {
+			const supabase = getSupabaseClient();
+			
+			// Check user's credits
+			const { data: userCredits, error: creditsError } = await supabase
+				.from("user_credits")
+				.select("credits")
+				.eq("user_id", data.userId)
+				.single();
+
+			if (creditsError && creditsError.code !== "PGRST116") {
+				console.error("Error checking credits:", creditsError);
+				throw new Error("Failed to check credits");
+			}
+
+			// If user exists but has no credits record, create one with default
+			if (creditsError?.code === "PGRST116") {
+				const { error: insertError } = await supabase
+					.from("user_credits")
+					.insert({ user_id: data.userId, credits: 30, monthly_credits_remaining: 30 });
+				
+				if (insertError) {
+					console.error("Error creating credits:", insertError);
+					throw new Error("Failed to initialize credits");
+				}
+			}
+
+			// Check if user has enough credits (1 credit per generation)
+			if (!userCredits || userCredits.credits < 1) {
+				throw new Error("INSUFFICIENT_CREDITS");
+			}
+		}
+
 		const openai = new OpenAI({ apiKey });
 
 		// Use full system prompt for first message
@@ -512,12 +555,44 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 			cleanContent = cleanContent.trim();
 
 			const parsed = JSON.parse(cleanContent);
+			
+			// Deduct credits only if action is generate or modify (not for "none" - just answering questions)
+			if (data.userId && (parsed.action === "generate" || parsed.action === "modify")) {
+				const supabase = getSupabaseClient();
+
+				// Deduct 1 credit for this generation
+				const { data: currentCredits } = await supabase
+					.from("user_credits")
+					.select("credits")
+					.eq("user_id", data.userId)
+					.single();
+
+				if (currentCredits) {
+					await supabase
+						.from("user_credits")
+						.update({ credits: currentCredits.credits - 1 })
+						.eq("user_id", data.userId);
+
+					// Log transaction
+					await supabase.from("credit_transactions").insert({
+						user_id: data.userId,
+						amount: -1,
+						transaction_type: "usage",
+						description: `AI chat - ${parsed.action} action`,
+					});
+				}
+			}
+
 			return {
 				...parsed,
 				streamingSteps: thinkingSteps,
 			};
 		} catch (error) {
 			console.error("Failed to parse JSON:", error, fullContent);
+			// Re-throw insufficient credits error
+			if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
+				throw error;
+			}
 			throw new Error("Failed to parse AI response as JSON");
 		}
 	});
