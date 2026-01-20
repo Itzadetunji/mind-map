@@ -28,7 +28,7 @@ export function AuthButton() {
 					</Button>
 				</Link>
 				<span className="text-sm text-slate-600 dark:text-slate-400 hidden sm:block">
-					{user.email}
+					{user.user_metadata?.full_name}
 				</span>
 				<Link to="/account" className="shrink-0">
 					{user.user_metadata?.avatar_url ? (
@@ -43,11 +43,7 @@ export function AuthButton() {
 						</div>
 					)}
 				</Link>
-				<Button
-					variant="outline"
-					onClick={signOut}
-					size="sm"
-				>
+				<Button variant="outline" onClick={signOut} size="sm">
 					Sign Out
 				</Button>
 			</div>

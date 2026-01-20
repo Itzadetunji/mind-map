@@ -26,10 +26,19 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "Mind Mapper",
+				title: "Proto Map",
 			},
 		],
 		links: [
+			{
+				rel: "icon",
+				href: "/favicon.ico",
+				sizes: "any",
+			},
+			{
+				rel: "apple-touch-icon",
+				href: "/apple-touch-icon.png",
+			},
 			{
 				rel: "stylesheet",
 				href: appCss,

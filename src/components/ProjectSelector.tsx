@@ -38,7 +38,7 @@ export function ProjectSelector({
 					<div className="mb-8">
 						<Network className="w-16 h-16 mx-auto text-[#03045E] dark:text-[#0077B6] mb-4" />
 						<h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-							Mind Mapper
+							Proto Map
 						</h1>
 						<p className="text-slate-600 dark:text-slate-400">
 							Transform your app ideas into visual user flow diagrams with AI
@@ -91,7 +91,7 @@ export function ProjectSelector({
 				<div className="flex items-center justify-between mb-8">
 					<div>
 						<h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-							Your Mind Maps
+							Your Projects
 						</h1>
 						<p className="text-slate-600 dark:text-slate-400 mt-1">
 							Select a project to continue or create a new one

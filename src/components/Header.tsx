@@ -20,9 +20,13 @@ export function Header({
 		<header className="p-4 flex items-center justify-between bg-white text-black border-b border-gray-200 z-10 relative dark:bg-black dark:text-white dark:border-gray-800">
 			<div className="flex items-center gap-4">
 				<div className="flex items-center gap-2">
-					<Network className="w-8 h-8 text-black dark:text-white" />
+					<img
+						src="/assets/brand/logo-white.png"
+						alt="Proto Map"
+						className="w-8 h-8"
+					/>
 					<h1 className="text-xl font-semibold">
-						<Link to="/">Mind Mapper</Link>
+						<Link to="/">Proto Map</Link>
 					</h1>
 				</div>
 				{projectTitle && (

@@ -219,6 +219,8 @@ export const MindMap = ({
 					height: `${imageHeight}px`,
 					transform: `translate(${-nodesBounds.x + padding}px, ${-nodesBounds.y + padding}px) scale(1)`,
 				},
+				// biome-ignore lint/suspicious/noDuplicateObjectKeys: For some reason this is triggered a lint error and I don't know why
+				pixelRatio: 2,
 			});
 
 			// Download the image
