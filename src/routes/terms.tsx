@@ -9,37 +9,39 @@ export const Route = createFileRoute("/terms")({
 function TermsPage() {
 	return (
 		<main className="min-h-dvh bg-slate-50 dark:bg-slate-950 flex-1 overflow-scroll">
-			<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+			<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col gap-8">
 				{/* Header */}
-				<div className="mb-8">
+				<div className="flex flex-col gap-6">
 					<Link to="/">
-						<Button variant="ghost" className="mb-6">
+						<Button variant="ghost">
 							<ArrowLeft className="w-4 h-4 mr-2" />
 							Back to Home
 						</Button>
 					</Link>
-					<div className="flex items-center gap-3 mb-4">
-						<div className="p-3 rounded-lg bg-[#03045E]/10 dark:bg-[#0077B6]/20">
-							<FileText className="w-6 h-6 text-[#03045E] dark:text-[#0077B6]" />
+					<div className="flex flex-col gap-4">
+						<div className="flex items-center gap-3">
+							<div className="p-3 rounded-lg bg-[#03045E]/10 dark:bg-[#0077B6]/20">
+								<FileText className="w-6 h-6 text-[#03045E] dark:text-[#0077B6]" />
+							</div>
+							<h1 className="text-4xl font-bold text-slate-900 dark:text-white">
+								Terms and Conditions
+							</h1>
 						</div>
-						<h1 className="text-4xl font-bold text-slate-900 dark:text-white">
-							Terms and Conditions
-						</h1>
+						<p className="text-slate-600 dark:text-slate-400">
+							Last updated:{" "}
+							{new Date().toLocaleDateString("en-US", {
+								year: "numeric",
+								month: "long",
+								day: "numeric",
+							})}
+						</p>
 					</div>
-					<p className="text-slate-600 dark:text-slate-400">
-						Last updated:{" "}
-						{new Date().toLocaleDateString("en-US", {
-							year: "numeric",
-							month: "long",
-							day: "numeric",
-						})}
-					</p>
 				</div>
 
 				{/* Content */}
-				<div className="bg-slate-50 dark:bg-slate-950 p-8 space-y-8">
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+				<div className="bg-slate-50 dark:bg-slate-950 p-8 flex flex-col gap-8">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							Acceptance of Terms
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -50,8 +52,8 @@ function TermsPage() {
 						</p>
 					</section>
 
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							Description of Service
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -62,13 +64,13 @@ function TermsPage() {
 						</p>
 					</section>
 
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							User Accounts
 						</h2>
-						<div className="space-y-4">
-							<div>
-								<h3 className="text-xl font-medium text-slate-900 dark:text-white mb-2">
+						<div className="flex flex-col gap-4">
+							<div className="flex flex-col gap-2">
+								<h3 className="text-xl font-medium text-slate-900 dark:text-white">
 									Account Creation
 								</h3>
 								<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -77,8 +79,8 @@ function TermsPage() {
 									maintaining the confidentiality of your account credentials.
 								</p>
 							</div>
-							<div>
-								<h3 className="text-xl font-medium text-slate-900 dark:text-white mb-2">
+							<div className="flex flex-col gap-2">
+								<h3 className="text-xl font-medium text-slate-900 dark:text-white">
 									Account Responsibility
 								</h3>
 								<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -90,13 +92,13 @@ function TermsPage() {
 						</div>
 					</section>
 
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							Use of the Service
 						</h2>
-						<div className="space-y-4">
-							<div>
-								<h3 className="text-xl font-medium text-slate-900 dark:text-white mb-2">
+						<div className="flex flex-col gap-4">
+							<div className="flex flex-col gap-2">
+								<h3 className="text-xl font-medium text-slate-900 dark:text-white">
 									Permitted Use
 								</h3>
 								<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -105,14 +107,15 @@ function TermsPage() {
 									purposes, subject to these Terms.
 								</p>
 							</div>
-							<div>
-								<h3 className="text-xl font-medium text-slate-900 dark:text-white mb-2">
+							<div className="flex flex-col gap-2">
+								<h3 className="text-xl font-medium text-slate-900 dark:text-white">
 									Prohibited Use
 								</h3>
-								<p className="text-slate-700 dark:text-slate-300 leading-relaxed mb-2">
-									You agree not to:
-								</p>
-								<ul className="list-disc list-inside space-y-2 text-slate-700 dark:text-slate-300 leading-relaxed">
+								<div className="flex flex-col gap-2">
+									<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+										You agree not to:
+									</p>
+									<ul className="list-disc list-inside flex flex-col gap-2 text-slate-700 dark:text-slate-300 leading-relaxed">
 									<li>
 										Use the Service for any illegal or unauthorized purpose
 									</li>
@@ -127,18 +130,19 @@ function TermsPage() {
 										Use the Service to create content that is defamatory,
 										harassing, or violates others' rights
 									</li>
-								</ul>
+									</ul>
+								</div>
 							</div>
 						</div>
 					</section>
 
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							AI-Generated Content
 						</h2>
-						<div className="space-y-4">
-							<div>
-								<h3 className="text-xl font-medium text-slate-900 dark:text-white mb-2">
+						<div className="flex flex-col gap-4">
+							<div className="flex flex-col gap-2">
+								<h3 className="text-xl font-medium text-slate-900 dark:text-white">
 									OpenAI Integration
 								</h3>
 								<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -160,8 +164,8 @@ function TermsPage() {
 									to understand their policies.
 								</p>
 							</div>
-							<div>
-								<h3 className="text-xl font-medium text-slate-900 dark:text-white mb-2">
+							<div className="flex flex-col gap-2">
+								<h3 className="text-xl font-medium text-slate-900 dark:text-white">
 									Content Accuracy
 								</h3>
 								<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -171,8 +175,8 @@ function TermsPage() {
 									completeness, or usefulness of AI-generated mind maps.
 								</p>
 							</div>
-							<div>
-								<h3 className="text-xl font-medium text-slate-900 dark:text-white mb-2">
+							<div className="flex flex-col gap-2">
+								<h3 className="text-xl font-medium text-slate-900 dark:text-white">
 									Content Ownership
 								</h3>
 								<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -184,13 +188,13 @@ function TermsPage() {
 						</div>
 					</section>
 
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							Intellectual Property
 						</h2>
-						<div className="space-y-4">
-							<div>
-								<h3 className="text-xl font-medium text-slate-900 dark:text-white mb-2">
+						<div className="flex flex-col gap-4">
+							<div className="flex flex-col gap-2">
+								<h3 className="text-xl font-medium text-slate-900 dark:text-white">
 									Your Content
 								</h3>
 								<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -200,8 +204,8 @@ function TermsPage() {
 									the Service.
 								</p>
 							</div>
-							<div>
-								<h3 className="text-xl font-medium text-slate-900 dark:text-white mb-2">
+							<div className="flex flex-col gap-2">
+								<h3 className="text-xl font-medium text-slate-900 dark:text-white">
 									Service Intellectual Property
 								</h3>
 								<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -213,8 +217,8 @@ function TermsPage() {
 						</div>
 					</section>
 
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							Service Availability
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -226,8 +230,8 @@ function TermsPage() {
 						</p>
 					</section>
 
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							Limitation of Liability
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -239,8 +243,8 @@ function TermsPage() {
 						</p>
 					</section>
 
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							Disclaimer of Warranties
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -251,8 +255,8 @@ function TermsPage() {
 						</p>
 					</section>
 
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							Termination
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -264,8 +268,8 @@ function TermsPage() {
 						</p>
 					</section>
 
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							Changes to Terms
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -277,8 +281,8 @@ function TermsPage() {
 						</p>
 					</section>
 
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							Governing Law
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -288,8 +292,8 @@ function TermsPage() {
 						</p>
 					</section>
 
-					<section>
-						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4">
+					<section className="flex flex-col gap-4">
+						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							Contact Information
 						</h2>
 						<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
