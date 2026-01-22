@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
-import { Brain, Loader2, Search, Sparkles } from "lucide-react";
+import { Brain, Loader2, Send, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useUserCredits } from "@/hooks/credits.hooks";
 import { generateMindMap } from "@/server/generate-mind-map";
@@ -22,6 +22,7 @@ export function FloatingSearchBar({
 	const [prompt, setPrompt] = useState("");
 	const [showCreditsModal, setShowCreditsModal] = useState(false);
 	const [showErrorDialog, setShowErrorDialog] = useState(false);
+	const [showOffTopicDialog, setShowOffTopicDialog] = useState(false);
 	const { setNodes, setEdges, fitView } = useReactFlow();
 	const user = useAuthStore((state) => state.user);
 	const { data: credits } = useUserCredits();
@@ -60,7 +61,6 @@ export function FloatingSearchBar({
 		},
 		onError: (error) => {
 			console.error("Failed to generate:", error);
-			// Show credits modal if insufficient credits
 			const errorMessage =
 				error instanceof Error
 					? error.message
@@ -69,6 +69,8 @@ export function FloatingSearchBar({
 						: String(error);
 			if (errorMessage.includes("INSUFFICIENT_CREDITS")) {
 				setShowCreditsModal(true);
+			} else if (errorMessage.includes("OFF_TOPIC_REQUEST")) {
+				setShowOffTopicDialog(true);
 			} else {
 				setShowErrorDialog(true);
 			}
@@ -142,7 +144,7 @@ export function FloatingSearchBar({
 					size="icon"
 					className="mr-1.5 rounded-full hover:bg-[#03045E] hover:text-white dark:hover:bg-[#0077B6] dark:hover:text-white"
 				>
-					<Search className="w-4 h-4" />
+					<Send className="w-4 h-4" />
 				</Button>
 			</form>
 
@@ -159,6 +161,14 @@ export function FloatingSearchBar({
 				onOpenChange={setShowErrorDialog}
 				title="Generation Failed"
 				description="Failed to generate mind map. Please check the console for more details and try again."
+			/>
+
+			{/* Off-Topic Request Dialog */}
+			<ErrorDialog
+				open={showOffTopicDialog}
+				onOpenChange={setShowOffTopicDialog}
+				title="Request Not Supported"
+				description="I can only help with designing app user flows and mind maps. Please describe an app idea, feature, or user flow you'd like me to create or modify."
 			/>
 		</div>
 	);

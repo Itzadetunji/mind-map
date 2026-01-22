@@ -151,6 +151,7 @@ export const AIChatSidebar = ({
 				data: {
 					message,
 					userId: user.id,
+					projectId: project.id,
 					projectContext: {
 						title: projectTitle || "New Project",
 						prompt: project?.first_prompt || "",
@@ -339,36 +340,6 @@ export const AIChatSidebar = ({
 						</div>
 					)}
 
-					{displayMessages.length === 0 && !isHistoryLoading && (
-						<div className="text-center py-8">
-							<Sparkles className="w-10 h-10 mx-auto text-[#03045E] dark:text-[#0077B6] mb-3" />
-							<h3 className="font-medium text-slate-900 dark:text-white mb-1">
-								Ready to build your mind map
-							</h3>
-							<p className="text-sm text-slate-500 mb-4">
-								Describe your app idea and I'll create a detailed user flow map
-								for you.
-							</p>
-							<div className="space-y-2">
-								{[
-									"Create a social media app like Twitter",
-									"Build an e-commerce checkout flow",
-									"Design a fitness tracking app",
-								].map((suggestion) => (
-									<Button
-										key={suggestion}
-										variant="ghost"
-										onClick={() => setInput(suggestion)}
-										className="w-full justify-start text-sm"
-									>
-										<ChevronRight className="w-3 h-3 mr-1" />
-										{suggestion}
-									</Button>
-								))}
-							</div>
-						</div>
-					)}
-
 					{displayMessages.map((message) => (
 						<div
 							key={message.id}
@@ -456,6 +427,7 @@ export const AIChatSidebar = ({
 							type="submit"
 							size="icon"
 							disabled={!input.trim() || chatMutation.isPending}
+							className="rounded-full grid place-content-center"
 						>
 							{chatMutation.isPending ? (
 								<Loader2 className="w-4 h-4 animate-spin" />

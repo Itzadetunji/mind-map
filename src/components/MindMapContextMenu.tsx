@@ -124,19 +124,6 @@ export function MindMapContextMenu({
 					});
 					break;
 				}
-				case "add-screen-ui-node": {
-					const position = screenToFlowPosition({
-						x: menu.left,
-						y: menu.top,
-					});
-					addNodes({
-						id: crypto.randomUUID(),
-						type: "screen-ui",
-						position,
-						data: { label: "Screen UI", description: "" },
-					});
-					break;
-				}
 				case "add-custom-node": {
 					const position = screenToFlowPosition({
 						x: menu.left,
@@ -357,16 +344,12 @@ export function MindMapContextMenu({
 					break;
 				}
 				case "add-child-feature":
-				case "add-child-screen":
-				case "add-child-tech":
 				case "add-child-custom":
 				case "add-child-user-flow": {
 					if (menu.node) {
 						const nodeId = menu.node.id;
 						const typeMap: Record<string, string> = {
 							"add-child-feature": "feature",
-							"add-child-screen": "screen-ui",
-							"add-child-tech": "feature",
 							"add-child-custom": "custom-node",
 							"add-child-user-flow": "user-flow",
 						};
@@ -560,15 +543,13 @@ export function MindMapContextMenu({
 
 				case "type-core":
 				case "type-flow":
-				case "type-feature":
-				case "type-screen": {
+				case "type-feature": {
 					if (menu.node) {
 						const nodeId = menu.node.id;
 						const typeMap: Record<string, string> = {
 							"type-core": "core-concept",
 							"type-flow": "user-flow",
 							"type-feature": "feature",
-							"type-screen": "screen-ui",
 						};
 						const type = typeMap[actionName];
 						setNodes((nodes) =>
@@ -615,11 +596,6 @@ export function MindMapContextMenu({
 					action: () => handleAction("add-child-user-flow"),
 				},
 				{
-					label: "Add Screen UI",
-					icon: <Plus className="w-4 h-4" />,
-					action: () => handleAction("add-child-screen"),
-				},
-				{
 					label: "Add Custom Node",
 					icon: <Plus className="w-4 h-4" />,
 					action: () => handleAction("add-child-custom"),
@@ -652,11 +628,6 @@ export function MindMapContextMenu({
 							label: "Add User Flow",
 							icon: <Plus className="w-4 h-4" />,
 							action: () => handleAction("add-user-flow-node"),
-						},
-						{
-							label: "Add Screen UI",
-							icon: <Plus className="w-4 h-4" />,
-							action: () => handleAction("add-screen-ui-node"),
 						},
 						{
 							label: "Add Custom Node",
@@ -746,11 +717,6 @@ export function MindMapContextMenu({
 					action: () => handleAction("add-child-user-flow"),
 				},
 				{
-					label: "Add Screen UI",
-					icon: <Smartphone className="w-4 h-4" />,
-					action: () => handleAction("add-child-screen"),
-				},
-				{
 					label: "Add Condition",
 					icon: <GitBranch className="w-4 h-4" />,
 					action: () => handleAction("add-child-condition"),
@@ -802,14 +768,6 @@ export function MindMapContextMenu({
 							action: () => handleAction("add-child-feature"),
 						},
 						{
-							label: "Screen",
-							action: () => handleAction("add-child-screen"),
-						},
-						{
-							label: "Tech Component",
-							action: () => handleAction("add-child-tech"),
-						},
-						{
 							label: "Custom",
 							action: () => handleAction("add-child-custom"),
 						},
@@ -822,14 +780,14 @@ export function MindMapContextMenu({
 				},
 				{
 					label: "Change Type",
+
 					submenu: [
 						{
-							label: "Core Concept",
+							label: "Core Concept2",
 							action: () => handleAction("type-core"),
 						},
 						{ label: "User Flow", action: () => handleAction("type-flow") },
 						{ label: "Feature", action: () => handleAction("type-feature") },
-						{ label: "Screen UI", action: () => handleAction("type-screen") },
 					],
 				},
 				{
@@ -908,21 +866,21 @@ export function MindMapContextMenu({
 			} else if (menu.node.type === "screen-ui") {
 				specificItems.push(
 					{ separator: true },
-					{
-						label: "Generate Mockup",
-						icon: <Smartphone className="w-4 h-4" />,
-						action: () => handleAction("screen-generate"),
-					},
-					{
-						label: "Add UI Elements",
-						icon: <Plus className="w-4 h-4" />,
-						action: () => handleAction("screen-add-elements"),
-					},
-					{
-						label: "Preview in Device Frame",
-						icon: <Eye className="w-4 h-4" />,
-						action: () => handleAction("screen-preview"),
-					},
+					// {
+					// 	label: "Generate Mockup",
+					// 	icon: <Smartphone className="w-4 h-4" />,
+					// 	action: () => handleAction("screen-generate"),
+					// },
+					// {
+					// 	label: "Add UI Elements",
+					// 	icon: <Plus className="w-4 h-4" />,
+					// 	action: () => handleAction("screen-add-elements"),
+					// },
+					// {
+					// 	label: "Preview in Device Frame",
+					// 	icon: <Eye className="w-4 h-4" />,
+					// 	action: () => handleAction("screen-preview"),
+					// },
 				);
 			}
 

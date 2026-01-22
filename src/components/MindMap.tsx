@@ -38,7 +38,6 @@ import ConditionNode from "./nodes/ConditionNode";
 import CoreConceptNode from "./nodes/CoreConceptNode";
 import CustomNode from "./nodes/CustomNode";
 import FeatureNode from "./nodes/FeatureNode";
-import ScreenUiNode from "./nodes/ScreenUiNode";
 import UserFlowNode from "./nodes/UserFlowNode";
 import { ErrorDialog } from "./shared/ErrorDialog";
 import { Button } from "./ui/button";
@@ -48,7 +47,7 @@ const nodeTypes = {
 	"core-concept": CoreConceptNode,
 	"user-flow": UserFlowNode,
 	feature: FeatureNode,
-	"screen-ui": ScreenUiNode,
+	"screen-ui": FeatureNode, // screen-ui now uses FeatureNode (merged)
 	condition: ConditionNode,
 	"custom-node": CustomNode,
 };

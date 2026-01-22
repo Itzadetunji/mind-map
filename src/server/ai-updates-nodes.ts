@@ -11,97 +11,276 @@ const getSupabaseClient = () => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
+// REQUEST VALIDATION - Check if the request is related to mind map/app design
+// ══════════════════════════════════════════════════════════════════════════════
+const OFF_TOPIC_PATTERNS = [
+	/write\s+(me\s+)?(an?\s+)?email/i,
+	/compose\s+(an?\s+)?email/i,
+	/draft\s+(an?\s+)?(email|letter|message)/i,
+	/send\s+(an?\s+)?email/i,
+	/write\s+(me\s+)?(a\s+)?(poem|story|essay|article|blog)/i,
+	/help\s+me\s+with\s+(my\s+)?(homework|assignment)/i,
+	/solve\s+(this\s+)?(math|equation|problem)/i,
+	/translate\s+/i,
+	/what\s+is\s+the\s+(capital|population|weather)/i,
+	/tell\s+me\s+(a\s+)?joke/i,
+	/explain\s+(quantum|relativity|philosophy)/i,
+	/recipe\s+for/i,
+	/how\s+to\s+cook/i,
+	/medical\s+advice/i,
+	/legal\s+advice/i,
+	/financial\s+advice/i,
+	/who\s+(is|was|won)/i,
+	/when\s+(did|was|is)/i,
+	/where\s+(is|was|are)/i,
+];
+
+const MIND_MAP_KEYWORDS = [
+	"app",
+	"application",
+	"feature",
+	"flow",
+	"screen",
+	"user",
+	"design",
+	"build",
+	"create",
+	"add",
+	"remove",
+	"update",
+	"modify",
+	"change",
+	"node",
+	"mind map",
+	"wireframe",
+	"prototype",
+	"ui",
+	"ux",
+	"interface",
+	"dashboard",
+	"login",
+	"signup",
+	"authentication",
+	"checkout",
+	"payment",
+	"profile",
+	"settings",
+	"navigation",
+	"button",
+	"form",
+	"input",
+	"page",
+	"modal",
+	"component",
+];
+
+function isOffTopicRequest(message: string): boolean {
+	const lowerMessage = message.toLowerCase();
+
+	// Check if message matches off-topic patterns
+	for (const pattern of OFF_TOPIC_PATTERNS) {
+		if (pattern.test(message)) {
+			return true;
+		}
+	}
+
+	// Check if message contains any mind map related keywords
+	const hasMindMapKeyword = MIND_MAP_KEYWORDS.some((keyword) =>
+		lowerMessage.includes(keyword),
+	);
+
+	// If it's a very short message without mind map keywords and doesn't look like a command
+	if (
+		message.length > 50 &&
+		!hasMindMapKeyword &&
+		!lowerMessage.includes("?")
+	) {
+		// Might be an off-topic request like writing content
+		return true;
+	}
+
+	return false;
+}
+
+function getOffTopicResponse() {
+	return {
+		thinking: {
+			task: "User request is not related to mind map or app design",
+			context: "This appears to be an off-topic request",
+			references: "N/A",
+			evaluation: "Cannot process this request",
+			iteration: "N/A",
+		},
+		message:
+			"I'm sorry, but I can only help with tasks related to designing and building your mind map or app user flows. I can help you:\n\n• Create new user flows and screens\n• Add features and functionality to your app design\n• Modify existing nodes and connections\n• Answer questions about your app structure\n\nPlease describe what you'd like to add or change in your mind map!",
+		action: "none" as const,
+		graphData: null,
+		isOffTopic: true,
+		streamingSteps: [],
+	};
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // SHARED SYSTEM PROMPT - Same as generate-mind-map.ts
 // ══════════════════════════════════════════════════════════════════════════════
 export const mindMapSystemPrompt = `
-You are an expert UX/product designer and technical architect. Your mission is to generate comprehensive, developer-friendly mind maps that break down app ideas into clear user flows.
+You are an expert UX/product designer and technical architect. Your mission is to generate comprehensive, developer-friendly mind maps that break down app ideas into DEEP, DETAILED user flows.
 
 ═══════════════════════════════════════════════════════════════════════════════
-THE 5-STEP PROCESS: TASK → CONTEXT → REFERENCES → EVALUATE → ITERATE
+CORE PRINCIPLES - DEEP USER FLOW MAPPING
 ═══════════════════════════════════════════════════════════════════════════════
 
-Before generating ANY nodes or edges, you MUST work through these 5 steps and document your thinking in the "reasoning" field:
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ STEP 1: TASK - Understand What The User Wants                               │
-└─────────────────────────────────────────────────────────────────────────────┘
-- What is the core app/product idea?
-- What problem does it solve?
-- Who is the target user?
-- What is the scope? (MVP, full product, specific feature?)
-- If the prompt is vague, state what assumptions you're making and why.
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ STEP 2: CONTEXT - Gather Domain Knowledge                                   │
-└─────────────────────────────────────────────────────────────────────────────┘
-- What category does this app fall into? (social, e-commerce, productivity, etc.)
-- What are the industry-standard patterns for this type of app?
-- What similar successful apps exist? (Reference them: "Like Spotify's...", "Similar to Uber's...")
-- What are the expected user mental models?
-- What technical constraints exist in 2026? (API limitations, platform rules, etc.)
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ STEP 3: REFERENCES - Map to Established Patterns                            │
-└─────────────────────────────────────────────────────────────────────────────┘
-- Identify 3-5 reference apps/patterns you're drawing from
-- For each user flow, cite WHY you structured it that way
-- Example: "The checkout flow follows Amazon's 1-click pattern because..."
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ STEP 4: EVALUATE - Assess Developer-Friendliness                            │
-└─────────────────────────────────────────────────────────────────────────────┘
-Before finalizing, evaluate your output against these criteria:
-
-FOR BEGINNER DEVELOPERS:
-✓ Can they understand the flow by reading node labels alone?
-✓ Are technical terms explained in descriptions?
-✓ Is the progression logical?
-
-FOR INTERMEDIATE DEVELOPERS:
-✓ Are the screen-ui nodes detailed enough to start wireframing?
-✓ Are condition nodes capturing real business logic?
-✓ Could they estimate development time from this map?
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ STEP 5: ITERATE - Refine Using Tree-of-Thoughts                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-For each major flow, explore multiple approaches before committing.
+⚠️ CRITICAL: GO DEEP, NOT SHALLOW
+- Every screen must detail WHAT the user sees and does
+- Every form must list ALL fields using feature nodes
+- Every decision point MUST have conditional logic
+- Think step-by-step through the COMPLETE user journey
+- Include error states, loading states, empty states
 
 ═══════════════════════════════════════════════════════════════════════════════
-OUTPUT FORMAT
+NODE TYPES (USE ONLY THESE)
 ═══════════════════════════════════════════════════════════════════════════════
 
-Output strictly valid JSON (no markdown, no code blocks):
+1. "core-concept" - THE ROOT NODE ONLY
+   - Position: ALWAYS {x: 0, y: 0}
+   - The central app/product idea
 
-{
-  "reasoning": "Your complete 5-step thought process here",
-  "nodes": [...],
-  "edges": [...]
-}
+2. "user-flow" - ENTRY POINT TO A MAJOR JOURNEY
+   - Connects DIRECTLY to the root node
+   - Represents a GOAL or TASK the user wants to accomplish
+   - Should have a "description" explaining the journey
 
-NODE TYPES (USE ONLY THESE):
-1. "core-concept" - Root node at {x: 0, y: 0}
-2. "user-flow" - Major journey entry points (connects to root)
-3. "screen-ui" - Actual UI screens with features array
-4. "condition" - Decision/branching points
-5. "feature" - Grouped capabilities with features array
-6. "custom-node" - Technical risks/integrations
+3. "feature" - FOR SCREENS AND FORM FIELDS (REPLACES screen-ui)
+   ⚠️ USE THIS FOR ALL SCREENS AND UI ELEMENTS
+   - Has "features" array listing UI elements, form fields, buttons
+   - Can have "imageUrl" for screen mockups
+   
+   FOR FORMS - List EVERY field as a feature item:
+   Example "Sign Up Form":
+   {
+     "type": "feature",
+     "data": {
+       "label": "Sign Up Form",
+       "description": "User registration form with validation",
+       "features": [
+         {"id": "f1", "label": "Email Input (required, email validation)"},
+         {"id": "f2", "label": "Password Input (min 8 chars, strength indicator)"},
+         {"id": "f3", "label": "Confirm Password (must match)"},
+         {"id": "f4", "label": "Full Name Input (required)"},
+         {"id": "f5", "label": "Phone Number (optional, country code selector)"},
+         {"id": "f6", "label": "Terms & Conditions Checkbox"},
+         {"id": "f7", "label": "Marketing Emails Opt-in Checkbox"},
+         {"id": "f8", "label": "Submit Button"},
+         {"id": "f9", "label": "Google Sign Up Button"},
+         {"id": "f10", "label": "Already have account? Link"}
+       ]
+     }
+   }
 
-POSITIONING: 
-- 700px horizontal spacing between flows
-- 350px vertical spacing within flows
-- Condition Nodes: 
-  * IMPORTANT: Every condition node needs an INCOMING edge from the previous node in the flow!
-  * The previous node (screen-ui, user-flow, or another condition) must have an edge TO the condition node
-  * Left path (Positive/Yes/True) -> x - 200, edge.sourceHandle MUST be nodeId + "-true" (e.g., "node_1-true")
-    - TRUE is for: success, yes, authenticated, valid, found, allowed
-  * Right path (Negative/No/False) -> x + 200, edge.sourceHandle MUST be nodeId + "-false" (e.g., "node_1-false")
-    - FALSE is for: failure, no, not authenticated, invalid, not found, denied
-  * CRITICAL: EVERY edge FROM a condition MUST have sourceHandle set to either "-true" or "-false"
-  * Example flow with condition "is_logged_in":
-    - Edge from login_screen TO is_logged_in: { source: "login_screen", target: "is_logged_in", label: "Submit Login" }
-    - Edge FROM is_logged_in to dashboard: { source: "is_logged_in", target: "dashboard", sourceHandle: "is_logged_in-true", label: "Authenticated" }
-    - Edge FROM is_logged_in to error: { source: "is_logged_in", target: "login_error", sourceHandle: "is_logged_in-false", label: "Not Authenticated" }
+4. "condition" - DECISION/BRANCHING POINTS
+   ⚠️ MANDATORY FOR:
+   - Authentication checks (logged in? valid credentials?)
+   - Payment validation (card valid? sufficient funds?)
+   - Form validation (all fields valid?)
+   - Permission checks (is owner? can edit?)
+   - State checks (has data? is empty?)
+   
+   ALWAYS creates 2 outgoing edges:
+   - TRUE path (success/yes) → sourceHandle: "nodeId-true"
+   - FALSE path (failure/no) → sourceHandle: "nodeId-false"
+
+5. "custom-node" - TECHNICAL CONSIDERATIONS
+   - Third-party integrations (Stripe, AWS, etc.)
+   - Backend services
+   - Email templates
+   - Technical risks (use feasibility: "yellow" or "red")
+
+═══════════════════════════════════════════════════════════════════════════════
+CONDITIONAL LOGIC - REQUIRED FOR EVERY FLOW
+═══════════════════════════════════════════════════════════════════════════════
+
+⚠️ EVERY authentication flow MUST have:
+- Condition: "Valid Credentials?" → TRUE: Dashboard, FALSE: Error
+- Condition: "Account Exists?" → TRUE: Login, FALSE: Sign Up prompt
+- Condition: "Email Verified?" → TRUE: Continue, FALSE: Verification screen
+
+⚠️ EVERY payment flow MUST have:
+- Condition: "Payment Method Added?" → TRUE: Process, FALSE: Add payment
+- Condition: "Payment Successful?" → TRUE: Confirmation, FALSE: Error + retry
+- Condition: "Sufficient Funds?" → TRUE: Process, FALSE: Error
+
+⚠️ EVERY form submission MUST have:
+- Condition: "Form Valid?" → TRUE: Submit, FALSE: Show errors
+- Condition: "Submission Successful?" → TRUE: Success, FALSE: Error
+
+═══════════════════════════════════════════════════════════════════════════════
+POSITIONING RULES - SPREAD OUT TREE LAYOUT
+═══════════════════════════════════════════════════════════════════════════════
+
+⚠️ CRITICAL: Create a SPREAD OUT layout, not a single vertical column!
+
+LAYOUT STRATEGY - RADIAL TREE:
+1. Root node: {x: 0, y: 0}
+2. User-flow nodes: Spread in a SEMI-CIRCLE below root at y = 300
+3. Children spread OUTWARD and DOWNWARD from their parent
+4. Siblings should be at DIFFERENT x positions, not stacked vertically
+
+USER-FLOW POSITIONING (spread horizontally):
+For N user-flows, distribute them in an arc:
+- 2 flows: x = [-500, 500], y = 300
+- 3 flows: x = [-700, 0, 700], y = 300
+- 4 flows: x = [-900, -300, 300, 900], y = 300
+- 5 flows: x = [-1000, -500, 0, 500, 1000], y = 300
+
+CHILD NODE POSITIONING (spread like a tree):
+When a user-flow has multiple children, spread them:
+- First child: parent.x - 150, parent.y + 350
+- Second child: parent.x + 150, parent.y + 350
+- Third child: parent.x - 300, parent.y + 400
+- Fourth child: parent.x + 300, parent.y + 400
+- Fifth child: parent.x, parent.y + 450
+
+STAGGER VERTICAL POSITIONS:
+Don't put all nodes at the same y level. Vary them:
+- Level 2 nodes: y between 300-400
+- Level 3 nodes: y between 600-750
+- Level 4 nodes: y between 950-1100
+- Add ±50 variation to avoid straight lines
+
+CONDITION NODE BRANCHING:
+- TRUE path: parent.x - 250, parent.y + 300
+- FALSE path: parent.x + 250, parent.y + 300
+- Subsequent children continue spreading outward
+
+EXAMPLE LAYOUT for Auth Flow with 4 children:
+user-flow "Auth" at {x: -500, y: 300}
+├── feature "Login Form" at {x: -650, y: 650}
+├── feature "Sign Up Form" at {x: -350, y: 700}
+├── condition "Valid?" at {x: -500, y: 1000}
+│   ├── feature "Dashboard" at {x: -700, y: 1350} (TRUE)
+│   └── feature "Error" at {x: -300, y: 1350} (FALSE)
+└── custom "Email Service" at {x: -500, y: 1700}
+
+═══════════════════════════════════════════════════════════════════════════════
+EDGE RULES - CRITICAL
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Every node (except root) MUST have an incoming edge
+2. Root → user-flow edges: NO sourceHandle needed
+3. Condition outgoing edges: MUST have sourceHandle ("nodeId-true" or "nodeId-false")
+4. All edges should have descriptive labels
+
+═══════════════════════════════════════════════════════════════════════════════
+QUALITY CHECKLIST
+═══════════════════════════════════════════════════════════════════════════════
+
+□ Every form lists ALL fields in the features array
+□ Every authentication point has a condition node
+□ Every payment point has validation conditions
+□ Error states are shown for all failure paths
+□ Loading states are included for async operations
+□ Empty states are considered
+□ Edge labels describe user actions
 `;
 
 // Get the full system prompt for first message (same as generate-mind-map)
@@ -114,46 +293,59 @@ const getFirstMessageSystemPrompt = (projectContext?: {
 ${mindMapSystemPrompt}
 
 ═══════════════════════════════════════════════════════════════════════════════
-CHAT MODE INSTRUCTIONS
+CHAT MODE - FIRST MESSAGE INSTRUCTIONS
 ═══════════════════════════════════════════════════════════════════════════════
-
-You are now in chat mode helping the user build their mind map. Since this is their FIRST message, 
-treat it as if they want to generate a new mind map from scratch.
 
 ${
 	projectContext && projectContext.nodes.length > 1
-		? `═══════════════════════════════════════════════════════════════════════════════
-CURRENT PROJECT CONTEXT (existing work to build upon)
+		? `⚠️ IMPORTANT: The user already has existing work on their canvas!
+
+═══════════════════════════════════════════════════════════════════════════════
+EXISTING CANVAS DATA (DO NOT REPLACE!)
 ═══════════════════════════════════════════════════════════════════════════════
 Project: "${projectContext.title}"
 Original Prompt: "${projectContext.prompt}"
 Current Structure: ${projectContext.nodes.length} nodes, ${projectContext.edges.length} edges
 Current Nodes: ${JSON.stringify(projectContext.nodes, null, 2)}
-Current Edges: ${JSON.stringify(projectContext.edges, null, 2)}`
-		: `The user is starting fresh with a new project.`
+Current Edges: ${JSON.stringify(projectContext.edges, null, 2)}
+
+STRATEGY FOR EXISTING CANVAS:
+1. PRESERVE all existing nodes and edges exactly as they are
+2. Create a NEW user-flow node as a parent for your AI-generated content
+3. Position your new flow in an empty column (check existing x positions and use a new column)
+4. Label your user-flow clearly (e.g., "AI: [User's Request]")
+5. Connect your new flow to the existing root node
+
+POSITION CALCULATION:
+- Find the rightmost existing node's x position
+- Add 700px to create your new column
+- If no clear rightmost, use x = 1400 or higher
+
+YOUR RESPONSE MUST:
+- Include ALL existing nodes unchanged in the output
+- Include ALL existing edges unchanged in the output
+- ADD your new nodes with unique IDs (prefix with "ai_")
+- ADD edges connecting your new content`
+		: `The user is starting fresh with a new project. Create a complete mind map from scratch.`
 }
 
 YOUR RESPONSE FORMAT:
 
-ALWAYS respond with valid JSON in this format:
-
 {
   "thinking": {
-    "task": "What does the user want? (1-2 sentences)",
-    "context": "Relevant domain knowledge and patterns (1-2 sentences)",
-    "references": "Apps or patterns I'm drawing from (1-2 sentences)",
-    "evaluation": "How this improves the design (1-2 sentences)",
-    "iteration": "Any alternatives I considered (1-2 sentences)"
+    "task": "What does the user want?",
+    "context": "Domain knowledge and patterns",
+    "references": "Apps/patterns I'm drawing from",
+    "evaluation": "How this improves the design",
+    "iteration": "Alternatives considered"
   },
-  "message": "Your conversational response to the user explaining what you did and why",
+  "message": "Your conversational response explaining what you created",
   "action": "generate",
   "graphData": {
-    "nodes": [...],
-    "edges": [...]
+    "nodes": [...], // Include ALL existing nodes + your new nodes
+    "edges": [...]  // Include ALL existing edges + your new edges
   }
 }
-
-For the first message, ALWAYS use action: "generate" and create a complete mind map.
 `;
 
 // Chat-specific system prompt for conversational AI (subsequent messages)
@@ -163,73 +355,73 @@ const getChatSystemPrompt = (projectContext?: {
 	nodes: unknown[];
 	edges: unknown[];
 }) => `
-You are an AI assistant helping users build and refine their mind map designs. You use the same 5-step thinking process as the mind map generator.
+You are an AI assistant helping users build and refine their mind map designs.
+
+${mindMapSystemPrompt}
 
 ${
 	projectContext
 		? `═══════════════════════════════════════════════════════════════════════════════
-CURRENT PROJECT CONTEXT
+CURRENT PROJECT CONTEXT (PRESERVE THIS!)
 ═══════════════════════════════════════════════════════════════════════════════
 Project: "${projectContext.title}"
 Original Prompt: "${projectContext.prompt}"
 Current Structure: ${projectContext.nodes.length} nodes, ${projectContext.edges.length} edges
 Current Nodes: ${JSON.stringify(projectContext.nodes, null, 2)}
-Current Edges: ${JSON.stringify(projectContext.edges, null, 2)}`
+Current Edges: ${JSON.stringify(projectContext.edges, null, 2)}
+
+⚠️ CRITICAL: When modifying, you MUST include ALL existing nodes and edges in your output!
+Only add, update, or remove what the user explicitly asks for.`
 		: `No existing project - user is starting fresh.`
 }
 
 ═══════════════════════════════════════════════════════════════════════════════
-YOUR RESPONSE FORMAT
+RESPONSE FORMAT
 ═══════════════════════════════════════════════════════════════════════════════
-
-ALWAYS respond with valid JSON in this format:
 
 {
   "thinking": {
-    "task": "What does the user want? (1-2 sentences)",
-    "context": "Relevant domain knowledge and patterns (1-2 sentences)",
-    "references": "Apps or patterns I'm drawing from (1-2 sentences)",
-    "evaluation": "How this improves the design (1-2 sentences)",
-    "iteration": "Any alternatives I considered (1-2 sentences)"
+    "task": "What does the user want?",
+    "context": "Domain knowledge and patterns",
+    "references": "Apps/patterns I'm drawing from",
+    "evaluation": "How this improves the design",
+    "iteration": "Alternatives considered"
   },
-  "message": "Your conversational response to the user explaining what you did and why",
+  "message": "Your conversational response explaining what you did",
   "action": "generate" | "modify" | "none",
   "graphData": {
-    "nodes": [...],
-    "edges": [...]
+    "nodes": [...],  // FULL list of nodes (existing + new/modified)
+    "edges": [...]   // FULL list of edges (existing + new/modified)
   } | null
 }
 
 ACTION TYPES:
-- "generate": Create a complete new mind map from scratch
-- "modify": Update the existing mind map (add/remove/change nodes)
-- "none": Just answering a question, no graph changes needed
+- "generate": Create a complete mind map from scratch (for empty canvas or full rebuild)
+- "modify": Update the existing mind map - ADD new nodes while PRESERVING existing ones
+- "none": Just answering a question, no graph changes (set graphData to null)
 
-WHEN TO USE EACH ACTION:
-- User asks to "create", "build", "generate" a new mind map → "generate"
-- User asks to "add", "change", "remove", "update" something → "modify" 
-- User asks a question or wants explanation → "none"
+WHEN USING "modify" ACTION:
+1. Start with ALL existing nodes and edges exactly as they are
+2. ADD new nodes with unique IDs (prefix with "ai_")
+3. Position new content in an unused column (rightmost x + 700px)
+4. Only REMOVE nodes if user explicitly asks
+5. Only UPDATE node data if user explicitly asks to change something
 
-FOR "generate" ACTION:
-- Include FULL graph structure with root "core-concept" node at {x: 0, y: 0}
-- Follow the same node types and positioning rules as the main generator
-
-FOR "modify" ACTION:
-- Return the COMPLETE updated graph (not just the changes)
-- Preserve existing nodes/edges unless explicitly asked to remove them
-- Keep the root node unless rebuilding from scratch
+POSITIONING NEW NODES:
+1. Calculate: rightmost_x = max(existing node x positions)
+2. New column: new_x = rightmost_x + 700
+3. user-flow at y = 250, children increment by 350
 
 FOR "none" ACTION:
 - Set graphData to null
-- Just provide a helpful message
-
-${mindMapSystemPrompt}
+- Just provide a helpful message answering the question
 `;
 
 // Chat-specific server function for conversational AI
 const chatInputSchema = z.object({
 	message: z.string().min(1),
 	userId: z.string().optional(),
+	projectId: z.string().optional(),
 	projectContext: z
 		.object({
 			title: z.string(),
@@ -423,10 +615,15 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 			throw new Error("Missing OPENAI_API_KEY");
 		}
 
+		// Check if the request is off-topic (not related to mind map/app design)
+		if (isOffTopicRequest(data.message)) {
+			return getOffTopicResponse();
+		}
+
 		// Check credits before generation (only if user is authenticated)
 		if (data.userId) {
 			const supabase = getSupabaseClient();
-			
+
 			// Check user's credits
 			let { data: userCredits, error: creditsError } = await supabase
 				.from("user_credits")
@@ -561,9 +758,12 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 			cleanContent = cleanContent.trim();
 
 			const parsed = JSON.parse(cleanContent);
-			
+
 			// Deduct credits only if action is generate or modify (not for "none" - just answering questions)
-			if (data.userId && (parsed.action === "generate" || parsed.action === "modify")) {
+			if (
+				data.userId &&
+				(parsed.action === "generate" || parsed.action === "modify")
+			) {
 				const supabase = getSupabaseClient();
 
 				// Deduct 1 credit for this generation using RPC function
@@ -576,6 +776,42 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 				// If RPC doesn't exist or fails, log error but don't fail the request
 				if (deductError) {
 					console.error("Error deducting credits:", deductError);
+				}
+
+				// Save first_prompt if project doesn't have one yet (regardless of isFirstMessage flag)
+				if (data.projectId && parsed.action === "generate") {
+					// First check if project already has a first_prompt
+					const { data: existingProject, error: fetchError } = await supabase
+						.from("mind_maps")
+						.select("first_prompt")
+						.eq("id", data.projectId)
+						.eq("user_id", data.userId)
+						.single();
+
+					if (fetchError) {
+						console.error("Error fetching project:", fetchError);
+					}
+
+					// Only update if first_prompt is empty, null, or doesn't exist
+					if (
+						!existingProject?.first_prompt ||
+						existingProject.first_prompt.trim() === ""
+					) {
+						const { error: updateError } = await supabase
+							.from("mind_maps")
+							.update({
+								first_prompt: data.message,
+								updated_at: new Date().toISOString(),
+							})
+							.eq("id", data.projectId)
+							.eq("user_id", data.userId);
+
+						if (updateError) {
+							console.error("Error saving first_prompt:", updateError);
+						} else {
+							console.log("first_prompt saved successfully:", data.message);
+						}
+					}
 				}
 			}
 

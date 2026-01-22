@@ -10,6 +10,105 @@ const getSupabaseClient = () => {
 	return createClient(supabaseUrl, supabaseAnonKey);
 };
 
+// ══════════════════════════════════════════════════════════════════════════════
+// REQUEST VALIDATION - Check if the request is related to mind map/app design
+// ══════════════════════════════════════════════════════════════════════════════
+const OFF_TOPIC_PATTERNS = [
+	/write\s+(me\s+)?(an?\s+)?email/i,
+	/compose\s+(an?\s+)?email/i,
+	/draft\s+(an?\s+)?(email|letter|message)/i,
+	/send\s+(an?\s+)?email/i,
+	/write\s+(me\s+)?(a\s+)?(poem|story|essay|article|blog)/i,
+	/help\s+me\s+with\s+(my\s+)?(homework|assignment)/i,
+	/solve\s+(this\s+)?(math|equation|problem)/i,
+	/translate\s+/i,
+	/what\s+is\s+the\s+(capital|population|weather)/i,
+	/tell\s+me\s+(a\s+)?joke/i,
+	/explain\s+(quantum|relativity|philosophy)/i,
+	/recipe\s+for/i,
+	/how\s+to\s+cook/i,
+	/medical\s+advice/i,
+	/legal\s+advice/i,
+	/financial\s+advice/i,
+	/who\s+(is|was|won)/i,
+	/when\s+(did|was|is)/i,
+	/where\s+(is|was|are)/i,
+];
+
+const MIND_MAP_KEYWORDS = [
+	"app",
+	"application",
+	"feature",
+	"flow",
+	"screen",
+	"user",
+	"design",
+	"build",
+	"create",
+	"add",
+	"remove",
+	"update",
+	"modify",
+	"change",
+	"node",
+	"mind map",
+	"wireframe",
+	"prototype",
+	"ui",
+	"ux",
+	"interface",
+	"dashboard",
+	"login",
+	"signup",
+	"authentication",
+	"checkout",
+	"payment",
+	"profile",
+	"settings",
+	"navigation",
+	"button",
+	"form",
+	"input",
+	"page",
+	"modal",
+	"component",
+	"website",
+	"platform",
+	"system",
+	"service",
+	"product",
+	"mobile",
+	"web",
+	"saas",
+	"e-commerce",
+	"ecommerce",
+	"social",
+	"marketplace",
+];
+
+function isOffTopicRequest(message: string): boolean {
+	const lowerMessage = message.toLowerCase();
+
+	// Check if message matches off-topic patterns
+	for (const pattern of OFF_TOPIC_PATTERNS) {
+		if (pattern.test(message)) {
+			return true;
+		}
+	}
+
+	// Check if message contains any mind map related keywords
+	const hasMindMapKeyword = MIND_MAP_KEYWORDS.some((keyword) =>
+		lowerMessage.includes(keyword),
+	);
+
+	// If it's a longer message without mind map keywords, likely off-topic
+	if (message.length > 100 && !hasMindMapKeyword) {
+		return true;
+	}
+
+	return false;
+}
+
 const generateMindMapInputSchema = z.object({
 	prompt: z.string().min(1, "Prompt is required"),
 	userId: z.string().optional(),
@@ -33,6 +132,11 @@ export const generateMindMap = createServerFn({ method: "POST" })
 			throw new Error("Missing OPENAI_API_KEY in environment variables");
 		}
 
+		// Check if the request is off-topic (not related to mind map/app design)
+		if (isOffTopicRequest(data.prompt)) {
+			throw new Error("OFF_TOPIC_REQUEST");
+		}
+
 		const openai = new OpenAI({ apiKey });
 
 		// Build context for existing canvas data if provided
@@ -40,10 +144,9 @@ export const generateMindMap = createServerFn({ method: "POST" })
 			data.currentCanvas?.nodes && data.currentCanvas.nodes.length > 0
 				? `
 ═══════════════════════════════════════════════════════════════════════════════
-EXISTING CANVAS DATA (Build upon this!)
+⚠️ CRITICAL: EXISTING CANVAS DATA - DO NOT REPLACE!
 ═══════════════════════════════════════════════════════════════════════════════
-The user already has work on their canvas. Use this as context and build upon it.
-Do NOT discard their existing work - integrate it with the new request.
+The user already has work on their canvas. You MUST preserve their work!
 
 Current Nodes (${data.currentCanvas.nodes.length}):
 ${JSON.stringify(data.currentCanvas.nodes, null, 2)}
@@ -51,11 +154,24 @@ ${JSON.stringify(data.currentCanvas.nodes, null, 2)}
 Current Edges (${data.currentCanvas.edges?.length || 0}):
 ${JSON.stringify(data.currentCanvas.edges || [], null, 2)}
 
-IMPORTANT: 
-- Preserve the user's existing node IDs and positions where possible
-- Add new nodes that complement the existing structure
-- Maintain connections to existing nodes when relevant
-- If the user is asking to regenerate, you may replace, but prefer to enhance
+═══════════════════════════════════════════════════════════════════════════════
+REQUIRED STRATEGY FOR EXISTING CANVAS:
+═══════════════════════════════════════════════════════════════════════════════
+1. INCLUDE ALL existing nodes in your output EXACTLY as they are
+2. INCLUDE ALL existing edges in your output EXACTLY as they are
+3. CREATE a new user-flow node as the parent for YOUR generated content
+4. POSITION your new flow in an EMPTY column:
+   - Calculate: rightmost_x = max(existing node x positions)
+   - Your new column starts at: rightmost_x + 700
+5. Use unique IDs for new nodes (prefix with "ai_")
+6. Connect your new user-flow to the root node
+
+EXAMPLE: If existing nodes have x positions [0, 700], your new content goes at x = 1400
+
+YOUR OUTPUT MUST CONTAIN:
+- ALL ${data.currentCanvas.nodes.length} existing nodes (unchanged)
+- ALL ${data.currentCanvas.edges?.length || 0} existing edges (unchanged)
+- PLUS your new nodes and edges for the user's request
 ═══════════════════════════════════════════════════════════════════════════════
 `
 				: "";
@@ -415,14 +531,27 @@ NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
    - "Share Link Drawer" - bottom sheet for sharing options
    - "Folder Selection Modal" - modal for choosing folder
    
-   FEATURES ARRAY - BE EXHAUSTIVE! List:
-   - Every form input with its type (Email Input, Password Field, Search Box)
+   ⚠️ CRITICAL: FEATURES ARRAY MUST LIST EVERY FORM FIELD!
+   For forms, list EACH field with validation rules:
+   
+   FORM FIELD FORMAT: "[Field Name] Input ([validation rules])"
+   Examples:
+   - "Email Input (required, valid email format)"
+   - "Password Input (required, min 8 chars, 1 uppercase, 1 number)"
+   - "Confirm Password Input (must match password)"
+   - "Phone Number Input (optional, country code selector)"
+   - "Date of Birth Picker (required, must be 18+)"
+   - "Profile Photo Upload (optional, max 5MB, jpg/png)"
+   - "Bio Textarea (optional, max 500 chars, character counter)"
+   - "Username Input (required, unique check, alphanumeric only)"
+   
+   ALSO LIST ALL OTHER UI ELEMENTS:
    - Every button with its action (Submit Button, Cancel Button, Add to Cart)
    - Every interactive element (Tabs, Toggles, Sliders, Checkboxes)
    - Every content section (Header, Hero Banner, Reviews Section)
    - Every navigation element (Back Button, Tab Bar, Sidebar)
    - Every state indicator (Loading Spinner, Progress Bar, Timer Display)
-   - Every validation message (Error Text, Success Message)
+   - Every validation message (Error Text, Success Message, Field Hints)
    - Every list/grid component (Image Grid, Client List, Folder Cards)
 
 4. "condition" - DECISION/BRANCHING POINTS
@@ -445,28 +574,34 @@ NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
    - "Link Valid?" → "Valid" to success, "Invalid" to error
    - "Action Type?" → "Delete", "Recover", "Move to Folder"
 
-5. "feature" - GROUPED CAPABILITIES/ACTIONS
-   ⚠️ WHEN TO USE: A collection of related actions or capabilities
-   - NOT a screen, but actions available within screens
-   - Has "features" array listing the individual capabilities
-   - Think of it as "things you can DO" not "places you can GO"
+5. "feature" - GROUPED CAPABILITIES/ACTIONS OR DETAILED FORM SECTIONS
+   ⚠️ USE FOR: Collections of actions, form sections, or detailed UI breakdowns
+   - Has "features" array listing individual items
+   - ALSO USE for breaking down complex forms into logical sections
    
-   ⚠️ CREATE FEATURE NODES FOR:
+   ⚠️ USE FEATURE NODES FOR:
    - Action menus (right-click options, long-press options)
    - Toolbar actions (bulk actions when items selected)
    - Settings groups (related settings together)
-   - Form field groups (e.g., "Shipping Address", "Payment Details")
+   - FORM SECTIONS - Break complex forms into feature nodes!
    
-   ✅ GOOD EXAMPLES:
-   - "Post Actions" → [Like, Share, Comment, Save, Report]
-   - "File Upload Options" → [Photo, Video, Document, Camera]
-   - "Payment Methods" → [Credit Card, PayPal, Apple Pay, Crypto]
-   - "Notification Settings" → [Push, Email, SMS, In-App]
-   - "Profile Settings" → [Edit Name, Change Photo, Update Bio, Privacy]
+   ✅ FORM SECTION EXAMPLES (use feature nodes!):
+   - "Shipping Address Form" → [Street Address Input, City Input, State Dropdown, ZIP Code Input, Country Selector, Save as Default Checkbox]
+   - "Payment Details Form" → [Card Number Input (16 digits), Expiry Date Picker, CVV Input (3-4 digits), Cardholder Name Input, Billing Address Same as Shipping Toggle]
+   - "Personal Information" → [First Name Input, Last Name Input, Email Input, Phone Input, Date of Birth Picker]
+   - "Account Security" → [Current Password Input, New Password Input, Confirm Password Input, Password Strength Indicator, 2FA Toggle]
    
-   ❌ NOT A FEATURE GROUP (these are screens):
-   - "Profile Page" - this is a SCREEN
-   - "Settings Page" - this is a SCREEN
+   ✅ ACTION GROUP EXAMPLES:
+   - "Post Actions" → [Like Button, Share Button, Comment Button, Save Button, Report Button]
+   - "File Upload Options" → [Photo Upload, Video Upload, Document Upload, Camera Capture]
+   - "Notification Settings" → [Push Notifications Toggle, Email Notifications Toggle, SMS Alerts Toggle]
+   
+   ⚠️ WHEN A FORM HAS 5+ FIELDS:
+   Consider breaking it into multiple feature nodes for clarity:
+   - "Checkout: Contact Info" (email, phone, name)
+   - "Checkout: Shipping Address" (address fields)
+   - "Checkout: Payment Details" (card fields)
+   - "Checkout: Order Review" (summary, terms checkbox, submit)
 
 6. "custom-node" - TECHNICAL/MISC NODES
    - Technical risks (use "feasibility": "yellow" or "red")
@@ -578,88 +713,90 @@ CREATE A DEDICATED "Authentication Flow" (user-flow node) with these sub-flows:
 ⚠️ Position all auth-related flows in their own column for clarity
 
 ═══════════════════════════════════════════════════════════════════════════════
-POSITIONING RULES - PREVENT OVERLAP!
+POSITIONING RULES - SPREAD OUT TREE LAYOUT (NOT SINGLE COLUMN!)
 ═══════════════════════════════════════════════════════════════════════════════
 
-⚠️ CRITICAL: Each flow branch should occupy its own COLUMN. Do not mix nodes from different flows!
+⚠️ CRITICAL: Create a SPREAD OUT tree layout! 
+- Nodes should NOT all fall in a single vertical line
+- Children should spread OUTWARD from their parent
+- Use VARIED x and y positions for visual clarity
 
-LAYOUT STRATEGY - COLUMN-BASED:
+LAYOUT STRATEGY - RADIAL TREE:
 1. Root node: {x: 0, y: 0}
-2. Each user-flow gets its own COLUMN, spaced 700px apart horizontally
-3. Within a column, nodes flow DOWNWARD, spaced 350px apart vertically
-4. Condition nodes split into sub-columns within the parent column
+2. User-flows spread in a SEMI-CIRCLE below root
+3. Children of each flow spread OUTWARD and DOWNWARD
+4. Siblings should be at DIFFERENT x positions
 
-COLUMN ASSIGNMENTS (scale based on number of user-flows):
-- 3 flows: x = -700, 0, 700
-- 4 flows: x = -1050, -350, 350, 1050
-- 5 flows: x = -1400, -700, 0, 700, 1400
-- 6 flows: x = -1750, -1050, -350, 350, 1050, 1750
-- 7+ flows: Continue pattern, spacing 700px apart, centered around 0
-- 10+ flows: Consider using 600px spacing to fit more columns
+USER-FLOW POSITIONING (spread horizontally below root):
+Distribute user-flows in an arc at y = 300:
+- 2 flows: x = [-600, 600]
+- 3 flows: x = [-800, 0, 800]
+- 4 flows: x = [-1000, -350, 350, 1000]
+- 5 flows: x = [-1200, -600, 0, 600, 1200]
+- 6 flows: x = [-1400, -850, -300, 300, 850, 1400]
+- 7+ flows: Continue spreading, ~500-600px between each
 
-VERTICAL SPACING within each column:
-- user-flow node: y = 250 (first level below root)
-- First child: y = 600
-- Second child: y = 950
-- Third child: y = 1300
-- Continue adding 350 for each level (no limit!)
-- For very deep flows (15+ levels), maintain spacing - let the map be tall!
+CHILD NODE POSITIONING - SPREAD LIKE BRANCHES:
+When a user-flow or node has multiple children, spread them horizontally AND vertically:
+
+For 2 children:
+- Child 1: parent.x - 200, parent.y + 350
+- Child 2: parent.x + 200, parent.y + 350
+
+For 3 children:
+- Child 1: parent.x - 300, parent.y + 320
+- Child 2: parent.x, parent.y + 400
+- Child 3: parent.x + 300, parent.y + 320
+
+For 4 children:
+- Child 1: parent.x - 350, parent.y + 300
+- Child 2: parent.x - 120, parent.y + 380
+- Child 3: parent.x + 120, parent.y + 380
+- Child 4: parent.x + 350, parent.y + 300
+
+For 5+ children:
+- Spread in a fan pattern: alternate left/right with varying y offsets
+- Example: [-400, -200, 0, +200, +400] for x
+- Example: [+300, +380, +420, +380, +300] for y
+
+STAGGER DEPTHS (avoid straight horizontal lines):
+Add variation to y positions:
+- Don't put all level-2 nodes at exactly y=650
+- Use y values like: 620, 680, 650, 700, 640
+- This creates visual interest and easier navigation
 
 CONDITION NODE BRANCHING:
-⚠️ CRITICAL: Every condition node needs TWO types of edges:
-  1. An INCOMING edge FROM the previous node in the flow (e.g., screen → condition)
-  2. OUTGOING edges TO the next nodes with sourceHandle set
+⚠️ CRITICAL: Every condition node needs edges with sourceHandle set!
 
-- When a condition splits paths, offset children horizontally by ±200px
-- Left path (Positive/Yes/True): parent.x - 200
-  * MUST set edge.sourceHandle to the condition node's id + "-true" (e.g., "condition_node_1-true")
-  * This connects to the GREEN "true" handle on the LEFT side of the condition node
-- Right path (Negative/No/False): parent.x + 200
-  * MUST set edge.sourceHandle to the condition node's id + "-false" (e.g., "condition_node_1-false")
-  * This connects to the RED "false" handle on the RIGHT side of the condition node
+- TRUE path (left side): parent.x - 280, parent.y + 320, sourceHandle: "nodeId-true"
+- FALSE path (right side): parent.x + 280, parent.y + 320, sourceHandle: "nodeId-false"
 
-⚠️ CRITICAL: EVERY edge FROM a condition node MUST have sourceHandle set correctly!
-⚠️ The sourceHandle MUST match the path meaning:
-   - Positive outcomes (success, yes, authenticated, valid) → use "-true" suffix
-   - Negative outcomes (failure, no, not authenticated, invalid) → use "-false" suffix
+COMPLETE EXAMPLE - Auth Flow Layout:
 
-COMPLETE EXAMPLE - Full flow with condition node "check_auth":
+root "My App" at {x: 0, y: 0}
+│
+├── user-flow "Authentication" at {x: -800, y: 300}
+│   ├── feature "Login Form" at {x: -950, y: 650}
+│   │   └── condition "Valid?" at {x: -950, y: 1000}
+│   │       ├── feature "Dashboard" at {x: -1150, y: 1350} (TRUE)
+│   │       └── feature "Error" at {x: -750, y: 1350} (FALSE)
+│   ├── feature "Sign Up Form" at {x: -650, y: 700}
+│   └── custom "Email Service" at {x: -800, y: 1050}
+│
+├── user-flow "Shopping" at {x: 0, y: 300}
+│   ├── feature "Product List" at {x: -150, y: 680}
+│   ├── feature "Product Detail" at {x: 150, y: 650}
+│   └── feature "Cart" at {x: 0, y: 1000}
+│
+└── user-flow "Profile" at {x: 800, y: 300}
+    ├── feature "View Profile" at {x: 650, y: 670}
+    └── feature "Edit Profile" at {x: 950, y: 650}
 
-  // INCOMING EDGE - From previous screen TO the condition (NO sourceHandle needed)
-  {
-    "id": "edge_to_check_auth",
-    "source": "login_form_screen",
-    "target": "check_auth",
-    "label": "Submit Login",
-    "sourceHandle": null
-  }
-
-  // TRUE PATH - User IS authenticated → goes to dashboard
-  {
-    "id": "edge_auth_success",
-    "source": "check_auth",
-    "target": "dashboard_screen",
-    "sourceHandle": "check_auth-true",
-    "label": "Authenticated"
-  }
-
-  // FALSE PATH - User is NOT authenticated → goes to error
-  {
-    "id": "edge_auth_fail",
-    "source": "check_auth",
-    "target": "login_error_screen",
-    "sourceHandle": "check_auth-false",
-    "label": "Not Authenticated"
-  }
-
-- For 3+ branches: spread evenly (e.g., -200, 0, +200) and do NOT set sourceHandle (or use closest match logic)
-- Keep same y-level for siblings from same condition
-
-DEEP FLOWS (many steps):
-- If a flow has 10+ nodes vertically, that's fine - keep going!
-- If a flow has 20+ nodes, that's GREAT for detailed specs!
-- Just maintain consistent 350px vertical spacing
-- The mind map should be as detailed as needed to fully capture the user journey
+VISUAL SPACING GUIDELINES:
+- Minimum horizontal gap between siblings: 250px
+- Minimum vertical gap between levels: 300px
+- Maximum horizontal spread for children: 700px from parent
+- Vary y positions by ±30-50px to avoid rigid grid appearance
 
 ═══════════════════════════════════════════════════════════════════════════════
 HANDLING COMPLEX NESTED FEATURES
