@@ -39,6 +39,7 @@ interface MindMapContextMenuProps {
 	onToggleGrid?: () => void;
 	onToggleTheme?: () => void;
 	onBeforeAction?: () => void;
+	onDownloadImage?: () => void;
 }
 
 export function MindMapContextMenu({
@@ -47,6 +48,7 @@ export function MindMapContextMenu({
 	onToggleGrid,
 	onToggleTheme,
 	onBeforeAction,
+	onDownloadImage,
 }: MindMapContextMenuProps) {
 	const {
 		getNodes,
@@ -84,7 +86,10 @@ export function MindMapContextMenu({
 
 			switch (actionName) {
 				case "add-root-node": {
-					const position = screenToFlowPosition({ x: menu.left, y: menu.top });
+					const position = screenToFlowPosition({
+						x: menu.left,
+						y: menu.top,
+					});
 					addNodes({
 						id: crypto.randomUUID(),
 						type: "core-concept",
@@ -94,7 +99,10 @@ export function MindMapContextMenu({
 					break;
 				}
 				case "add-feature-node": {
-					const position = screenToFlowPosition({ x: menu.left, y: menu.top });
+					const position = screenToFlowPosition({
+						x: menu.left,
+						y: menu.top,
+					});
 					addNodes({
 						id: crypto.randomUUID(),
 						type: "feature",
@@ -104,7 +112,10 @@ export function MindMapContextMenu({
 					break;
 				}
 				case "add-user-flow-node": {
-					const position = screenToFlowPosition({ x: menu.left, y: menu.top });
+					const position = screenToFlowPosition({
+						x: menu.left,
+						y: menu.top,
+					});
 					addNodes({
 						id: crypto.randomUUID(),
 						type: "user-flow",
@@ -114,7 +125,10 @@ export function MindMapContextMenu({
 					break;
 				}
 				case "add-screen-ui-node": {
-					const position = screenToFlowPosition({ x: menu.left, y: menu.top });
+					const position = screenToFlowPosition({
+						x: menu.left,
+						y: menu.top,
+					});
 					addNodes({
 						id: crypto.randomUUID(),
 						type: "screen-ui",
@@ -124,7 +138,10 @@ export function MindMapContextMenu({
 					break;
 				}
 				case "add-custom-node": {
-					const position = screenToFlowPosition({ x: menu.left, y: menu.top });
+					const position = screenToFlowPosition({
+						x: menu.left,
+						y: menu.top,
+					});
 					addNodes({
 						id: crypto.randomUUID(),
 						type: "custom-node",
@@ -134,7 +151,10 @@ export function MindMapContextMenu({
 					break;
 				}
 				case "add-condition-node": {
-					const position = screenToFlowPosition({ x: menu.left, y: menu.top });
+					const position = screenToFlowPosition({
+						x: menu.left,
+						y: menu.top,
+					});
 					const conditionId = crypto.randomUUID();
 					const yesId = crypto.randomUUID();
 					const noId = crypto.randomUUID();
@@ -230,22 +250,6 @@ export function MindMapContextMenu({
 				case "settings-theme":
 					onToggleTheme?.();
 					break;
-				case "settings-export": {
-					// Determine viewport to export
-					// Currently just printing to console for simplicity in this step, or try to download
-					const viewport = document.querySelector(
-						".react-flow__viewport",
-					) as HTMLElement;
-					if (viewport) {
-						toPng(viewport).then((dataUrl) => {
-							const link = document.createElement("a");
-							link.download = "mind-map.png";
-							link.href = dataUrl;
-							link.click();
-						});
-					}
-					break;
-				}
 				// Node actions
 				case "delete":
 					if (menu.node) {
@@ -666,30 +670,15 @@ export function MindMapContextMenu({
 						},
 					],
 				},
-				{
-					label: "Generate Mind Map",
-					icon: <Sparkles className="w-4 h-4" />,
-					submenu: [
-						{
-							label: "From Prompt...",
-							action: () => handleAction("gen-prompt"),
-						},
-						{
-							label: "Expand Current Map",
-							action: () => handleAction("gen-expand"),
-						},
-						{
-							label: "Refine Feasibility",
-							action: () => handleAction("gen-refine"),
-						},
-					],
-				},
 				{ separator: true },
 				{
 					label: "Layout Options",
 					icon: <Layout className="w-4 h-4" />,
 					submenu: [
-						{ label: "Auto-Layout", action: () => handleAction("layout-auto") },
+						{
+							label: "Auto-Layout",
+							action: () => handleAction("layout-auto"),
+						},
 						{
 							label: "Align Selected Nodes",
 							action: () => handleAction("layout-align"),
@@ -713,20 +702,28 @@ export function MindMapContextMenu({
 					],
 				},
 				{
-					label: "Canvas Settings",
+					label: "Toggle Grid",
 					icon: <Grid className="w-4 h-4" />,
-					submenu: [
-						{
-							label: "Change Theme",
-							action: () => handleAction("settings-theme"),
-						},
-						{
-							label: "Grid Toggle",
-							action: () => handleAction("settings-grid"),
-						},
-						{ label: "Export", action: () => handleAction("settings-export") },
-					],
+					action: () => handleAction("settings-grid"),
 				},
+				// {
+				// 	label: "Canvas Settings",
+				// 	icon: <Grid className="w-4 h-4" />,
+				// 	submenu: [
+				// 		{
+				// 			label: "Change Theme",
+				// 			action: () => handleAction("settings-theme"),
+				// 		},
+				// 		{
+				// 			label: "Grid Toggle",
+				// 			action: () => handleAction("settings-grid"),
+				// 		},
+				// 		{
+				// 			label: "Download As Image",
+				// 			action: () => handleAction("settings-download-image"),
+				// 		},
+				// 	],
+				// },
 				{ separator: true },
 				{
 					label: "Paste",
@@ -804,12 +801,18 @@ export function MindMapContextMenu({
 							label: "Feature",
 							action: () => handleAction("add-child-feature"),
 						},
-						{ label: "Screen", action: () => handleAction("add-child-screen") },
+						{
+							label: "Screen",
+							action: () => handleAction("add-child-screen"),
+						},
 						{
 							label: "Tech Component",
 							action: () => handleAction("add-child-tech"),
 						},
-						{ label: "Custom", action: () => handleAction("add-child-custom") },
+						{
+							label: "Custom",
+							action: () => handleAction("add-child-custom"),
+						},
 					],
 				},
 				{
@@ -820,7 +823,10 @@ export function MindMapContextMenu({
 				{
 					label: "Change Type",
 					submenu: [
-						{ label: "Core Concept", action: () => handleAction("type-core") },
+						{
+							label: "Core Concept",
+							action: () => handleAction("type-core"),
+						},
 						{ label: "User Flow", action: () => handleAction("type-flow") },
 						{ label: "Feature", action: () => handleAction("type-feature") },
 						{ label: "Screen UI", action: () => handleAction("type-screen") },

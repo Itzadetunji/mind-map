@@ -116,20 +116,22 @@ function TermsPage() {
 										You agree not to:
 									</p>
 									<ul className="list-disc list-inside flex flex-col gap-2 text-slate-700 dark:text-slate-300 leading-relaxed">
-									<li>
-										Use the Service for any illegal or unauthorized purpose
-									</li>
-									<li>Violate any laws in your jurisdiction</li>
-									<li>Transmit any malicious code, viruses, or harmful data</li>
-									<li>
-										Attempt to gain unauthorized access to the Service or its
-										systems
-									</li>
-									<li>Interfere with or disrupt the Service or servers</li>
-									<li>
-										Use the Service to create content that is defamatory,
-										harassing, or violates others' rights
-									</li>
+										<li>
+											Use the Service for any illegal or unauthorized purpose
+										</li>
+										<li>Violate any laws in your jurisdiction</li>
+										<li>
+											Transmit any malicious code, viruses, or harmful data
+										</li>
+										<li>
+											Attempt to gain unauthorized access to the Service or its
+											systems
+										</li>
+										<li>Interfere with or disrupt the Service or servers</li>
+										<li>
+											Use the Service to create content that is defamatory,
+											harassing, or violates others' rights
+										</li>
 									</ul>
 								</div>
 							</div>

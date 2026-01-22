@@ -697,6 +697,7 @@ export const MindMap = ({
 								document.documentElement.classList.toggle("dark")
 							}
 							onBeforeAction={onBeforeMenuAction}
+							onDownloadImage={handleDownloadImage}
 						/>
 					)}
 				</ReactFlow>

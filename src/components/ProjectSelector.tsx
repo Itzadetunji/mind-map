@@ -27,8 +27,8 @@ export function ProjectSelector({
 	const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8">
-			<div className="max-w-4xl mx-auto">
+		<section className="flex-1 bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 flex flex-col">
+			<div className="max-w-4xl mx-auto flex-1 w-full">
 				<div className="flex items-center justify-between mb-8">
 					<div>
 						<h1 className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -48,7 +48,7 @@ export function ProjectSelector({
 						) : (
 							<Plus className="w-4 h-4" />
 						)}
-						{isCreating ? "Creating..." : "New Mind Map"}
+						{isCreating ? "Creating..." : "New Project"}
 					</Button>
 				</div>
 
@@ -151,26 +151,25 @@ export function ProjectSelector({
 						}
 					}}
 				/>
-
-				{/* Footer Links */}
-				<footer className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">
-					<div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600 dark:text-slate-400">
-						<Link
-							to="/privacy"
-							className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
-						>
-							Privacy Policy
-						</Link>
-						<span className="text-slate-400 dark:text-slate-600">•</span>
-						<Link
-							to="/terms"
-							className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
-						>
-							Terms and Conditions
-						</Link>
-					</div>
-				</footer>
 			</div>
-		</div>
+			{/* Footer Links */}
+			<footer className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">
+				<div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600 dark:text-slate-400">
+					<Link
+						to="/privacy"
+						className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
+					>
+						Privacy Policy
+					</Link>
+					<span className="text-slate-400 dark:text-slate-600">•</span>
+					<Link
+						to="/terms"
+						className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
+					>
+						Terms and Conditions
+					</Link>
+				</div>
+			</footer>
+		</section>
 	);
 }
