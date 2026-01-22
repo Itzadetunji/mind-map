@@ -1,21 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Edge, Node } from "@xyflow/react";
-import {
-	Bot,
-	Brain,
-	ChevronRight,
-	Loader2,
-	Send,
-	Sparkles,
-	X,
-	Zap,
-} from "lucide-react";
+import { Bot, Brain, Loader2, Send, X, Zap } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { useChatHistory, useSendChatMessage } from "@/hooks/chats.hooks";
+
+import { useChatHistory } from "@/hooks/chats.hooks";
 import { useUserCredits } from "@/hooks/credits.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatTime } from "@/lib/date-utils";
-import { chatWithAIStreaming } from "@/server/ai-updates-nodes";
+import { chatWithAIStreaming } from "@/server/v1/ai-updates-nodes";
 import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
@@ -49,6 +41,27 @@ interface AIChatSidebarProps {
 	onApplyChanges?: (nodes: Node[], edges: Edge[]) => void;
 }
 
+type ChatResponse = {
+	thinking: {
+		task: string;
+		context: string;
+		references: string;
+		evaluation: string;
+		iteration: string;
+	};
+	message: string;
+	action: "generate" | "modify" | "none";
+	graphData: {
+		nodes: Array<Record<string, unknown>>;
+		edges: Array<Record<string, unknown>>;
+	} | null;
+	streamingSteps?: Array<{
+		step: string;
+		content: string;
+		completed: boolean;
+	}>;
+};
+
 export const AIChatSidebar = ({
 	isOpen,
 	onClose,
@@ -70,8 +83,6 @@ export const AIChatSidebar = ({
 		isFetchingNextPage,
 		isLoading: isHistoryLoading,
 	} = useChatHistory(project?.id);
-
-	const sendMessage = useSendChatMessage();
 
 	const [input, setInput] = useState("");
 	const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -126,18 +137,10 @@ export const AIChatSidebar = ({
 		}
 	}, [historyMessages.length, isFetchingNextPage]);
 
-	const chatMutation = useMutation({
-		mutationFn: async (message: string) => {
+	const chatMutation = useMutation<ChatResponse, Error, string>({
+		mutationFn: async (message: string): Promise<ChatResponse> => {
 			if (!project?.id || !user?.id)
 				throw new Error("Project or user not found");
-
-			// 1. Add user message to DB
-			await sendMessage.mutateAsync({
-				mind_map_id: project.id,
-				user_id: user.id,
-				role: "user",
-				content: message,
-			});
 
 			const chatHistory = historyMessages.map((m) => ({
 				role: m.role as "user" | "assistant",
@@ -147,7 +150,8 @@ export const AIChatSidebar = ({
 			// Check if this is the first message
 			const isFirstMessage = chatHistory.length === 0;
 
-			return await chatWithAIStreaming({
+			// Backend now handles saving user message and AI response
+			const response = await chatWithAIStreaming({
 				data: {
 					message,
 					userId: user.id,
@@ -162,8 +166,9 @@ export const AIChatSidebar = ({
 					isFirstMessage,
 				},
 			});
+			return response as ChatResponse;
 		},
-		onSuccess: async (data) => {
+		onSuccess: async (data: ChatResponse) => {
 			if (!project?.id || !user?.id) return;
 
 			// Refresh credits if action was generate or modify (credits were deducted)
@@ -174,17 +179,9 @@ export const AIChatSidebar = ({
 				});
 			}
 
-			// 2. Add AI response to DB
-			await sendMessage.mutateAsync({
-				mind_map_id: project.id,
-				user_id: user.id,
-				role: "ai",
-				content: data.message,
-				map_data:
-					(data.action === "generate" || data.action === "modify") &&
-					data.graphData
-						? data.graphData
-						: null,
+			// Refresh chat history since backend saved the messages
+			queryClient.invalidateQueries({
+				queryKey: ["chat_messages", project.id],
 			});
 
 			// Apply graph changes if any
@@ -193,7 +190,10 @@ export const AIChatSidebar = ({
 				data.graphData &&
 				onApplyChanges
 			) {
-				onApplyChanges(data.graphData.nodes, data.graphData.edges);
+				onApplyChanges(
+					data.graphData.nodes as Node[],
+					data.graphData.edges as Edge[],
+				);
 			}
 		},
 		onError: (error) => {

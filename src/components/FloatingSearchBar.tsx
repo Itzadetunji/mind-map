@@ -3,7 +3,7 @@ import { useReactFlow } from "@xyflow/react";
 import { Brain, Loader2, Send, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useUserCredits } from "@/hooks/credits.hooks";
-import { generateMindMap } from "@/server/generate-mind-map";
+import { generateMindMap } from "@/server/v1/generate-mind-map";
 import { useAuthStore } from "@/stores/authStore";
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
 import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";

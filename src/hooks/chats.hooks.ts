@@ -4,6 +4,7 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import type { ChatMessage } from "@/lib/database.types";
+import { CHAT_ROLES, TABLE_CHAT_MESSAGES, TABLES, type ChatMessageInsert } from "@/lib/database.constants";
 import { supabase } from "@/lib/supabase";
 
 const PAGE_SIZE = 20;
@@ -26,10 +27,10 @@ export function useChatHistory(mindMapId: string | undefined) {
 			const to = from + PAGE_SIZE - 1;
 
 			const { data, error } = await supabase
-				.from("chat_messages")
+				.from(TABLES.CHAT_MESSAGES)
 				.select("*")
-				.eq("mind_map_id", mindMapId)
-				.order("created_at", { ascending: false }) // Get newest first for pagination
+				.eq(TABLE_CHAT_MESSAGES.MIND_MAP_ID, mindMapId)
+				.order(TABLE_CHAT_MESSAGES.CREATED_AT, { ascending: false }) // Get newest first for pagination
 				.range(from, to);
 
 			if (error) throw error;
@@ -69,9 +70,16 @@ export function useSendChatMessage() {
 			content: string;
 			map_data?: unknown;
 		}) => {
+			const insertData: ChatMessageInsert = {
+				[TABLE_CHAT_MESSAGES.MIND_MAP_ID]: message.mind_map_id,
+				[TABLE_CHAT_MESSAGES.USER_ID]: message.user_id,
+				[TABLE_CHAT_MESSAGES.ROLE]: message.role as typeof CHAT_ROLES[keyof typeof CHAT_ROLES],
+				[TABLE_CHAT_MESSAGES.CONTENT]: message.content,
+				...(message.map_data ? { [TABLE_CHAT_MESSAGES.MAP_DATA]: message.map_data } : {}),
+			};
 			const { data, error } = await supabase
-				.from("chat_messages")
-				.insert(message)
+				.from(TABLES.CHAT_MESSAGES)
+				.insert(insertData)
 				.select()
 				.single();
 

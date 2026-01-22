@@ -5,6 +5,19 @@ import type {
 	UserCredits,
 	UserSubscription,
 } from "@/lib/database.types";
+import {
+	SUBSCRIPTION_TIERS,
+	TABLES,
+	TABLE_CREDIT_TRANSACTIONS,
+	TABLE_USER_CREDITS,
+	TABLE_USER_SUBSCRIPTIONS,
+	TRANSACTION_TYPES,
+	type CreditTransactionInsert,
+	type SubscriptionTier as SubscriptionTierType,
+	type UserCreditsInsert,
+	type UserCreditsUpdate,
+	type UserSubscriptionInsert,
+} from "@/lib/database.constants";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -55,17 +68,26 @@ export function useUserSubscription() {
 			if (!user) return null;
 
 			const { data, error } = await supabase
-				.from("user_subscriptions")
+				.from(TABLES.USER_SUBSCRIPTIONS)
 				.select("*")
-				.eq("user_id", user.id)
+				.eq(TABLE_USER_SUBSCRIPTIONS.USER_ID, user.id)
 				.single();
 
 			if (error) {
 				// If no record exists, create one with free tier
 				if (error.code === "PGRST116") {
+					const insertData: UserSubscriptionInsert = {
+						[TABLE_USER_SUBSCRIPTIONS.USER_ID]: user.id,
+						[TABLE_USER_SUBSCRIPTIONS.TIER]: SUBSCRIPTION_TIERS.FREE,
+						[TABLE_USER_SUBSCRIPTIONS.STRIPE_CUSTOMER_ID]: null,
+						[TABLE_USER_SUBSCRIPTIONS.STRIPE_SUBSCRIPTION_ID]: null,
+						[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]: null,
+						[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_END]: null,
+						[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]: false,
+					};
 					const { data: newSub, error: insertError } = await supabase
-						.from("user_subscriptions")
-						.insert({ user_id: user.id, tier: "free" })
+						.from(TABLES.USER_SUBSCRIPTIONS)
+						.insert(insertData)
 						.select()
 						.single();
 
@@ -89,21 +111,22 @@ export function useUserCredits() {
 			if (!user) return null;
 
 			const { data, error } = await supabase
-				.from("user_credits")
+				.from(TABLES.USER_CREDITS)
 				.select("*")
-				.eq("user_id", user.id)
+				.eq(TABLE_USER_CREDITS.USER_ID, user.id)
 				.single();
 
 			if (error) {
 				// If no record exists, create one with free tier default (30 credits)
 				if (error.code === "PGRST116") {
+					const insertData: UserCreditsInsert = {
+						[TABLE_USER_CREDITS.USER_ID]: user.id,
+						[TABLE_USER_CREDITS.CREDITS]: 30,
+						[TABLE_USER_CREDITS.MONTHLY_CREDITS_REMAINING]: 30,
+					};
 					const { data: newCredits, error: insertError } = await supabase
-						.from("user_credits")
-						.insert({
-							user_id: user.id,
-							credits: 30,
-							monthly_credits_remaining: 30,
-						})
+						.from(TABLES.USER_CREDITS)
+						.insert(insertData)
 						.select()
 						.single();
 
@@ -127,10 +150,10 @@ export function useCreditTransactions() {
 			if (!user) return [];
 
 			const { data, error } = await supabase
-				.from("credit_transactions")
+				.from(TABLES.CREDIT_TRANSACTIONS)
 				.select("*")
-				.eq("user_id", user.id)
-				.order("created_at", { ascending: false })
+				.eq(TABLE_CREDIT_TRANSACTIONS.USER_ID, user.id)
+				.order(TABLE_CREDIT_TRANSACTIONS.CREATED_AT, { ascending: false })
 				.limit(50);
 
 			if (error) throw error;
@@ -156,33 +179,37 @@ export function useDeductCredits() {
 
 			// Get current credits
 			const { data: currentCredits, error: fetchError } = await supabase
-				.from("user_credits")
-				.select("credits")
-				.eq("user_id", user.id)
+				.from(TABLES.USER_CREDITS)
+				.select(TABLE_USER_CREDITS.CREDITS)
+				.eq(TABLE_USER_CREDITS.USER_ID, user.id)
 				.single();
 
 			if (fetchError) throw fetchError;
-			if (currentCredits.credits < amount) {
+			if (currentCredits[TABLE_USER_CREDITS.CREDITS] < amount) {
 				throw new Error("Insufficient credits");
 			}
 
 			// Deduct credits
+			const updateData: UserCreditsUpdate = {
+				[TABLE_USER_CREDITS.CREDITS]: currentCredits[TABLE_USER_CREDITS.CREDITS] - amount,
+			};
 			const { error: updateError } = await supabase
-				.from("user_credits")
-				.update({ credits: currentCredits.credits - amount })
-				.eq("user_id", user.id);
+				.from(TABLES.USER_CREDITS)
+				.update(updateData)
+				.eq(TABLE_USER_CREDITS.USER_ID, user.id);
 
 			if (updateError) throw updateError;
 
 			// Log transaction
+			const transaction: CreditTransactionInsert = {
+				[TABLE_CREDIT_TRANSACTIONS.USER_ID]: user.id,
+				[TABLE_CREDIT_TRANSACTIONS.AMOUNT]: -amount,
+				[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_TYPE]: TRANSACTION_TYPES.USAGE,
+				[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_DESCRIPTION]: description,
+			};
 			const { error: transactionError } = await supabase
-				.from("credit_transactions")
-				.insert({
-					user_id: user.id,
-					amount: -amount,
-					transaction_type: "usage",
-					description,
-				});
+				.from(TABLES.CREDIT_TRANSACTIONS)
+				.insert(transaction);
 
 			if (transactionError) {
 				console.error("Failed to log transaction:", transactionError);
@@ -217,30 +244,34 @@ export function useAddCredits() {
 
 			// Get current credits
 			const { data: currentCredits, error: fetchError } = await supabase
-				.from("user_credits")
-				.select("credits")
-				.eq("user_id", user.id)
+				.from(TABLES.USER_CREDITS)
+				.select(TABLE_USER_CREDITS.CREDITS)
+				.eq(TABLE_USER_CREDITS.USER_ID, user.id)
 				.single();
 
 			if (fetchError) throw fetchError;
 
 			// Add credits
+			const updateData: UserCreditsUpdate = {
+				[TABLE_USER_CREDITS.CREDITS]: currentCredits[TABLE_USER_CREDITS.CREDITS] + amount,
+			};
 			const { error: updateError } = await supabase
-				.from("user_credits")
-				.update({ credits: currentCredits.credits + amount })
-				.eq("user_id", user.id);
+				.from(TABLES.USER_CREDITS)
+				.update(updateData)
+				.eq(TABLE_USER_CREDITS.USER_ID, user.id);
 
 			if (updateError) throw updateError;
 
 			// Log transaction
+			const transaction: CreditTransactionInsert = {
+				[TABLE_CREDIT_TRANSACTIONS.USER_ID]: user.id,
+				[TABLE_CREDIT_TRANSACTIONS.AMOUNT]: amount,
+				[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_TYPE]: transactionType as typeof TRANSACTION_TYPES[keyof typeof TRANSACTION_TYPES],
+				[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_DESCRIPTION]: description,
+			};
 			const { error: transactionError } = await supabase
-				.from("credit_transactions")
-				.insert({
-					user_id: user.id,
-					amount: amount,
-					transaction_type: transactionType,
-					description,
-				});
+				.from(TABLES.CREDIT_TRANSACTIONS)
+				.insert(transaction);
 
 			if (transactionError) {
 				console.error("Failed to log transaction:", transactionError);

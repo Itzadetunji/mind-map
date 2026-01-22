@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMindMapContext } from "@/context/MindMapContext";
+import { STORAGE_BUCKETS } from "@/lib/database.constants";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { AutoResizeTextarea } from "../shared/AutoResizeTextArea";
@@ -213,7 +214,7 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 				const filePath = `${fileName}`;
 
 				const { error: uploadError } = await supabase.storage
-					.from("mind_maps_images")
+					.from(STORAGE_BUCKETS.MIND_MAPS_IMAGES)
 					.upload(filePath, file);
 
 				if (uploadError) throw uploadError;

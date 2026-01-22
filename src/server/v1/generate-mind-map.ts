@@ -2,6 +2,16 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerFn } from "@tanstack/react-start";
 import OpenAI from "openai";
 import { z } from "zod";
+import {
+	type CreditTransactionInsert,
+	type MindMapInsert,
+	type MindMapUpdate,
+	TABLE_CREDIT_TRANSACTIONS,
+	TABLE_MIND_MAPS,
+	TABLE_USER_CREDITS,
+	TABLES,
+	TRANSACTION_TYPES,
+} from "@/lib/database.constants";
 
 // Server-side Supabase client
 const getSupabaseClient = () => {
@@ -11,103 +21,8 @@ const getSupabaseClient = () => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
-// REQUEST VALIDATION - Check if the request is related to mind map/app design
+// Off-topic detection is now handled by the AI itself
 // ══════════════════════════════════════════════════════════════════════════════
-const OFF_TOPIC_PATTERNS = [
-	/write\s+(me\s+)?(an?\s+)?email/i,
-	/compose\s+(an?\s+)?email/i,
-	/draft\s+(an?\s+)?(email|letter|message)/i,
-	/send\s+(an?\s+)?email/i,
-	/write\s+(me\s+)?(a\s+)?(poem|story|essay|article|blog)/i,
-	/help\s+me\s+with\s+(my\s+)?(homework|assignment)/i,
-	/solve\s+(this\s+)?(math|equation|problem)/i,
-	/translate\s+/i,
-	/what\s+is\s+the\s+(capital|population|weather)/i,
-	/tell\s+me\s+(a\s+)?joke/i,
-	/explain\s+(quantum|relativity|philosophy)/i,
-	/recipe\s+for/i,
-	/how\s+to\s+cook/i,
-	/medical\s+advice/i,
-	/legal\s+advice/i,
-	/financial\s+advice/i,
-	/who\s+(is|was|won)/i,
-	/when\s+(did|was|is)/i,
-	/where\s+(is|was|are)/i,
-];
-
-const MIND_MAP_KEYWORDS = [
-	"app",
-	"application",
-	"feature",
-	"flow",
-	"screen",
-	"user",
-	"design",
-	"build",
-	"create",
-	"add",
-	"remove",
-	"update",
-	"modify",
-	"change",
-	"node",
-	"mind map",
-	"wireframe",
-	"prototype",
-	"ui",
-	"ux",
-	"interface",
-	"dashboard",
-	"login",
-	"signup",
-	"authentication",
-	"checkout",
-	"payment",
-	"profile",
-	"settings",
-	"navigation",
-	"button",
-	"form",
-	"input",
-	"page",
-	"modal",
-	"component",
-	"website",
-	"platform",
-	"system",
-	"service",
-	"product",
-	"mobile",
-	"web",
-	"saas",
-	"e-commerce",
-	"ecommerce",
-	"social",
-	"marketplace",
-];
-
-function isOffTopicRequest(message: string): boolean {
-	const lowerMessage = message.toLowerCase();
-
-	// Check if message matches off-topic patterns
-	for (const pattern of OFF_TOPIC_PATTERNS) {
-		if (pattern.test(message)) {
-			return true;
-		}
-	}
-
-	// Check if message contains any mind map related keywords
-	const hasMindMapKeyword = MIND_MAP_KEYWORDS.some((keyword) =>
-		lowerMessage.includes(keyword),
-	);
-
-	// If it's a longer message without mind map keywords, likely off-topic
-	if (message.length > 100 && !hasMindMapKeyword) {
-		return true;
-	}
-
-	return false;
-}
 
 const generateMindMapInputSchema = z.object({
 	prompt: z.string().min(1, "Prompt is required"),
@@ -123,6 +38,7 @@ const generateMindMapInputSchema = z.object({
 		.optional(),
 });
 
+// Runtime structure is correct, this is a TypeScript strictness issue
 export const generateMindMap = createServerFn({ method: "POST" })
 	.inputValidator(generateMindMapInputSchema)
 	.handler(async ({ data }) => {
@@ -130,11 +46,6 @@ export const generateMindMap = createServerFn({ method: "POST" })
 
 		if (!apiKey) {
 			throw new Error("Missing OPENAI_API_KEY in environment variables");
-		}
-
-		// Check if the request is off-topic (not related to mind map/app design)
-		if (isOffTopicRequest(data.prompt)) {
-			throw new Error("OFF_TOPIC_REQUEST");
 		}
 
 		const openai = new OpenAI({ apiKey });
@@ -180,6 +91,40 @@ YOUR OUTPUT MUST CONTAIN:
 		const systemPrompt = `
 You are an expert UX/product designer, technical architect, and requirements analyst. Your mission is to generate comprehensive mind maps for ANY type of application, product, or idea the user describes.
 ${canvasContext}
+
+⚠️ CRITICAL: OFF-TOPIC REQUEST DETECTION
+═══════════════════════════════════════════════════════════════════════════════
+BEFORE generating any mind map, you MUST determine if the user's request is related to app/product design and mind maps.
+
+If the request is NOT related to:
+- App/application design
+- Product design
+- User flows and screens
+- Feature planning
+- UI/UX design
+- Website/platform design
+- Mind map creation/modification
+
+Then set "isOffTopic": true in your response and provide a helpful message explaining that you can only help with app/product design tasks.
+
+Examples of OFF-TOPIC requests:
+- Writing emails, poems, stories, essays
+- General questions (weather, facts, trivia)
+- Homework help unrelated to design
+- Math problems or translations
+- Recipes, cooking instructions
+- Medical, legal, or financial advice
+- Jokes or entertainment
+
+Examples of ON-TOPIC requests:
+- "Create a social media app"
+- "Design a checkout flow for an e-commerce site"
+- "Add a user profile feature"
+- "Build a dashboard for analytics"
+- "Create a login flow"
+
+If isOffTopic is true, you may still provide a brief reasoning, but set nodes and edges to empty arrays.
+
 ⚠️ CRITICAL: ADAPT TO THE USER'S IDEA
 ═══════════════════════════════════════════════════════════════════════════════
 Users will describe THEIR OWN unique ideas - not a specific template app.
@@ -426,10 +371,12 @@ Your "reasoning" field MUST follow this structure:
    - Branch points → sub-column offsets
 
 ═══════════════════════════════════════════════════════════════════════════════
-OUTPUT FORMAT
+OUTPUT FORMAT - JSON ONLY!
 ═══════════════════════════════════════════════════════════════════════════════
 
-Output strictly valid JSON (no markdown, no code blocks):
+⚠️ CRITICAL: You MUST respond with VALID JSON ONLY. No markdown, no code blocks, no explanations outside the JSON structure!
+
+Output ONLY this JSON structure (no other text before or after):
 
 {
   "reasoning": "Your complete 7-step thought process here (detailed, transparent, with full extraction)",
@@ -456,6 +403,15 @@ Output strictly valid JSON (no markdown, no code blocks):
     }
   ]
 }
+
+⚠️ JSON OUTPUT REQUIREMENTS:
+- DO NOT wrap in markdown code blocks (no \`\`\`json)
+- DO NOT add any text before or after the JSON
+- Output must be parseable JSON.parse() directly
+- All strings must be properly escaped
+- All arrays and objects must be properly formatted
+- No trailing commas
+- No comments in JSON
 
 ⚠️ CRITICAL - EDGE HIERARCHY (DO NOT FORGET!):
 Every node MUST have an incoming edge (except the root core-concept node):
@@ -990,10 +946,15 @@ QUALITY:
 			schema: {
 				type: "object",
 				properties: {
+					isOffTopic: {
+						type: "boolean",
+						description:
+							"Set to true if the user's request is not related to app/product design or mind maps. If true, provide a helpful message in reasoning explaining what you can help with instead.",
+					},
 					reasoning: {
 						type: "string",
 						description:
-							"Complete 7-step thought process: Exhaustive Feature Extraction (list ALL screens, features, conditions, fields, states, integrations found in the prompt), Task understanding, Context analysis, Decomposition into sub-flows, Reference mapping, Evaluation with completeness check, and Tree-of-Thoughts iteration. This should be DETAILED and include the full inventory of extracted features.",
+							"Complete 7-step thought process: Exhaustive Feature Extraction (list ALL screens, features, conditions, fields, states, integrations found in the prompt), Task understanding, Context analysis, Decomposition into sub-flows, Reference mapping, Evaluation with completeness check, and Tree-of-Thoughts iteration. This should be DETAILED and include the full inventory of extracted features. If isOffTopic is true, explain that you can only help with app/product design tasks.",
 					},
 					nodes: {
 						type: "array",
@@ -1064,7 +1025,7 @@ QUALITY:
 						},
 					},
 				},
-				required: ["reasoning", "nodes", "edges"],
+				required: ["isOffTopic", "reasoning", "nodes", "edges"],
 				additionalProperties: false,
 			},
 		};
@@ -1076,9 +1037,9 @@ QUALITY:
 
 				// Check user's credits
 				let { data: userCredits, error: creditsError } = await supabase
-					.from("user_credits")
-					.select("credits")
-					.eq("user_id", data.userId)
+					.from(TABLES.USER_CREDITS)
+					.select(TABLE_USER_CREDITS.CREDITS)
+					.eq(TABLE_USER_CREDITS.USER_ID, data.userId)
 					.single();
 
 				if (creditsError && creditsError.code !== "PGRST116") {
@@ -1100,12 +1061,15 @@ QUALITY:
 
 					// Update userCredits with the initialized data
 					if (initializedCredits && initializedCredits.length > 0) {
-						userCredits = { credits: initializedCredits[0].credits };
+						userCredits = {
+							[TABLE_USER_CREDITS.CREDITS]:
+								initializedCredits[0][TABLE_USER_CREDITS.CREDITS],
+						};
 					}
 				}
 
 				// Check if user has enough credits (1 credit per generation)
-				if (!userCredits || userCredits.credits < 1) {
+				if (!userCredits || userCredits[TABLE_USER_CREDITS.CREDITS] < 1) {
 					throw new Error("INSUFFICIENT_CREDITS");
 				}
 			}
@@ -1127,7 +1091,70 @@ QUALITY:
 			const content = response.choices[0].message.content;
 			if (!content) throw new Error("No content returned from OpenAI");
 
-			const graphData = JSON.parse(content);
+			// Parse JSON with error handling
+			type GraphData = {
+				isOffTopic?: boolean;
+				reasoning?: string;
+				nodes: Array<{
+					id: string;
+					type: string;
+					position: { x: number; y: number };
+					data: Record<string, unknown>;
+				}>;
+				edges: Array<{
+					id: string;
+					source: string;
+					target: string;
+					label?: string;
+					sourceHandle?: string;
+				}>;
+				projectId?: string;
+			};
+
+			let graphData: GraphData;
+			try {
+				// Clean up content if needed
+				let cleanContent = content.trim();
+
+				// Remove markdown code blocks if present
+				if (cleanContent.startsWith("```json")) {
+					cleanContent = cleanContent.slice(7);
+				} else if (cleanContent.startsWith("```")) {
+					cleanContent = cleanContent.slice(3);
+				}
+				if (cleanContent.endsWith("```")) {
+					cleanContent = cleanContent.slice(0, -3);
+				}
+				cleanContent = cleanContent.trim();
+
+				// Extract JSON if there's extra text
+				const firstBrace = cleanContent.indexOf("{");
+				const lastBrace = cleanContent.lastIndexOf("}");
+				if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+					cleanContent = cleanContent.substring(firstBrace, lastBrace + 1);
+				}
+
+				graphData = JSON.parse(cleanContent) as GraphData;
+			} catch (parseError) {
+				console.error("JSON parse error:", parseError);
+				console.error("Content received:", content.substring(0, 500));
+				throw new Error(
+					"Failed to parse AI response as JSON. Please try again or rephrase your request.",
+				);
+			}
+
+			// Check if AI determined the request is off-topic
+			if (graphData.isOffTopic === true) {
+				throw new Error("OFF_TOPIC_REQUEST");
+			}
+
+			// Validate required fields
+			if (!graphData.nodes || !Array.isArray(graphData.nodes)) {
+				throw new Error("Invalid response: missing or invalid 'nodes' array");
+			}
+			if (!graphData.edges || !Array.isArray(graphData.edges)) {
+				throw new Error("Invalid response: missing or invalid 'edges' array");
+			}
 
 			// Deduct credits and save to user's project if authenticated
 			if (data.userId) {
@@ -1143,38 +1170,46 @@ QUALITY:
 				// If RPC doesn't exist, manually deduct
 				if (deductError) {
 					const { data: currentCredits } = await supabase
-						.from("user_credits")
-						.select("credits")
-						.eq("user_id", data.userId)
+						.from(TABLES.USER_CREDITS)
+						.select(TABLE_USER_CREDITS.CREDITS)
+						.eq(TABLE_USER_CREDITS.USER_ID, data.userId)
 						.single();
 
 					if (currentCredits) {
+						const updateData: { [TABLE_USER_CREDITS.CREDITS]: number } = {
+							[TABLE_USER_CREDITS.CREDITS]:
+								currentCredits[TABLE_USER_CREDITS.CREDITS] - 1,
+						};
 						await supabase
-							.from("user_credits")
-							.update({ credits: currentCredits.credits - 1 })
-							.eq("user_id", data.userId);
+							.from(TABLES.USER_CREDITS)
+							.update(updateData)
+							.eq(TABLE_USER_CREDITS.USER_ID, data.userId);
 
 						// Log transaction
-						await supabase.from("credit_transactions").insert({
-							user_id: data.userId,
-							amount: -1,
-							transaction_type: "usage",
-							description: "AI mind map generation",
-						});
+						const transaction: CreditTransactionInsert = {
+							[TABLE_CREDIT_TRANSACTIONS.USER_ID]: data.userId,
+							[TABLE_CREDIT_TRANSACTIONS.AMOUNT]: -1,
+							[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_TYPE]:
+								TRANSACTION_TYPES.USAGE,
+							[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_DESCRIPTION]:
+								"AI mind map generation",
+						};
+						await supabase.from(TABLES.CREDIT_TRANSACTIONS).insert(transaction);
 					}
 				}
 
 				if (data.projectId) {
 					// Update existing project - also save prompt if this is first generation
+					const updateData: MindMapUpdate = {
+						[TABLE_MIND_MAPS.GRAPH_DATA]: graphData,
+						[TABLE_MIND_MAPS.FIRST_PROMPT]: data.prompt, // Save the prompt on updates too
+						[TABLE_MIND_MAPS.UPDATED_AT]: new Date().toISOString(),
+					};
 					const { error: updateError } = await supabase
-						.from("mind_maps")
-						.update({
-							graph_data: graphData,
-							first_prompt: data.prompt, // Save the prompt on updates too
-							updated_at: new Date().toISOString(),
-						})
-						.eq("id", data.projectId)
-						.eq("user_id", data.userId);
+						.from(TABLES.MIND_MAPS)
+						.update(updateData)
+						.eq(TABLE_MIND_MAPS.ID, data.projectId)
+						.eq(TABLE_MIND_MAPS.USER_ID, data.userId);
 
 					if (updateError) {
 						console.error("Supabase update error:", updateError);
@@ -1184,20 +1219,22 @@ QUALITY:
 				} else {
 					// Create new project
 					const title = data.title || extractTitle(data.prompt);
+					const insertData: MindMapInsert = {
+						[TABLE_MIND_MAPS.USER_ID]: data.userId,
+						[TABLE_MIND_MAPS.TITLE]: title,
+						[TABLE_MIND_MAPS.DESCRIPTION]: data.prompt.slice(0, 200),
+						[TABLE_MIND_MAPS.FIRST_PROMPT]: data.prompt,
+						[TABLE_MIND_MAPS.GRAPH_DATA]: graphData,
+					};
 					const { data: newProject, error: insertError } = await supabase
-						.from("mind_maps")
-						.insert({
-							user_id: data.userId,
-							title,
-							description: data.prompt.slice(0, 200),
-							first_prompt: data.prompt,
-							graph_data: graphData,
-						})
+						.from(TABLES.MIND_MAPS)
+						.insert(insertData)
 						.select()
 						.single();
 
 					if (insertError) {
 						console.error("Supabase insert error:", insertError);
+						return graphData;
 					} else {
 						// Return the project ID so client can track it
 						return { ...graphData, projectId: newProject.id };

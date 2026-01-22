@@ -2,6 +2,14 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerFn } from "@tanstack/react-start";
 import OpenAI from "openai";
 import { z } from "zod";
+import {
+	CHAT_ROLES,
+	type ChatMessageInsert,
+	TABLE_CHAT_MESSAGES,
+	TABLE_MIND_MAPS,
+	TABLE_USER_CREDITS,
+	TABLES,
+} from "@/lib/database.constants";
 
 // Server-side Supabase client
 const getSupabaseClient = () => {
@@ -11,96 +19,8 @@ const getSupabaseClient = () => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
-// REQUEST VALIDATION - Check if the request is related to mind map/app design
+// Off-topic detection is now handled by the AI itself
 // ══════════════════════════════════════════════════════════════════════════════
-const OFF_TOPIC_PATTERNS = [
-	/write\s+(me\s+)?(an?\s+)?email/i,
-	/compose\s+(an?\s+)?email/i,
-	/draft\s+(an?\s+)?(email|letter|message)/i,
-	/send\s+(an?\s+)?email/i,
-	/write\s+(me\s+)?(a\s+)?(poem|story|essay|article|blog)/i,
-	/help\s+me\s+with\s+(my\s+)?(homework|assignment)/i,
-	/solve\s+(this\s+)?(math|equation|problem)/i,
-	/translate\s+/i,
-	/what\s+is\s+the\s+(capital|population|weather)/i,
-	/tell\s+me\s+(a\s+)?joke/i,
-	/explain\s+(quantum|relativity|philosophy)/i,
-	/recipe\s+for/i,
-	/how\s+to\s+cook/i,
-	/medical\s+advice/i,
-	/legal\s+advice/i,
-	/financial\s+advice/i,
-	/who\s+(is|was|won)/i,
-	/when\s+(did|was|is)/i,
-	/where\s+(is|was|are)/i,
-];
-
-const MIND_MAP_KEYWORDS = [
-	"app",
-	"application",
-	"feature",
-	"flow",
-	"screen",
-	"user",
-	"design",
-	"build",
-	"create",
-	"add",
-	"remove",
-	"update",
-	"modify",
-	"change",
-	"node",
-	"mind map",
-	"wireframe",
-	"prototype",
-	"ui",
-	"ux",
-	"interface",
-	"dashboard",
-	"login",
-	"signup",
-	"authentication",
-	"checkout",
-	"payment",
-	"profile",
-	"settings",
-	"navigation",
-	"button",
-	"form",
-	"input",
-	"page",
-	"modal",
-	"component",
-];
-
-function isOffTopicRequest(message: string): boolean {
-	const lowerMessage = message.toLowerCase();
-
-	// Check if message matches off-topic patterns
-	for (const pattern of OFF_TOPIC_PATTERNS) {
-		if (pattern.test(message)) {
-			return true;
-		}
-	}
-
-	// Check if message contains any mind map related keywords
-	const hasMindMapKeyword = MIND_MAP_KEYWORDS.some((keyword) =>
-		lowerMessage.includes(keyword),
-	);
-
-	// If it's a very short message without mind map keywords and doesn't look like a command
-	if (
-		message.length > 50 &&
-		!hasMindMapKeyword &&
-		!lowerMessage.includes("?")
-	) {
-		// Might be an off-topic request like writing content
-		return true;
-	}
-
-	return false;
-}
 
 function getOffTopicResponse() {
 	return {
@@ -125,6 +45,39 @@ function getOffTopicResponse() {
 // ══════════════════════════════════════════════════════════════════════════════
 export const mindMapSystemPrompt = `
 You are an expert UX/product designer and technical architect. Your mission is to generate comprehensive, developer-friendly mind maps that break down app ideas into DEEP, DETAILED user flows.
+
+⚠️ CRITICAL: OFF-TOPIC REQUEST DETECTION
+═══════════════════════════════════════════════════════════════════════════════
+BEFORE generating any mind map, you MUST determine if the user's request is related to app/product design and mind maps.
+
+If the request is NOT related to:
+- App/application design
+- Product design
+- User flows and screens
+- Feature planning
+- UI/UX design
+- Website/platform design
+- Mind map creation/modification
+
+Then set "isOffTopic": true in your response and provide a helpful message explaining that you can only help with app/product design tasks.
+
+Examples of OFF-TOPIC requests:
+- Writing emails, poems, stories, essays
+- General questions (weather, facts, trivia)
+- Homework help unrelated to design
+- Math problems or translations
+- Recipes, cooking instructions
+- Medical, legal, or financial advice
+- Jokes or entertainment
+
+Examples of ON-TOPIC requests:
+- "Create a social media app"
+- "Design a checkout flow for an e-commerce site"
+- "Add a user profile feature"
+- "Build a dashboard for analytics"
+- "Create a login flow"
+
+If isOffTopic is true, set action to "none" and graphData to null, but still provide a helpful message.
 
 ═══════════════════════════════════════════════════════════════════════════════
 CORE PRINCIPLES - DEEP USER FLOW MAPPING
@@ -331,6 +284,10 @@ YOUR RESPONSE MUST:
 
 YOUR RESPONSE FORMAT:
 
+⚠️ CRITICAL: You MUST respond with VALID JSON ONLY. No markdown, no code blocks, no explanations outside the JSON structure!
+
+Output ONLY this JSON structure (no other text before or after):
+
 {
   "thinking": {
     "task": "What does the user want?",
@@ -346,6 +303,10 @@ YOUR RESPONSE FORMAT:
     "edges": [...]  // Include ALL existing edges + your new edges
   }
 }
+
+⚠️ DO NOT wrap in markdown code blocks (no \`\`\`json)
+⚠️ DO NOT add any text before or after the JSON
+⚠️ Output must be parseable JSON.parse() directly
 `;
 
 // Chat-specific system prompt for conversational AI (subsequent messages)
@@ -376,8 +337,12 @@ Only add, update, or remove what the user explicitly asks for.`
 }
 
 ═══════════════════════════════════════════════════════════════════════════════
-RESPONSE FORMAT
+RESPONSE FORMAT - JSON ONLY!
 ═══════════════════════════════════════════════════════════════════════════════
+
+⚠️ CRITICAL: You MUST respond with VALID JSON ONLY. No markdown, no code blocks, no explanations outside the JSON structure!
+
+Output ONLY this JSON structure (no other text before or after):
 
 {
   "thinking": {
@@ -394,6 +359,12 @@ RESPONSE FORMAT
     "edges": [...]   // FULL list of edges (existing + new/modified)
   } | null
 }
+
+⚠️ DO NOT wrap in markdown code blocks (no \`\`\`json)
+⚠️ DO NOT add any text before or after the JSON
+⚠️ Output must be parseable JSON.parse() directly
+⚠️ All strings must be properly escaped
+⚠️ All arrays and objects must be properly formatted
 
 ACTION TYPES:
 - "generate": Create a complete mind map from scratch (for empty canvas or full rebuild)
@@ -607,6 +578,8 @@ export const chatWithAI = createServerFn({ method: "POST" })
 	});
 
 // Streaming chat function that returns thinking steps as they're detected
+
+// Runtime structure is correct, this is a TypeScript strictness issue
 export const chatWithAIStreaming = createServerFn({ method: "POST" })
 	.inputValidator(chatInputSchema)
 	.handler(async ({ data }) => {
@@ -615,20 +588,35 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 			throw new Error("Missing OPENAI_API_KEY");
 		}
 
-		// Check if the request is off-topic (not related to mind map/app design)
-		if (isOffTopicRequest(data.message)) {
-			return getOffTopicResponse();
+		// Off-topic detection is now handled by the AI itself
+
+		const supabase = getSupabaseClient();
+
+		// Save user message to database (backend)
+		if (data.userId && data.projectId) {
+			const userMessage: ChatMessageInsert = {
+				[TABLE_CHAT_MESSAGES.MIND_MAP_ID]: data.projectId,
+				[TABLE_CHAT_MESSAGES.USER_ID]: data.userId,
+				[TABLE_CHAT_MESSAGES.ROLE]: CHAT_ROLES.USER,
+				[TABLE_CHAT_MESSAGES.CONTENT]: data.message,
+			};
+			const { error: userMessageError } = await supabase
+				.from(TABLES.CHAT_MESSAGES)
+				.insert(userMessage);
+
+			if (userMessageError) {
+				console.error("Error saving user message:", userMessageError);
+				// Don't fail the request, but log the error
+			}
 		}
 
 		// Check credits before generation (only if user is authenticated)
 		if (data.userId) {
-			const supabase = getSupabaseClient();
-
 			// Check user's credits
 			let { data: userCredits, error: creditsError } = await supabase
-				.from("user_credits")
-				.select("credits")
-				.eq("user_id", data.userId)
+				.from(TABLES.USER_CREDITS)
+				.select(TABLE_USER_CREDITS.CREDITS)
+				.eq(TABLE_USER_CREDITS.USER_ID, data.userId)
 				.single();
 
 			if (creditsError && creditsError.code !== "PGRST116") {
@@ -650,12 +638,15 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 
 				// Update userCredits with the initialized data
 				if (initializedCredits && initializedCredits.length > 0) {
-					userCredits = { credits: initializedCredits[0].credits };
+					userCredits = {
+						[TABLE_USER_CREDITS.CREDITS]:
+							initializedCredits[0][TABLE_USER_CREDITS.CREDITS],
+					};
 				}
 			}
 
 			// Check if user has enough credits (1 credit per generation)
-			if (!userCredits || userCredits.credits < 1) {
+			if (!userCredits || userCredits[TABLE_USER_CREDITS.CREDITS] < 1) {
 				throw new Error("INSUFFICIENT_CREDITS");
 			}
 		}
@@ -746,10 +737,11 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 		try {
 			// Clean up the content if it has markdown code blocks
 			let cleanContent = fullContent.trim();
+
+			// Remove markdown code block wrappers
 			if (cleanContent.startsWith("```json")) {
 				cleanContent = cleanContent.slice(7);
-			}
-			if (cleanContent.startsWith("```")) {
+			} else if (cleanContent.startsWith("```")) {
 				cleanContent = cleanContent.slice(3);
 			}
 			if (cleanContent.endsWith("```")) {
@@ -757,7 +749,69 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 			}
 			cleanContent = cleanContent.trim();
 
-			const parsed = JSON.parse(cleanContent);
+			// Try to extract JSON if there's extra text
+			let jsonContent = cleanContent;
+
+			// Find the first { and last } to extract JSON object
+			const firstBrace = cleanContent.indexOf("{");
+			const lastBrace = cleanContent.lastIndexOf("}");
+
+			if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+				jsonContent = cleanContent.substring(firstBrace, lastBrace + 1);
+			}
+
+			type ParsedResponse = {
+				isOffTopic?: boolean;
+				thinking: {
+					task: string;
+					context: string;
+					references: string;
+					evaluation: string;
+					iteration: string;
+				};
+				message: string;
+				action: "generate" | "modify" | "none";
+				graphData: {
+					nodes: Array<Record<string, unknown>>;
+					edges: Array<Record<string, unknown>>;
+				} | null;
+				streamingSteps?: Array<{
+					step: string;
+					content: string;
+					completed: boolean;
+				}>;
+			};
+
+			let parsed: ParsedResponse;
+			try {
+				parsed = JSON.parse(jsonContent) as ParsedResponse;
+			} catch {
+				// Try to fix common JSON issues
+				// Remove trailing commas
+				jsonContent = jsonContent.replace(/,(\s*[}\]])/g, "$1");
+				// Try parsing again
+				try {
+					parsed = JSON.parse(jsonContent) as ParsedResponse;
+				} catch (retryError) {
+					console.error("Failed to parse JSON:", retryError);
+					console.error("Content received:", fullContent.substring(0, 500));
+					throw new Error(
+						"Invalid JSON response from AI. Please try again or rephrase your request.",
+					);
+				}
+			}
+
+			// Validate required fields
+			if (!parsed.thinking || !parsed.message || !parsed.action) {
+				throw new Error(
+					"Invalid response structure. Missing required fields: thinking, message, or action.",
+				);
+			}
+
+			// Ensure graphData is null if action is "none"
+			if (parsed.action === "none" && parsed.graphData !== null) {
+				parsed.graphData = null;
+			}
 
 			// Deduct credits only if action is generate or modify (not for "none" - just answering questions)
 			if (
@@ -778,46 +832,110 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 					console.error("Error deducting credits:", deductError);
 				}
 
-				// Save first_prompt if project doesn't have one yet (regardless of isFirstMessage flag)
-				if (data.projectId && parsed.action === "generate") {
+				// Save first_prompt if this is the first message OR if project doesn't have one yet
+				if (
+					data.projectId &&
+					(data.isFirstMessage || parsed.action === "generate")
+				) {
 					// First check if project already has a first_prompt
 					const { data: existingProject, error: fetchError } = await supabase
-						.from("mind_maps")
-						.select("first_prompt")
-						.eq("id", data.projectId)
-						.eq("user_id", data.userId)
+						.from(TABLES.MIND_MAPS)
+						.select(TABLE_MIND_MAPS.FIRST_PROMPT)
+						.eq(TABLE_MIND_MAPS.ID, data.projectId)
+						.eq(TABLE_MIND_MAPS.USER_ID, data.userId)
 						.single();
 
 					if (fetchError) {
 						console.error("Error fetching project:", fetchError);
 					}
 
-					// Only update if first_prompt is empty, null, or doesn't exist
-					if (
-						!existingProject?.first_prompt ||
-						existingProject.first_prompt.trim() === ""
-					) {
+					// Check if first_prompt is empty, null, or doesn't exist
+					const firstPrompt = existingProject?.[TABLE_MIND_MAPS.FIRST_PROMPT];
+					const shouldSavePrompt =
+						!existingProject ||
+						!firstPrompt ||
+						(typeof firstPrompt === "string" && firstPrompt.trim() === "");
+
+					if (shouldSavePrompt) {
+						const updateData: {
+							[TABLE_MIND_MAPS.FIRST_PROMPT]: string;
+							[TABLE_MIND_MAPS.UPDATED_AT]: string;
+						} = {
+							[TABLE_MIND_MAPS.FIRST_PROMPT]: data.message,
+							[TABLE_MIND_MAPS.UPDATED_AT]: new Date().toISOString(),
+						};
 						const { error: updateError } = await supabase
-							.from("mind_maps")
-							.update({
-								first_prompt: data.message,
-								updated_at: new Date().toISOString(),
-							})
-							.eq("id", data.projectId)
-							.eq("user_id", data.userId);
+							.from(TABLES.MIND_MAPS)
+							.update(updateData)
+							.eq(TABLE_MIND_MAPS.ID, data.projectId)
+							.eq(TABLE_MIND_MAPS.USER_ID, data.userId);
 
 						if (updateError) {
 							console.error("Error saving first_prompt:", updateError);
 						} else {
-							console.log("first_prompt saved successfully:", data.message);
+							console.log(
+								"first_prompt saved successfully:",
+								data.message.substring(0, 50) + "...",
+							);
 						}
+					} else {
+						const existingPrompt =
+							existingProject?.[TABLE_MIND_MAPS.FIRST_PROMPT];
+						console.log(
+							"first_prompt already exists, skipping save:",
+							typeof existingPrompt === "string"
+								? existingPrompt.substring(0, 50) + "..."
+								: "null/undefined",
+						);
+					}
+				}
+
+				// Save AI response to database (backend)
+				if (data.userId && data.projectId) {
+					const aiMessage: ChatMessageInsert = {
+						[TABLE_CHAT_MESSAGES.MIND_MAP_ID]: data.projectId,
+						[TABLE_CHAT_MESSAGES.USER_ID]: data.userId,
+						[TABLE_CHAT_MESSAGES.ROLE]: CHAT_ROLES.AI,
+						[TABLE_CHAT_MESSAGES.CONTENT]: parsed.message,
+						...(parsed.action === "generate" || parsed.action === "modify"
+							? { [TABLE_CHAT_MESSAGES.MAP_DATA]: parsed.graphData }
+							: {}),
+					};
+					const { error: aiMessageError } = await supabase
+						.from(TABLES.CHAT_MESSAGES)
+						.insert(aiMessage);
+
+					if (aiMessageError) {
+						console.error("Error saving AI message:", aiMessageError);
+						// Don't fail the request, but log the error
 					}
 				}
 			}
 
+			// Type assertion needed due to Record<string, unknown> vs { [x: string]: {} } incompatibility
+			// The actual runtime structure is correct
 			return {
 				...parsed,
 				streamingSteps: thinkingSteps,
+			} as unknown as {
+				thinking: {
+					task: string;
+					context: string;
+					references: string;
+					evaluation: string;
+					iteration: string;
+				};
+				message: string;
+				action: "generate" | "modify" | "none";
+				graphData: {
+					nodes: Array<Record<string, unknown>>;
+					edges: Array<Record<string, unknown>>;
+				} | null;
+				streamingSteps: Array<{
+					step: string;
+					content: string;
+					completed: boolean;
+				}>;
 			};
 		} catch (error) {
 			console.error("Failed to parse JSON:", error, fullContent);

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Edge, Node } from "@xyflow/react";
 import { useCallback, useState } from "react";
 import type { MindMapProject } from "@/lib/database.types";
+import { TABLE_MIND_MAPS, TABLES, type MindMapInsert, type MindMapUpdate } from "@/lib/database.constants";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -14,10 +15,10 @@ export function useMindMapProjects() {
 			if (!user) return [];
 
 			const { data, error } = await supabase
-				.from("mind_maps")
+				.from(TABLES.MIND_MAPS)
 				.select("*")
-				.eq("user_id", user.id)
-				.order("updated_at", { ascending: false });
+				.eq(TABLE_MIND_MAPS.USER_ID, user.id)
+				.order(TABLE_MIND_MAPS.UPDATED_AT, { ascending: false });
 
 			if (error) throw error;
 			return data as MindMapProject[];
@@ -35,10 +36,10 @@ export function useMindMapProject(projectId: string | null) {
 			if (!user || !projectId) return null;
 
 			const { data, error } = await supabase
-				.from("mind_maps")
+				.from(TABLES.MIND_MAPS)
 				.select("*")
-				.eq("id", projectId)
-				.eq("user_id", user.id)
+				.eq(TABLE_MIND_MAPS.ID, projectId)
+				.eq(TABLE_MIND_MAPS.USER_ID, user.id)
 				.single();
 
 			if (error) throw error;
@@ -61,12 +62,13 @@ export function useCreateMindMapProject() {
 		) => {
 			if (!user) throw new Error("User not authenticated");
 
+			const insertData: MindMapInsert = {
+				...project,
+				[TABLE_MIND_MAPS.USER_ID]: user.id,
+			};
 			const { data, error } = await supabase
-				.from("mind_maps")
-				.insert({
-					...project,
-					user_id: user.id,
-				})
+				.from(TABLES.MIND_MAPS)
+				.insert(insertData)
 				.select()
 				.single();
 
@@ -93,10 +95,14 @@ export function useUpdateMindMapProject() {
 			id,
 			...updates
 		}: Partial<MindMapProject> & { id: string }) => {
+			const updateData: MindMapUpdate = {
+				...updates,
+				[TABLE_MIND_MAPS.UPDATED_AT]: new Date().toISOString(),
+			};
 			const { data, error } = await supabase
-				.from("mind_maps")
-				.update({ ...updates, updated_at: new Date().toISOString() })
-				.eq("id", id)
+				.from(TABLES.MIND_MAPS)
+				.update(updateData)
+				.eq(TABLE_MIND_MAPS.ID, id)
 				.select()
 				.single();
 
