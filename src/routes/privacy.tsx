@@ -169,19 +169,19 @@ function PrivacyPage() {
 						</h2>
 						<div className="flex flex-col gap-4">
 							<p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-								We do not sell, trade, or rent your personal information to third
-								parties. We only share information as necessary to:
+								We do not sell, trade, or rent your personal information to
+								third parties. We only share information as necessary to:
 							</p>
 							<ul className="list-disc list-inside flex flex-col gap-2 text-slate-700 dark:text-slate-300 leading-relaxed">
-							<li>
-								Provide our service (e.g., sending prompts to OpenAI for AI
-								generation)
-							</li>
-							<li>
-								Comply with legal obligations or respond to lawful requests
-							</li>
-							<li>Protect our rights, privacy, safety, or property</li>
-						</ul>
+								<li>
+									Provide our service (e.g., sending prompts to OpenAI for AI
+									generation)
+								</li>
+								<li>
+									Comply with legal obligations or respond to lawful requests
+								</li>
+								<li>Protect our rights, privacy, safety, or property</li>
+							</ul>
 						</div>
 					</section>
 
