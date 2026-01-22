@@ -8,7 +8,6 @@ import {
 	useMindMapProject,
 	useUpdateMindMapProject,
 } from "@/hooks/mind-maps.hooks";
-import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
 
 const AUTOSAVE_DELAY = 1000; // 1s debounce
@@ -17,7 +16,6 @@ const ProjectPage = () => {
 	const { projectId } = Route.useParams();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
-	const { user, loading: authLoading } = useAuthStore();
 	const { projectTitle, setProjectTitle } = useProjectStore();
 
 	// Fetch project from Supabase
@@ -59,20 +57,13 @@ const ProjectPage = () => {
 		}
 	}, [project, setProjectTitle]);
 
-	// Redirect to home on error
+	// Redirect to projects on error
 	useEffect(() => {
 		if (projectError) {
 			console.error("Failed to load project:", projectError);
-			navigate({ to: "/" });
+			navigate({ to: "/projects" });
 		}
 	}, [projectError, navigate]);
-
-	// Redirect if not authenticated
-	useEffect(() => {
-		if (!authLoading && !user) {
-			navigate({ to: "/" });
-		}
-	}, [authLoading, user, navigate]);
 
 	// Autosave function - only saves if there are actual changes
 	const performAutosave = useCallback(async () => {
@@ -191,7 +182,7 @@ const ProjectPage = () => {
 			clearTimeout(autosaveTimerRef.current);
 			performAutosave();
 		}
-		navigate({ to: "/" });
+		navigate({ to: "/projects" });
 	};
 
 	// Handle when the first prompt is submitted
@@ -201,7 +192,7 @@ const ProjectPage = () => {
 	}, [queryClient, projectId]);
 
 	// Show loading state
-	if (authLoading || projectLoading) {
+	if (projectLoading) {
 		return (
 			<main className="w-full flex-1 flex items-center justify-center">
 				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#03045E] dark:border-[#0077B6]" />
@@ -249,6 +240,6 @@ const ProjectPage = () => {
 	);
 };
 
-export const Route = createFileRoute("/project/$projectId")({
+export const Route = createFileRoute("/(auth)/project/$projectId")({
 	component: ProjectPage,
 });

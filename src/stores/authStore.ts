@@ -45,10 +45,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
 	signInWithGoogle: async () => {
 		// Use custom domain from env if available, otherwise fallback to current origin
-		const redirectUrl =
-			import.meta.env.VITE_AUTH_REDIRECT_URL ||
-			`${window.location.origin}/`;
-		
+		const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL;
+
 		const { error } = await supabase.auth.signInWithOAuth({
 			provider: "google",
 			options: {

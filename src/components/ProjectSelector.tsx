@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Clock, FileText, Loader2, Network, Plus, Trash2 } from "lucide-react";
+import { Clock, FileText, Loader2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
 	useDeleteMindMapProject,
@@ -7,9 +7,7 @@ import {
 } from "@/hooks/mind-maps.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatRelativeDate } from "@/lib/date-utils";
-import { useAuthStore } from "@/stores/authStore";
 import { ConfirmDialog } from "./shared/ConfirmDialog";
-import { GoogleIcon } from "./svg-icons/google-icon";
 import { Button } from "./ui/button";
 
 interface ProjectSelectorProps {
@@ -23,74 +21,10 @@ export function ProjectSelector({
 	onNewProject,
 	isCreating = false,
 }: ProjectSelectorProps) {
-	const { user, loading: authLoading, signInWithGoogle } = useAuthStore();
 	const { data: projects, isLoading } = useMindMapProjects();
 	const deleteMutation = useDeleteMindMapProject();
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
-
-	if (authLoading) {
-		return (
-			<div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-				<Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-			</div>
-		);
-	}
-
-	if (!user) {
-		return (
-			<div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-				<div className="max-w-md w-full text-center">
-					<div className="mb-8 flex flex-col items-center">
-						<img
-							src="/public/assets/brand/logo-transparent.png"
-							alt="logo"
-							className="size-16"
-						/>
-						<h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-							Proto Map
-						</h1>
-						<p className="text-slate-600 dark:text-slate-400">
-							Transform your app ideas into visual user flow diagrams with AI
-						</p>
-					</div>
-
-					<Button
-						onClick={signInWithGoogle}
-						variant="outline"
-						className="w-full"
-						size="lg"
-					>
-						<GoogleIcon className="size-5" />
-						Continue with Google
-					</Button>
-
-					<p className="mt-6 text-sm text-slate-500 dark:text-slate-500">
-						Sign in to save and manage your mind maps
-					</p>
-
-					{/* Footer Links */}
-					<footer className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800">
-						<div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600 dark:text-slate-400">
-							<Link
-								to="/privacy"
-								className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
-							>
-								Privacy Policy
-							</Link>
-							<span className="text-slate-400 dark:text-slate-600">•</span>
-							<Link
-								to="/terms"
-								className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
-							>
-								Terms and Conditions
-							</Link>
-						</div>
-					</footer>
-				</div>
-			</div>
-		);
-	}
 
 	return (
 		<div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8">
@@ -134,7 +68,7 @@ export function ProjectSelector({
 								<div className="flex items-start justify-between mb-3">
 									<div className="p-2 rounded-lg bg-[#03045E]/10 dark:bg-[#0077B6]/20">
 										<img
-											src="/public/assets/brand/logo-transparent.png"
+											src="/assets/brand/logo-transparent.png"
 											alt="logo"
 											className="size-5"
 										/>
@@ -179,7 +113,7 @@ export function ProjectSelector({
 				) : (
 					<div className="text-center py-20 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col items-center gap-4">
 						<img
-							src="/public/assets/brand/logo-transparent.png"
+							src="/assets/brand/logo-transparent.png"
 							alt="logo"
 							className="size-12"
 						/>

@@ -1,67 +1,15 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ProjectSelector } from "@/components/ProjectSelector";
-import { useCreateMindMapProject } from "@/hooks/mind-maps.hooks";
-import type { MindMapProject } from "@/lib/database.types";
-import { useAuthStore } from "@/stores/authStore";
+import { createFileRoute } from "@tanstack/react-router";
 
-const App = () => {
-	const navigate = useNavigate();
-	const { user, loading } = useAuthStore();
-	const createMutation = useCreateMindMapProject();
-
-	const handleSelectProject = (project: MindMapProject) => {
-		navigate({ to: "/project/$projectId", params: { projectId: project.id } });
-	};
-
-	const handleNewProject = async () => {
-		if (!user) return;
-
-		try {
-			// Create the project in Supabase first
-			const newProject = await createMutation.mutateAsync({
-				title: "New Project",
-				description: null,
-				first_prompt: "",
-				graph_data: {
-					nodes: [
-						{
-							id: "root",
-							type: "core-concept",
-							position: { x: 0, y: 0 },
-							data: { label: "New Project" },
-						},
-					],
-					edges: [],
-				},
-			});
-			// Then navigate to the new project
-			navigate({
-				to: "/project/$projectId",
-				params: { projectId: newProject.id },
-			});
-		} catch (error) {
-			console.error("Failed to create project:", error);
-		}
-	};
-
-	// Show loading state
-	if (loading) {
-		return (
-			<main className="w-full flex-1 flex items-center justify-center">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#03045E] dark:border-[#0077B6]" />
-			</main>
-		);
-	}
-
+const LandingPage = () => {
 	return (
-		<ProjectSelector
-			onSelectProject={handleSelectProject}
-			onNewProject={handleNewProject}
-			isCreating={createMutation.isPending}
-		/>
+		<main className="w-full flex-1 flex items-center justify-center bg-white dark:bg-black">
+			<h1 className="text-4xl font-bold text-black dark:text-white">
+				ProtoMap
+			</h1>
+		</main>
 	);
 };
 
 export const Route = createFileRoute("/")({
-	component: App,
+	component: LandingPage,
 });

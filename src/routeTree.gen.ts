@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as AccountRouteImport } from './routes/account'
+import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProjectProjectIdRouteImport } from './routes/project.$projectId'
+import { Route as authProjectsRouteImport } from './routes/(auth)/projects'
+import { Route as authAccountRouteImport } from './routes/(auth)/account'
+import { Route as authProjectProjectIdRouteImport } from './routes/(auth)/project/$projectId'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -25,9 +27,8 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AccountRoute = AccountRouteImport.update({
-  id: '/account',
-  path: '/account',
+const authRouteRoute = authRouteRouteImport.update({
+  id: '/(auth)',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -35,54 +36,81 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProjectProjectIdRoute = ProjectProjectIdRouteImport.update({
+const authProjectsRoute = authProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => authRouteRoute,
+} as any)
+const authAccountRoute = authAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => authRouteRoute,
+} as any)
+const authProjectProjectIdRoute = authProjectProjectIdRouteImport.update({
   id: '/project/$projectId',
   path: '/project/$projectId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => authRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/project/$projectId': typeof ProjectProjectIdRoute
+  '/account': typeof authAccountRoute
+  '/projects': typeof authProjectsRoute
+  '/project/$projectId': typeof authProjectProjectIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/project/$projectId': typeof ProjectProjectIdRoute
+  '/account': typeof authAccountRoute
+  '/projects': typeof authProjectsRoute
+  '/project/$projectId': typeof authProjectProjectIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
+  '/(auth)': typeof authRouteRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/project/$projectId': typeof ProjectProjectIdRoute
+  '/(auth)/account': typeof authAccountRoute
+  '/(auth)/projects': typeof authProjectsRoute
+  '/(auth)/project/$projectId': typeof authProjectProjectIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/account' | '/privacy' | '/terms' | '/project/$projectId'
+  fullPaths:
+    | '/'
+    | '/privacy'
+    | '/terms'
+    | '/account'
+    | '/projects'
+    | '/project/$projectId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/account' | '/privacy' | '/terms' | '/project/$projectId'
+  to:
+    | '/'
+    | '/privacy'
+    | '/terms'
+    | '/account'
+    | '/projects'
+    | '/project/$projectId'
   id:
     | '__root__'
     | '/'
-    | '/account'
+    | '/(auth)'
     | '/privacy'
     | '/terms'
-    | '/project/$projectId'
+    | '/(auth)/account'
+    | '/(auth)/projects'
+    | '/(auth)/project/$projectId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AccountRoute: typeof AccountRoute
+  authRouteRoute: typeof authRouteRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
-  ProjectProjectIdRoute: typeof ProjectProjectIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -101,11 +129,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/account': {
-      id: '/account'
-      path: '/account'
-      fullPath: '/account'
-      preLoaderRoute: typeof AccountRouteImport
+    '/(auth)': {
+      id: '/(auth)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof authRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -115,22 +143,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/project/$projectId': {
-      id: '/project/$projectId'
+    '/(auth)/projects': {
+      id: '/(auth)/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof authProjectsRouteImport
+      parentRoute: typeof authRouteRoute
+    }
+    '/(auth)/account': {
+      id: '/(auth)/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof authAccountRouteImport
+      parentRoute: typeof authRouteRoute
+    }
+    '/(auth)/project/$projectId': {
+      id: '/(auth)/project/$projectId'
       path: '/project/$projectId'
       fullPath: '/project/$projectId'
-      preLoaderRoute: typeof ProjectProjectIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof authProjectProjectIdRouteImport
+      parentRoute: typeof authRouteRoute
     }
   }
 }
 
+interface authRouteRouteChildren {
+  authAccountRoute: typeof authAccountRoute
+  authProjectsRoute: typeof authProjectsRoute
+  authProjectProjectIdRoute: typeof authProjectProjectIdRoute
+}
+
+const authRouteRouteChildren: authRouteRouteChildren = {
+  authAccountRoute: authAccountRoute,
+  authProjectsRoute: authProjectsRoute,
+  authProjectProjectIdRoute: authProjectProjectIdRoute,
+}
+
+const authRouteRouteWithChildren = authRouteRoute._addFileChildren(
+  authRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AccountRoute: AccountRoute,
+  authRouteRoute: authRouteRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
-  ProjectProjectIdRoute: ProjectProjectIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

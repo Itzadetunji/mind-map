@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowLeft,
 	Check,
@@ -155,8 +155,7 @@ function formatDate(dateString: string) {
 }
 
 function AccountPage() {
-	const navigate = useNavigate();
-	const { user, loading: authLoading } = useAuthStore();
+	const { user } = useAuthStore();
 	const { data: subscription, isLoading: subscriptionLoading } =
 		useUserSubscription();
 	const { data: credits, isLoading: creditsLoading } = useUserCredits();
@@ -172,12 +171,6 @@ function AccountPage() {
 		null,
 	);
 
-	// Redirect to home if not authenticated
-	if (!authLoading && !user) {
-		navigate({ to: "/" });
-		return null;
-	}
-
 	const handleSubscribe = (tier: SubscriptionTier) => {
 		// TODO: Integrate with Stripe for subscription
 		setSelectedTier(tier);
@@ -191,7 +184,7 @@ function AccountPage() {
 	};
 
 	const currentTier = subscription?.tier || "free";
-	const isLoading = authLoading || subscriptionLoading || creditsLoading;
+	const isLoading = subscriptionLoading || creditsLoading;
 
 	if (isLoading) {
 		return (
@@ -206,7 +199,7 @@ function AccountPage() {
 			<div className="max-w-6xl mx-auto px-4 py-8">
 				{/* Back button */}
 				<Link
-					to="/"
+					to="/projects"
 					className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 mb-6"
 				>
 					<ArrowLeft className="w-4 h-4" />
@@ -519,7 +512,10 @@ function AccountPage() {
 			</div>
 
 			{/* Subscription Dialog */}
-			<Dialog open={showSubscriptionDialog} onOpenChange={setShowSubscriptionDialog}>
+			<Dialog
+				open={showSubscriptionDialog}
+				onOpenChange={setShowSubscriptionDialog}
+			>
 				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
 						<div className="flex items-center gap-3 mb-2">
@@ -540,9 +536,7 @@ function AccountPage() {
 						>
 							Cancel
 						</Button>
-						<Button onClick={() => setShowSubscriptionDialog(false)}>
-							OK
-						</Button>
+						<Button onClick={() => setShowSubscriptionDialog(false)}>OK</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
@@ -577,6 +571,6 @@ function AccountPage() {
 	);
 }
 
-export const Route = createFileRoute("/account")({
+export const Route = createFileRoute("/(auth)/account")({
 	component: AccountPage,
 });

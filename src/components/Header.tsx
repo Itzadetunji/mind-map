@@ -26,7 +26,7 @@ export function Header({
 						className="w-8 h-8"
 					/>
 					<h1 className="text-xl font-semibold">
-						<Link to="/">Proto Map</Link>
+						<Link to="/projects">Proto Map</Link>
 					</h1>
 				</div>
 				{projectTitle && (

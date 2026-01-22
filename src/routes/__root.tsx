@@ -7,7 +7,6 @@ import {
 } from "@tanstack/react-router";
 import reactFlowCss from "@xyflow/react/dist/style.css?url";
 import { useEffect } from "react";
-import { Header } from "../components/Header";
 import { useAuthStore } from "../stores/authStore";
 import appCss from "../styles.css?url";
 
@@ -74,7 +73,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body className="flex flex-col h-dvh">
-				<Header />
 				{children}
 				<Scripts />
 			</body>
