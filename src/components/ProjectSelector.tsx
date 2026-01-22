@@ -1,5 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { Clock, FileText, Loader2, Plus, Trash2 } from "lucide-react";
+import {
+	Clock,
+	FileText,
+	Link2,
+	Loader2,
+	MoreVertical,
+	Plus,
+	Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import {
 	useDeleteMindMapProject,
@@ -7,8 +15,10 @@ import {
 } from "@/hooks/mind-maps.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatRelativeDate } from "@/lib/date-utils";
+import { ShareLinkDialog } from "./ShareLinkDialog";
 import { ConfirmDialog } from "./shared/ConfirmDialog";
 import { Button } from "./ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 interface ProjectSelectorProps {
 	onSelectProject: (project: MindMapProject) => void;
@@ -25,6 +35,9 @@ export function ProjectSelector({
 	const deleteMutation = useDeleteMindMapProject();
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+	const [showShareDialog, setShowShareDialog] = useState(false);
+	const [projectToShare, setProjectToShare] = useState<string | null>(null);
+	const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
 	return (
 		<section className="flex-1 bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 flex flex-col">
@@ -73,18 +86,60 @@ export function ProjectSelector({
 											className="size-5"
 										/>
 									</div>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										onClick={(e) => {
-											e.stopPropagation();
-											setProjectToDelete(project.id);
-											setShowDeleteDialog(true);
+									<Popover
+										open={openPopoverId === project.id}
+										onOpenChange={(open) => {
+											setOpenPopoverId(open ? project.id : null);
 										}}
-										className="opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-950 text-slate-400 hover:text-red-500"
 									>
-										<Trash2 className="w-4 h-4" />
-									</Button>
+										<PopoverTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												onClick={(e) => {
+													e.stopPropagation();
+												}}
+												className="opacity-0 group-hover:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+											>
+												<MoreVertical className="w-4 h-4" />
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent
+											className="w-fit p-1"
+											onClick={(e) => e.stopPropagation()}
+										>
+											<div className="flex flex-col gap-1">
+												<Button
+													variant="ghost"
+													size="sm"
+													className="justify-start w-full"
+													onClick={(e) => {
+														e.stopPropagation();
+														setProjectToShare(project.id);
+														setShowShareDialog(true);
+														setOpenPopoverId(null);
+													}}
+												>
+													<Link2 className="w-4 h-4 mr-2" />
+													Share Link
+												</Button>
+												<Button
+													variant="ghost"
+													size="sm"
+													className="justify-start w-full text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 dark:text-red-400"
+													onClick={(e) => {
+														e.stopPropagation();
+														setProjectToDelete(project.id);
+														setShowDeleteDialog(true);
+														setOpenPopoverId(null);
+													}}
+												>
+													<Trash2 className="w-4 h-4 mr-2" />
+													Delete
+												</Button>
+											</div>
+										</PopoverContent>
+									</Popover>
 								</div>
 
 								<h3 className="font-semibold text-slate-900 dark:text-white mb-1 line-clamp-1">
@@ -134,23 +189,6 @@ export function ProjectSelector({
 						</Button>
 					</div>
 				)}
-
-				{/* Delete Confirmation Dialog */}
-				<ConfirmDialog
-					open={showDeleteDialog}
-					onOpenChange={setShowDeleteDialog}
-					title="Delete Project"
-					description="Are you sure you want to delete this project? This action cannot be undone."
-					confirmLabel="Delete"
-					cancelLabel="Cancel"
-					variant="destructive"
-					onConfirm={() => {
-						if (projectToDelete) {
-							deleteMutation.mutate(projectToDelete);
-							setProjectToDelete(null);
-						}
-					}}
-				/>
 			</div>
 			{/* Footer Links */}
 			<footer className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">
@@ -170,6 +208,36 @@ export function ProjectSelector({
 					</Link>
 				</div>
 			</footer>
+			{/* Delete Confirmation Dialog */}
+			<ConfirmDialog
+				open={showDeleteDialog}
+				onOpenChange={setShowDeleteDialog}
+				title="Delete Project"
+				description="Are you sure you want to delete this project? This action cannot be undone."
+				confirmLabel="Delete"
+				cancelLabel="Cancel"
+				variant="destructive"
+				onConfirm={() => {
+					if (projectToDelete) {
+						deleteMutation.mutate(projectToDelete);
+						setProjectToDelete(null);
+					}
+				}}
+			/>
+
+			{/* Share Link Dialog */}
+			{projectToShare && (
+				<ShareLinkDialog
+					open={showShareDialog}
+					onOpenChange={(open) => {
+						setShowShareDialog(open);
+						if (!open) {
+							setProjectToShare(null);
+						}
+					}}
+					mindMapId={projectToShare}
+				/>
+			)}
 		</section>
 	);
 }

@@ -13,6 +13,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShareShareTokenRouteImport } from './routes/share/$shareToken'
 import { Route as authProjectsRouteImport } from './routes/(auth)/projects'
 import { Route as authAccountRouteImport } from './routes/(auth)/account'
 import { Route as authProjectProjectIdRouteImport } from './routes/(auth)/project/$projectId'
@@ -34,6 +35,11 @@ const authRouteRoute = authRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareShareTokenRoute = ShareShareTokenRouteImport.update({
+  id: '/share/$shareToken',
+  path: '/share/$shareToken',
   getParentRoute: () => rootRouteImport,
 } as any)
 const authProjectsRoute = authProjectsRouteImport.update({
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/account': typeof authAccountRoute
   '/projects': typeof authProjectsRoute
+  '/share/$shareToken': typeof ShareShareTokenRoute
   '/project/$projectId': typeof authProjectProjectIdRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/account': typeof authAccountRoute
   '/projects': typeof authProjectsRoute
+  '/share/$shareToken': typeof ShareShareTokenRoute
   '/project/$projectId': typeof authProjectProjectIdRoute
 }
 export interface FileRoutesById {
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/(auth)/account': typeof authAccountRoute
   '/(auth)/projects': typeof authProjectsRoute
+  '/share/$shareToken': typeof ShareShareTokenRoute
   '/(auth)/project/$projectId': typeof authProjectProjectIdRoute
 }
 export interface FileRouteTypes {
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/projects'
+    | '/share/$shareToken'
     | '/project/$projectId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/projects'
+    | '/share/$shareToken'
     | '/project/$projectId'
   id:
     | '__root__'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/(auth)/account'
     | '/(auth)/projects'
+    | '/share/$shareToken'
     | '/(auth)/project/$projectId'
   fileRoutesById: FileRoutesById
 }
@@ -111,6 +123,7 @@ export interface RootRouteChildren {
   authRouteRoute: typeof authRouteRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
+  ShareShareTokenRoute: typeof ShareShareTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share/$shareToken': {
+      id: '/share/$shareToken'
+      path: '/share/$shareToken'
+      fullPath: '/share/$shareToken'
+      preLoaderRoute: typeof ShareShareTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth)/projects': {
@@ -188,6 +208,7 @@ const rootRouteChildren: RootRouteChildren = {
   authRouteRoute: authRouteRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
+  ShareShareTokenRoute: ShareShareTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

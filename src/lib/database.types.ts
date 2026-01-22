@@ -73,6 +73,15 @@ export interface CreditTransaction {
 	created_at: string;
 }
 
+export interface ShareLink {
+	id: string;
+	mind_map_id: string;
+	user_id: string;
+	share_token: string;
+	created_at: string;
+	updated_at: string;
+}
+
 export interface Database {
 	public: {
 		Tables: {
@@ -100,6 +109,11 @@ export interface Database {
 				Row: CreditTransaction;
 				Insert: Omit<CreditTransaction, "id" | "created_at">;
 				Update: Partial<Omit<CreditTransaction, "id" | "created_at">>;
+			};
+			share_links: {
+				Row: ShareLink;
+				Insert: Omit<ShareLink, "id" | "created_at" | "updated_at">;
+				Update: Partial<Omit<ShareLink, "id" | "created_at" | "updated_at">>;
 			};
 		};
 	};

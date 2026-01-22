@@ -70,6 +70,7 @@ interface MindMapProps {
 	onEdgesChange?: (edges: Edge[]) => void;
 	hasPrompt?: boolean;
 	onPromptSubmitted?: () => void;
+	readOnly?: boolean;
 }
 
 export const MindMap = ({
@@ -78,6 +79,7 @@ export const MindMap = ({
 	onEdgesChange: onEdgesChangeCallback,
 	hasPrompt = false,
 	onPromptSubmitted,
+	readOnly = false,
 }: MindMapProps) => {
 	// Initialize with project data if available, otherwise use blank canvas
 	const projectNodes = project?.graph_data?.nodes as Node[] | undefined;
@@ -444,10 +446,11 @@ export const MindMap = ({
 
 	const onConnect = useCallback(
 		(params: Edge | Connection) => {
+			if (readOnly) return;
 			takeSnapshot(nodes, edges);
 			setEdges((eds) => addEdge(params, eds));
 		},
-		[setEdges, takeSnapshot, nodes, edges],
+		[setEdges, takeSnapshot, nodes, edges, readOnly],
 	);
 
 	const onBeforeMenuAction = useCallback(() => {
@@ -456,6 +459,7 @@ export const MindMap = ({
 
 	const onNodeContextMenu = useCallback(
 		(event: React.MouseEvent, node: Node) => {
+			if (readOnly) return;
 			event.preventDefault();
 			setMenu({
 				id: node.id,
@@ -465,11 +469,12 @@ export const MindMap = ({
 				node: node,
 			});
 		},
-		[],
+		[readOnly],
 	);
 
 	const onPaneContextMenu = useCallback(
 		(event: MouseEvent | React.MouseEvent<Element, MouseEvent>) => {
+			if (readOnly) return;
 			event.preventDefault();
 			setMenu({
 				id: "pane",
@@ -478,7 +483,7 @@ export const MindMap = ({
 				type: "pane",
 			});
 		},
-		[],
+		[readOnly],
 	);
 
 	const onNodeClick = useCallback(() => {
@@ -496,20 +501,31 @@ export const MindMap = ({
 	}, [setEdges]);
 
 	const onNodeDragStart = useCallback(() => {
+		if (readOnly) return;
 		setMenu(null);
 		// Capture snapshot before drag for undo support
 		takeSnapshot(nodes, edges);
-	}, [takeSnapshot, nodes, edges]);
+	}, [readOnly, takeSnapshot, nodes, edges]);
 
 	// Capture snapshot before nodes are deleted (select tool + Delete key)
-	const onNodesDelete = useCallback(() => {
-		takeSnapshot(nodes, edges);
-	}, [takeSnapshot, nodes, edges]);
+	const onNodesDelete = useCallback(
+		(deleted: Node[]) => {
+			if (readOnly) return;
+			takeSnapshot(nodes, edges);
+			setNodes((nds) => nds.filter((n) => !deleted.find((d) => d.id === n.id)));
+		},
+		[setNodes, takeSnapshot, nodes, edges, readOnly],
+	);
 
 	// Capture snapshot before edges are deleted (select tool + Delete key)
-	const onEdgesDelete = useCallback(() => {
-		takeSnapshot(nodes, edges);
-	}, [takeSnapshot, nodes, edges]);
+	const onEdgesDelete = useCallback(
+		(deleted: Edge[]) => {
+			if (readOnly) return;
+			takeSnapshot(nodes, edges);
+			setEdges((eds) => eds.filter((e) => !deleted.find((d) => d.id === e.id)));
+		},
+		[setEdges, takeSnapshot, nodes, edges, readOnly],
+	);
 
 	// Expose takeSnapshot for node components to capture before internal changes
 	const takeSnapshotForUndo = useCallback(() => {
@@ -528,22 +544,25 @@ export const MindMap = ({
 					onNodesChange={onNodesChange}
 					onEdgesChange={onEdgesChange}
 					onNodeClick={onNodeClick}
-					onConnect={onConnect}
-					onNodeDragStart={onNodeDragStart}
-					onNodesDelete={onNodesDelete}
-					onEdgesDelete={onEdgesDelete}
+					onConnect={readOnly ? undefined : onConnect}
+					onNodeDragStart={readOnly ? undefined : onNodeDragStart}
+					onNodesDelete={readOnly ? undefined : onNodesDelete}
+					onEdgesDelete={readOnly ? undefined : onEdgesDelete}
 					onNodeContextMenu={onNodeContextMenu}
 					onPaneContextMenu={onPaneContextMenu}
 					onPaneClick={onPaneClick}
 					onMoveStart={() => setMenu(null)}
 					fitView
-					panOnDrag={tool === "hand"}
-					selectionOnDrag={tool === "select"}
-					selectionMode={SelectionMode.Partial}
+					panOnDrag={readOnly ? true : tool === "hand"}
+					selectionOnDrag={readOnly ? false : tool === "select"}
+					selectionMode={readOnly ? SelectionMode.Full : SelectionMode.Partial}
 					panOnScroll={true}
+					nodesDraggable={!readOnly}
+					nodesConnectable={!readOnly}
+					elementsSelectable={!readOnly}
 				>
-					{/* Show FloatingSearchBar only if no prompt exists yet */}
-					{!hasLocalPrompt && (
+					{/* Show FloatingSearchBar only if no prompt exists yet and not read-only */}
+					{!hasLocalPrompt && !readOnly && (
 						<FloatingSearchBar
 							projectId={project?.id}
 							onProjectCreated={() => {
@@ -552,8 +571,8 @@ export const MindMap = ({
 							}}
 						/>
 					)}
-					{/* Show AI Chat toggle button only if prompt exists */}
-					{hasLocalPrompt && (
+					{/* Show AI Chat toggle button only if prompt exists and not read-only */}
+					{hasLocalPrompt && !readOnly && (
 						<Panel position="top-right" className="mr-2 mt-2">
 							<Button
 								onClick={() => setShowChatSidebar(!showChatSidebar)}
@@ -565,129 +584,131 @@ export const MindMap = ({
 							</Button>
 						</Panel>
 					)}
-					<Controls />
-					<Panel
-						position="top-center"
-						className="flex items-center gap-1 p-1 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800"
-					>
-						<Tooltip content="Pan Tool (H)" side="bottom">
-							<button
-								type="button"
-								onClick={() => setTool("hand")}
-								className={`p-2 rounded-md transition-colors ${
-									tool === "hand"
-										? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-										: "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
-								}`}
-							>
-								<Hand className="w-4 h-4" />
-							</button>
-						</Tooltip>
-						<Tooltip content="Select Tool (V)" side="bottom">
-							<button
-								type="button"
-								onClick={() => setTool("select")}
-								className={`p-2 rounded-md transition-colors ${
-									tool === "select"
-										? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-										: "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
-								}`}
-							>
-								<MousePointer2 className="w-4 h-4" />
-							</button>
-						</Tooltip>
-						<div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
-						<Tooltip content="Undo (Ctrl+Z)" side="bottom">
-							<button
-								type="button"
-								onClick={handleUndo}
-								disabled={!canUndo}
-								className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
-							>
-								<Undo className="w-4 h-4" />
-							</button>
-						</Tooltip>
-						<Tooltip content="Redo (Ctrl+Y)" side="bottom">
-							<button
-								type="button"
-								onClick={handleRedo}
-								disabled={!canRedo}
-								className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
-							>
-								<Redo className="w-4 h-4" />
-							</button>
-						</Tooltip>
-						{/* Download Documentation Button - shows when 2+ nodes */}
-						{nodes.length >= 2 && (
-							<>
-								<div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
-								<div className="relative" ref={downloadMenuRef}>
-									<Tooltip content="Download Documentation" side="bottom">
-										<button
-											type="button"
-											onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-											disabled={isDownloading}
-											className="flex items-center gap-1 p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
-										>
-											{isDownloading ? (
-												<Loader2 className="w-4 h-4 animate-spin" />
-											) : (
-												<Download className="w-4 h-4" />
-											)}
-											<ChevronDown className="w-3 h-3" />
-										</button>
-									</Tooltip>
-									{showDownloadMenu && (
-										<div className="absolute top-full mt-1 left-0 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-45 z-50">
+					{!readOnly && <Controls />}
+					{!readOnly && (
+						<Panel
+							position="top-center"
+							className="flex items-center gap-1 p-1 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800"
+						>
+							<Tooltip content="Pan Tool (H)" side="bottom">
+								<button
+									type="button"
+									onClick={() => setTool("hand")}
+									className={`p-2 rounded-md transition-colors ${
+										tool === "hand"
+											? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+											: "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
+									}`}
+								>
+									<Hand className="w-4 h-4" />
+								</button>
+							</Tooltip>
+							<Tooltip content="Select Tool (V)" side="bottom">
+								<button
+									type="button"
+									onClick={() => setTool("select")}
+									className={`p-2 rounded-md transition-colors ${
+										tool === "select"
+											? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+											: "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
+									}`}
+								>
+									<MousePointer2 className="w-4 h-4" />
+								</button>
+							</Tooltip>
+							<div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
+							<Tooltip content="Undo (Ctrl+Z)" side="bottom">
+								<button
+									type="button"
+									onClick={handleUndo}
+									disabled={!canUndo}
+									className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
+								>
+									<Undo className="w-4 h-4" />
+								</button>
+							</Tooltip>
+							<Tooltip content="Redo (Ctrl+Y)" side="bottom">
+								<button
+									type="button"
+									onClick={handleRedo}
+									disabled={!canRedo}
+									className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
+								>
+									<Redo className="w-4 h-4" />
+								</button>
+							</Tooltip>
+							{/* Download Documentation Button - shows when 2+ nodes */}
+							{nodes.length >= 2 && (
+								<>
+									<div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
+									<div className="relative" ref={downloadMenuRef}>
+										<Tooltip content="Download Documentation" side="bottom">
 											<button
 												type="button"
-												onClick={handleDownloadImage}
-												className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+												onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+												disabled={isDownloading}
+												className="flex items-center gap-1 p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
 											>
-												<ImageIcon className="w-4 h-4 text-green-500" />
-												<div>
-													<div className="font-medium">Image (PNG)</div>
-													<div className="text-xs text-slate-500">
-														Export as image
-													</div>
-												</div>
+												{isDownloading ? (
+													<Loader2 className="w-4 h-4 animate-spin" />
+												) : (
+													<Download className="w-4 h-4" />
+												)}
+												<ChevronDown className="w-3 h-3" />
 											</button>
-											<div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
-											<button
-												type="button"
-												onClick={() => handleDownload("readme")}
-												className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-											>
-												<FileText className="w-4 h-4 text-blue-500" />
-												<div>
-													<div className="font-medium">README.md</div>
-													<div className="text-xs text-slate-500">
-														For AI & Developers
+										</Tooltip>
+										{showDownloadMenu && (
+											<div className="absolute top-full mt-1 left-0 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-45 z-50">
+												<button
+													type="button"
+													onClick={handleDownloadImage}
+													className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+												>
+													<ImageIcon className="w-4 h-4 text-green-500" />
+													<div>
+														<div className="font-medium">Image (PNG)</div>
+														<div className="text-xs text-slate-500">
+															Export as image
+														</div>
 													</div>
-												</div>
-											</button>
-											<button
-												type="button"
-												onClick={() => handleDownload("prd")}
-												className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-											>
-												<FileText className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />
-												<div>
-													<div className="font-medium">PRD Document</div>
-													<div className="text-xs text-slate-500">
-														For Stakeholders
+												</button>
+												<div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
+												<button
+													type="button"
+													onClick={() => handleDownload("readme")}
+													className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+												>
+													<FileText className="w-4 h-4 text-blue-500" />
+													<div>
+														<div className="font-medium">README.md</div>
+														<div className="text-xs text-slate-500">
+															For AI & Developers
+														</div>
 													</div>
-												</div>
-											</button>
-										</div>
-									)}
-								</div>
-							</>
-						)}
-					</Panel>
+												</button>
+												<button
+													type="button"
+													onClick={() => handleDownload("prd")}
+													className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+												>
+													<FileText className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />
+													<div>
+														<div className="font-medium">PRD Document</div>
+														<div className="text-xs text-slate-500">
+															For Stakeholders
+														</div>
+													</div>
+												</button>
+											</div>
+										)}
+									</div>
+								</>
+							)}
+						</Panel>
+					)}
 					<MiniMap />
 					{showGrid && <Background gap={12} size={1} />}
-					{menu && (
+					{menu && !readOnly && (
 						<MindMapContextMenu
 							menu={menu}
 							onClose={() => setMenu(null)}
@@ -700,8 +721,8 @@ export const MindMap = ({
 						/>
 					)}
 				</ReactFlow>
-				{/* Only show chat sidebar if prompt exists */}
-				{hasLocalPrompt && (
+				{/* Only show chat sidebar if prompt exists and not read-only */}
+				{hasLocalPrompt && !readOnly && (
 					<AIChatSidebar
 						isOpen={showChatSidebar}
 						onClose={() => setShowChatSidebar(false)}

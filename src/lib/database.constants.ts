@@ -14,6 +14,7 @@ export const TABLES = {
 	USER_CREDITS: "user_credits",
 	USER_SUBSCRIPTIONS: "user_subscriptions",
 	CREDIT_TRANSACTIONS: "credit_transactions",
+	SHARE_LINKS: "share_links",
 } as const;
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -76,6 +77,12 @@ export const TABLE_CREDIT_TRANSACTIONS = {
 	AMOUNT: "amount",
 	TRANSACTION_TYPE: "transaction_type",
 	TRANSACTION_DESCRIPTION: "description",
+} as const;
+
+export const TABLE_SHARE_LINKS = {
+	...COMMON,
+	MIND_MAP_ID: "mind_map_id",
+	SHARE_TOKEN: "share_token",
 } as const;
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -209,3 +216,39 @@ export type UserSubscriptionUpdate = Partial<{
 	[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]: boolean;
 	[TABLE_USER_SUBSCRIPTIONS.UPDATED_AT]: string;
 }>;
+
+export type ShareLinkInsert = {
+	[TABLE_SHARE_LINKS.MIND_MAP_ID]: string;
+	[TABLE_SHARE_LINKS.USER_ID]: string;
+	[TABLE_SHARE_LINKS.SHARE_TOKEN]: string;
+};
+
+export type ShareLinkUpdate = Partial<{
+	[TABLE_SHARE_LINKS.SHARE_TOKEN]: string;
+	[TABLE_SHARE_LINKS.UPDATED_AT]: string;
+}>;
+
+// ════════════════════════════════════════════════════════════════════════════════
+// VALIDATION SCHEMAS (Zod)
+// ════════════════════════════════════════════════════════════════════════════════
+
+import { z } from "zod";
+
+export const createShareLinkSchema = z.object({
+	mindMapId: z.string().min(1),
+	userId: z.string().min(1),
+});
+
+export const revokeShareLinkSchema = z.object({
+	mindMapId: z.string().min(1),
+	userId: z.string().min(1),
+});
+
+export const getShareLinkSchema = z.object({
+	mindMapId: z.string().min(1),
+	userId: z.string().min(1),
+});
+
+export const getSharedMindMapSchema = z.object({
+	shareToken: z.string().min(1),
+});

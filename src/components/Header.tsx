@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { MessageSquare, Network } from "lucide-react";
+import { MessageSquare, Share2 } from "lucide-react";
 import { AuthButton } from "./AuthButton";
 import { Button } from "./ui/button";
 
@@ -8,6 +8,7 @@ interface HeaderProps {
 	onChatToggle?: () => void;
 	projectTitle?: string;
 	onBackToProjects?: () => void;
+	onShareClick?: () => void;
 }
 
 export function Header({
@@ -15,6 +16,7 @@ export function Header({
 	onChatToggle,
 	projectTitle,
 	onBackToProjects,
+	onShareClick,
 }: HeaderProps) {
 	return (
 		<header className="sticky top-0 p-4 flex items-center justify-between bg-white text-black border-b border-gray-200 z-10 dark:bg-black dark:text-white dark:border-gray-800">
@@ -48,6 +50,16 @@ export function Header({
 				)}
 			</div>
 			<div className="flex items-center gap-3">
+				{onShareClick && (
+					<Button
+						variant="outline"
+						onClick={onShareClick}
+						className="flex items-center gap-2 bg-[#03045E]/10 dark:bg-[#0077B6]/20 text-[#03045E] dark:text-[#0077B6] hover:bg-[#03045E]/20 dark:hover:bg-[#0077B6]/30 border-[#03045E]/20 dark:border-[#0077B6]/30"
+					>
+						<Share2 className="w-4 h-4" />
+						<span className="hidden sm:inline">Share</span>
+					</Button>
+				)}
 				{showChatButton && onChatToggle && (
 					<Button
 						variant="outline"
