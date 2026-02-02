@@ -1,8 +1,11 @@
-import type { SubscriptionTier } from "./database.constants";
+import { Crown, Star } from "lucide-react";
+import { SubscriptionTier, type SubscriptionTierType } from "../database.types";
+
+type PlanTier = Exclude<SubscriptionTierType, typeof SubscriptionTier.FREE>;
 
 // Subscription plans - Only Hobby and Pro
 export const subscriptionPlans: {
-	id: SubscriptionTier;
+	id: PlanTier;
 	name: string;
 	price: number;
 	initialCredits: number;
@@ -10,7 +13,7 @@ export const subscriptionPlans: {
 	dailyCredits: number;
 	features: string[];
 	popular: boolean;
-	icon: React.ReactNode;
+	icon: keyof typeof SubscriptionIconMap;
 }[] = [
 	{
 		id: "hobby",
@@ -49,3 +52,28 @@ export const subscriptionPlans: {
 		icon: "Crown",
 	},
 ];
+
+export const SubscriptionIconMap = {
+	Star: Star,
+	Crown: Crown,
+} as const;
+
+export const SubscriptionPricingMeta = {
+	[SubscriptionTier.HOBBY]: {
+		description: "Perfect for getting started with your side projects",
+		badge: null,
+		highlight: false,
+	},
+	[SubscriptionTier.PRO]: {
+		description: "For serious founders who want to ship faster.",
+		badge: "Best Value",
+		highlight: true,
+	},
+} as const satisfies Record<
+	PlanTier,
+	{
+		description: string;
+		badge: string | null;
+		highlight: boolean;
+	}
+>;

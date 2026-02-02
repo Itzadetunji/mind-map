@@ -90,14 +90,6 @@ export const CHAT_ROLES = {
 
 export type ChatRole = (typeof CHAT_ROLES)[keyof typeof CHAT_ROLES];
 
-export const SUBSCRIPTION_TIERS = {
-	HOBBY: "hobby",
-	PRO: "pro",
-} as const;
-
-export type SubscriptionTier =
-	(typeof SUBSCRIPTION_TIERS)[keyof typeof SUBSCRIPTION_TIERS];
-
 export type TableName = (typeof TABLES)[keyof typeof TABLES];
 
 /**
@@ -169,7 +161,7 @@ export type UserCreditsUpdate = Partial<{
 
 export type UserSubscriptionInsert = {
 	[TABLE_USER_SUBSCRIPTIONS.USER_ID]: string;
-	[TABLE_USER_SUBSCRIPTIONS.TIER]: SubscriptionTier;
+	[TABLE_USER_SUBSCRIPTIONS.TIER]: SubscriptionTierType;
 	[TABLE_USER_SUBSCRIPTIONS.STRIPE_CUSTOMER_ID]: string | null;
 	[TABLE_USER_SUBSCRIPTIONS.STRIPE_SUBSCRIPTION_ID]: string | null;
 	[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]: string | null;
@@ -178,7 +170,7 @@ export type UserSubscriptionInsert = {
 };
 
 export type UserSubscriptionUpdate = Partial<{
-	[TABLE_USER_SUBSCRIPTIONS.TIER]: SubscriptionTier;
+	[TABLE_USER_SUBSCRIPTIONS.TIER]: SubscriptionTierType;
 	[TABLE_USER_SUBSCRIPTIONS.STRIPE_CUSTOMER_ID]: string | null;
 	[TABLE_USER_SUBSCRIPTIONS.STRIPE_SUBSCRIPTION_ID]: string | null;
 	[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]: string | null;
@@ -203,6 +195,7 @@ export type ShareLinkUpdate = Partial<{
 // ════════════════════════════════════════════════════════════════════════════════
 
 import { z } from "zod";
+import { SubscriptionTierType } from "../database.types";
 
 export const createShareLinkSchema = z.object({
 	mindMapId: z.string().min(1),

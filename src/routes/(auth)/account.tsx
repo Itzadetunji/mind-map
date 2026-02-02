@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, RefreshCw, Subscript, Zap } from "lucide-react";
+import { Check, Loader2, RefreshCw } from "lucide-react";
+import React from "react";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -13,11 +13,14 @@ import {
 } from "@/components/ui/card";
 import {
 	getTierMonthlyCredits,
-	getTierPrice,
 	useUserCredits,
 	useUserSubscription,
 } from "@/hooks/credits.hooks";
-import { subscriptionPlans } from "@/lib/constants";
+import {
+	SubscriptionIconMap,
+	SubscriptionPricingMeta,
+	subscriptionPlans,
+} from "@/lib/constants";
 import {
 	SubscriptionTier,
 	type SubscriptionTierType,
@@ -25,13 +28,15 @@ import {
 import { createDodoCheckoutSession } from "@/server/v1/checkout/dodo-checkout";
 import { useAuthStore } from "@/stores/authStore";
 
-function AccountPage() {
+const AccountPage = () => {
 	const { user } = useAuthStore();
-	const { data: subscription, isLoading: subscriptionLoading } =
-		useUserSubscription();
-	const { data: credits, isLoading: creditsLoading } = useUserCredits();
+	const userSubscriptionQuery = useUserSubscription();
+	const userCreditsQuery = useUserCredits();
+
+	const [isLoading, setIsLoading] = React.useState(false);
 
 	const handleSubscribe = async (tier: SubscriptionTierType) => {
+		setIsLoading(true);
 		if (tier === SubscriptionTier.FREE) {
 			return;
 		}
@@ -54,17 +59,18 @@ function AccountPage() {
 			toast.error("Dodo checkout unavailable", {
 				description: message,
 			});
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
-	const currentTier = subscription?.tier || null;
-	const hasActiveSubscription = !!subscription?.tier;
-	const isLoading = subscriptionLoading || creditsLoading;
+	const currentTier = userSubscriptionQuery.data?.tier || null;
+	const hasActiveSubscription = !!userSubscriptionQuery.data?.tier;
 
-	if (isLoading) {
+	if (userSubscriptionQuery.isLoading || userCreditsQuery.isLoading) {
 		return (
 			<main className="w-full flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary dark:border-[#0077B6]" />
+				<Loader2 className="w-4 h-4 mr-2 animate-spin" />
 			</main>
 		);
 	}
@@ -126,7 +132,7 @@ function AccountPage() {
 							)}
 						</div>
 						<CardTitle className="text-5xl font-bold">
-							{credits?.credits ?? 0}
+							{userCreditsQuery.data?.credits ?? 0}
 							<span className="text-2xl font-normal ml-2 text-white/80">
 								credits
 							</span>
@@ -150,96 +156,75 @@ function AccountPage() {
 				</Card>
 
 				{/* Subscription Plans */}
-				<div className="mb-10">
-					<h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
-						Subscription Plans
-					</h2>
-					<p className="text-slate-600 dark:text-slate-400 mb-4">
-						Choose a plan that fits your needs. Earn daily credits upon login.
-					</p>
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+				<div className="pb-10 flex flex-col items-stretch gap-6">
+					<div className="flex flex-col">
+						<h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
+							Subscription Plans
+						</h2>
+						<p className="text-slate-600 dark:text-slate-400">
+							Choose a plan that fits your needs. Earn daily credits upon login.
+						</p>
+					</div>
+					<div className="flex flex-col lg:flex-row gap-4 justify-center w-full">
 						{subscriptionPlans.map((plan) => {
-							const isCurrentPlan = currentTier === plan.id;
+							const meta = SubscriptionPricingMeta[plan.id];
+							const Icon = SubscriptionIconMap[plan.icon];
+
 							return (
 								<Card
 									key={plan.id}
-									className={`relative ${plan.popular ? "border-primary dark:border-[#0077B6] border-2" : ""} ${isCurrentPlan ? "ring-2 ring-primary dark:ring-[#0077B6] ring-offset-2" : ""}`}
+									className={`flex flex-col border-2 relative max-w-100 ${meta.highlight ? "border-primary bg-primary/5" : ""}`}
 								>
-									{plan.popular && (
+									{meta.badge && (
 										<div className="absolute -top-3 left-1/2 -translate-x-1/2">
-											<span className="bg-primary dark:bg-[#0077B6] text-white text-xs font-medium px-3 py-1 rounded-full">
-												Most Popular
-											</span>
-										</div>
-									)}
-									{isCurrentPlan && (
-										<div className="absolute -top-3 right-4">
-											<span className="bg-green-500 text-white text-xs font-medium px-3 py-1 rounded-full">
-												Current Plan
+											<span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
+												{meta.badge}
 											</span>
 										</div>
 									)}
 									<CardHeader>
-										<CardTitle className="flex items-center justify-between">
-											<span className="flex items-center gap-2">
-												<span
-													className={
-														plan.popular
-															? "text-primary dark:text-[#0077B6]"
-															: "text-slate-400"
-													}
-												>
-													{plan.icon}
-												</span>
-												{plan.name}
-											</span>
-										</CardTitle>
-										<CardDescription>
-											<span className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-												${plan.price}
-											</span>
-											<span className="text-slate-500">/month</span>
-										</CardDescription>
-									</CardHeader>
-									<CardContent>
-										<div className="flex items-center gap-2 mb-4 p-2 bg-primary/10 dark:bg-[#0077B6]/20 rounded-lg">
-											<Zap className="w-4 h-4 text-primary dark:text-[#0077B6]" />
-											<span className="font-semibold text-primary dark:text-[#0077B6]">
-												{plan.initialCredits} initial + {plan.dailyCredits}/day
-											</span>
+										<div className="flex items-center gap-2 mb-2">
+											<Icon className="w-5 h-5 text-primary" />
+											<CardTitle className="text-xl">{plan.name}</CardTitle>
 										</div>
-										<ul className="space-y-2">
+										<CardDescription>{meta.description}</CardDescription>
+										<div className="mt-4">
+											<span className="text-4xl font-bold">${plan.price}</span>
+											{plan.id === "pro" && (
+												<span className="text-muted-foreground line-through ml-2 text-sm">
+													$40
+												</span>
+											)}
+											<span className="text-muted-foreground">/month</span>
+										</div>
+										{plan.id === "pro" && (
+											<p className="text-primary text-xs font-semibold mt-1">
+												Early deal - Limited time
+											</p>
+										)}
+									</CardHeader>
+									<CardContent className="flex-1">
+										<ul className="space-y-3">
 											{plan.features.map((feature) => (
 												<li
 													key={feature}
-													className="flex items-start gap-2 text-sm"
+													className="flex items-center gap-3 text-sm"
 												>
-													<Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-													<span className="text-slate-600 dark:text-slate-400">
-														{feature}
-													</span>
+													<Check className="h-4 w-4 text-green-500 shrink-0" />
+													{feature}
 												</li>
 											))}
 										</ul>
 									</CardContent>
 									<CardFooter>
-										{isCurrentPlan ? (
-											<Button className="w-full" variant="outline" disabled>
-												Current Plan
-											</Button>
-										) : (
-											<Button
-												className="w-full"
-												variant={plan.popular ? "default" : "outline"}
-												onClick={() => handleSubscribe(plan.id)}
-											>
-												{!hasActiveSubscription
-													? "Subscribe"
-													: getTierPrice(currentTier) < plan.price
-														? "Upgrade"
-														: "Switch"}
-											</Button>
-										)}
+										<Button
+											variant={plan.id === "hobby" ? "outline" : "default"}
+											className={`w-full h-12 rounded-full text-base ${plan.id === "pro" ? "bg-primary text-white hover:bg-primary/90" : ""}`}
+											onClick={() => handleSubscribe(plan.id)}
+											disabled={isLoading}
+										>
+											Start 3-day free trial
+										</Button>
 									</CardFooter>
 								</Card>
 							);
@@ -249,7 +234,7 @@ function AccountPage() {
 			</div>
 		</main>
 	);
-}
+};
 
 export const Route = createFileRoute("/(auth)/account")({
 	component: AccountPage,
