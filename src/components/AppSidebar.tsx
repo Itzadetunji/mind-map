@@ -38,14 +38,14 @@ export function AppSidebar() {
 					<SidebarMenuItem>
 						<SidebarMenuButton size="lg" asChild>
 							<Link to="/projects">
-								<div className="flex size-8 overflow-hidden items-center justify-center rounded-full bg-white text-sidebar-primary-foreground">
+								<div className="flex min-w-8 size-8 overflow-hidden items-center justify-center rounded-full bg-white text-sidebar-primary-foreground ">
 									<img
 										src="/assets/brand/logo-white.png"
 										alt="Proto Map"
 										className="size-6 object-contain"
 									/>
 								</div>
-								<div className="flex flex-col gap-0.5 leading-none font-semibold">
+								<div className="flex flex-col gap-0.5 leading-none font-semibold flex-1">
 									ProtoMap
 								</div>
 							</Link>
@@ -102,7 +102,7 @@ export function AppSidebar() {
 							asChild
 						>
 							<div className="flex items-center gap-2">
-								<div className="flex items-center justify-center rounded-md border bg-sidebar-accent text-sidebar-primary-foreground h-8 w-8">
+								<div className="flex items-center justify-center rounded-md border bg-sidebar-accent text-sidebar-primary-foreground h-8 min-w-8">
 									<Zap className="size-4 text-yellow-500 fill-yellow-500" />
 								</div>
 								<div className="flex flex-col gap-1 leading-none">
