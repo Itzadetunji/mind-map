@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
 import { Brain, Loader2, Send, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { useUserCredits } from "@/hooks/credits.hooks";
+import { creditsQueryKeys, useUserCredits } from "@/hooks/credits.hooks";
 import { generateMindMap } from "@/server/v1/generate-mind-map";
 import { useAuthStore } from "@/stores/authStore";
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
@@ -40,9 +40,11 @@ export function FloatingSearchBar({
 		},
 		onSuccess: (data) => {
 			// Refresh credits after successful generation
-			queryClient.invalidateQueries({ queryKey: ["userCredits", user?.id] });
 			queryClient.invalidateQueries({
-				queryKey: ["creditTransactions", user?.id],
+				queryKey: creditsQueryKeys.balance(user?.id),
+			});
+			queryClient.invalidateQueries({
+				queryKey: creditsQueryKeys.transactions(user?.id),
 			});
 
 			// Mark all steps as completed

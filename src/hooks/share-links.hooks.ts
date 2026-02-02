@@ -6,11 +6,17 @@ import {
 } from "@/server/v1/share-links";
 import { useAuthStore } from "@/stores/authStore";
 
+export const shareLinksQueryKeys = {
+	all: ["share_links"] as const,
+	detail: (mindMapId?: string | null, userId?: string) =>
+		[...shareLinksQueryKeys.all, mindMapId, userId] as const,
+} as const;
+
 export function useShareLink(mindMapId: string | null) {
 	const user = useAuthStore((state) => state.user);
 
 	return useQuery({
-		queryKey: ["shareLink", mindMapId, user?.id],
+		queryKey: shareLinksQueryKeys.detail(mindMapId, user?.id),
 		queryFn: async () => {
 			if (!user || !mindMapId) return null;
 
@@ -46,7 +52,7 @@ export function useCreateShareLink() {
 		},
 		onSuccess: (_, mindMapId) => {
 			queryClient.invalidateQueries({
-				queryKey: ["shareLink", mindMapId, user?.id],
+				queryKey: shareLinksQueryKeys.detail(mindMapId, user?.id),
 			});
 		},
 	});
@@ -69,7 +75,7 @@ export function useRevokeShareLink() {
 		},
 		onSuccess: (_, mindMapId) => {
 			queryClient.invalidateQueries({
-				queryKey: ["shareLink", mindMapId, user?.id],
+				queryKey: shareLinksQueryKeys.detail(mindMapId, user?.id),
 			});
 		},
 	});

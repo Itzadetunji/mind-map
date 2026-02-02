@@ -3,8 +3,8 @@ import type { Edge, Node } from "@xyflow/react";
 import { Bot, Brain, Loader2, Send, X, Zap } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { useChatHistory } from "@/hooks/chats.hooks";
-import { useUserCredits } from "@/hooks/credits.hooks";
+import { chatsQueryKeys, useChatHistory } from "@/hooks/chats.hooks";
+import { creditsQueryKeys, useUserCredits } from "@/hooks/credits.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatTime } from "@/lib/date-utils";
 import { chatWithAIStreaming } from "@/server/v1/ai-updates-nodes";
@@ -173,15 +173,17 @@ export const AIChatSidebar = ({
 
 			// Refresh credits if action was generate or modify (credits were deducted)
 			if (data.action === "generate" || data.action === "modify") {
-				queryClient.invalidateQueries({ queryKey: ["userCredits", user.id] });
 				queryClient.invalidateQueries({
-					queryKey: ["creditTransactions", user.id],
+					queryKey: creditsQueryKeys.balance(user.id),
+				});
+				queryClient.invalidateQueries({
+					queryKey: creditsQueryKeys.transactions(user.id),
 				});
 			}
 
 			// Refresh chat history since backend saved the messages
 			queryClient.invalidateQueries({
-				queryKey: ["chat_messages", project.id],
+				queryKey: chatsQueryKeys.messages(project.id),
 			});
 
 			// Apply graph changes if any

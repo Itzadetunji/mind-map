@@ -3,9 +3,19 @@ import {
 	useMutation,
 	useQueryClient,
 } from "@tanstack/react-query";
+import {
+	CHAT_ROLES,
+	type ChatMessageInsert,
+	TABLE_CHAT_MESSAGES,
+	TABLES,
+} from "@/lib/database.constants";
 import type { ChatMessage } from "@/lib/database.types";
-import { CHAT_ROLES, TABLE_CHAT_MESSAGES, TABLES, type ChatMessageInsert } from "@/lib/database.constants";
 import { supabase } from "@/lib/supabase";
+
+export const chatsQueryKeys = {
+	all: ["chat_messages"] as const,
+	messages: (mindMapId?: string) => [...chatsQueryKeys.all, mindMapId] as const,
+} as const;
 
 const PAGE_SIZE = 20;
 
@@ -19,7 +29,7 @@ export function useChatHistory(mindMapId: string | undefined) {
 		isError,
 		error,
 	} = useInfiniteQuery({
-		queryKey: ["chat_messages", mindMapId],
+		queryKey: chatsQueryKeys.messages(mindMapId),
 		queryFn: async ({ pageParam = 0 }) => {
 			if (!mindMapId) return [];
 
@@ -73,9 +83,12 @@ export function useSendChatMessage() {
 			const insertData: ChatMessageInsert = {
 				[TABLE_CHAT_MESSAGES.MIND_MAP_ID]: message.mind_map_id,
 				[TABLE_CHAT_MESSAGES.USER_ID]: message.user_id,
-				[TABLE_CHAT_MESSAGES.ROLE]: message.role as typeof CHAT_ROLES[keyof typeof CHAT_ROLES],
+				[TABLE_CHAT_MESSAGES.ROLE]:
+					message.role as (typeof CHAT_ROLES)[keyof typeof CHAT_ROLES],
 				[TABLE_CHAT_MESSAGES.CONTENT]: message.content,
-				...(message.map_data ? { [TABLE_CHAT_MESSAGES.MAP_DATA]: message.map_data } : {}),
+				...(message.map_data
+					? { [TABLE_CHAT_MESSAGES.MAP_DATA]: message.map_data }
+					: {}),
 			};
 			const { data, error } = await supabase
 				.from(TABLES.CHAT_MESSAGES)
@@ -91,7 +104,7 @@ export function useSendChatMessage() {
 			// we might want to just refetch or rely on the UI state until refresh.
 			// For now, simple invalidation.
 			queryClient.invalidateQueries({
-				queryKey: ["chat_messages", variables.mind_map_id],
+				queryKey: chatsQueryKeys.messages(variables.mind_map_id),
 			});
 		},
 	});

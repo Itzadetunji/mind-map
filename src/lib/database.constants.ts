@@ -59,6 +59,8 @@ export const TABLE_USER_CREDITS = {
 	...COMMON,
 	CREDITS: "credits",
 	MONTHLY_CREDITS_REMAINING: "monthly_credits_remaining",
+	MONTHLY_CREDITS_USED: "monthly_credits_used",
+	LAST_DAILY_CREDIT_CLAIMED_AT: "last_daily_credit_claimed_at",
 } as const;
 
 export const TABLE_USER_SUBSCRIPTIONS = {
@@ -89,7 +91,6 @@ export const CHAT_ROLES = {
 export type ChatRole = (typeof CHAT_ROLES)[keyof typeof CHAT_ROLES];
 
 export const SUBSCRIPTION_TIERS = {
-	FREE: "free",
 	HOBBY: "hobby",
 	PRO: "pro",
 } as const;
@@ -154,11 +155,15 @@ export type UserCreditsInsert = {
 	[TABLE_USER_CREDITS.USER_ID]: string;
 	[TABLE_USER_CREDITS.CREDITS]: number;
 	[TABLE_USER_CREDITS.MONTHLY_CREDITS_REMAINING]: number;
+	[TABLE_USER_CREDITS.MONTHLY_CREDITS_USED]?: number;
+	[TABLE_USER_CREDITS.LAST_DAILY_CREDIT_CLAIMED_AT]?: string | null;
 };
 
 export type UserCreditsUpdate = Partial<{
 	[TABLE_USER_CREDITS.CREDITS]: number;
 	[TABLE_USER_CREDITS.MONTHLY_CREDITS_REMAINING]: number;
+	[TABLE_USER_CREDITS.MONTHLY_CREDITS_USED]: number;
+	[TABLE_USER_CREDITS.LAST_DAILY_CREDIT_CLAIMED_AT]: string | null;
 	[TABLE_USER_CREDITS.UPDATED_AT]: string;
 }>;
 

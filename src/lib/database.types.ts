@@ -33,7 +33,7 @@ export interface ChatMessage {
 	created_at: string;
 }
 
-export type SubscriptionTier = "free" | "hobby" | "pro";
+export type SubscriptionTier = "hobby" | "pro";
 
 export interface UserSubscription {
 	id: string;
@@ -53,6 +53,8 @@ export interface UserCredits {
 	user_id: string;
 	credits: number;
 	monthly_credits_remaining: number;
+	monthly_credits_used: number;
+	last_daily_credit_claimed_at: string | null;
 	created_at: string;
 	updated_at: string;
 }

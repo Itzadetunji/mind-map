@@ -8,6 +8,7 @@ import { ShareLinkDialog } from "@/components/ShareLinkDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+	mindMapsQueryKeys,
 	useMindMapProject,
 	useUpdateMindMapProject,
 } from "@/hooks/mind-maps.hooks";
@@ -192,7 +193,9 @@ const ProjectPage = () => {
 	// Handle when the first prompt is submitted
 	const handlePromptSubmitted = useCallback(() => {
 		// Invalidate the project query to refresh data (including prompt field)
-		queryClient.invalidateQueries({ queryKey: ["mindMapProject", projectId] });
+		queryClient.invalidateQueries({
+			queryKey: mindMapsQueryKeys.detail(projectId),
+		});
 	}, [queryClient, projectId]);
 
 	// Show loading state

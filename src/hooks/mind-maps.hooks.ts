@@ -1,16 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Edge, Node } from "@xyflow/react";
 import { useCallback, useState } from "react";
+import {
+	type MindMapInsert,
+	type MindMapUpdate,
+	TABLE_MIND_MAPS,
+	TABLES,
+} from "@/lib/database.constants";
 import type { MindMapProject } from "@/lib/database.types";
-import { TABLE_MIND_MAPS, TABLES, type MindMapInsert, type MindMapUpdate } from "@/lib/database.constants";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
+
+export const mindMapsQueryKeys = {
+	all: ["mind-maps"] as const,
+	list: (userId?: string) =>
+		[...mindMapsQueryKeys.all, "list", userId] as const,
+	detail: (projectId?: string) =>
+		[...mindMapsQueryKeys.all, "detail", projectId] as const,
+} as const;
 
 export function useMindMapProjects() {
 	const user = useAuthStore((state) => state.user);
 
 	return useQuery({
-		queryKey: ["mindMapProjects", user?.id],
+		queryKey: mindMapsQueryKeys.list(user?.id),
 		queryFn: async () => {
 			if (!user) return [];
 
@@ -31,7 +44,7 @@ export function useMindMapProject(projectId: string | null) {
 	const user = useAuthStore((state) => state.user);
 
 	return useQuery({
-		queryKey: ["mindMapProject", projectId],
+		queryKey: mindMapsQueryKeys.detail(projectId ?? undefined),
 		queryFn: async () => {
 			if (!user || !projectId) return null;
 
@@ -77,7 +90,7 @@ export function useCreateMindMapProject() {
 		},
 		onSuccess: (data) => {
 			queryClient.setQueryData<MindMapProject[]>(
-				["mindMapProjects", data.user_id],
+				mindMapsQueryKeys.list(data.user_id),
 				(oldData) => {
 					if (!oldData) return [data];
 					return [data, ...oldData];
@@ -111,10 +124,10 @@ export function useUpdateMindMapProject() {
 		},
 		onSuccess: (data) => {
 			// Update cache directly instead of invalidating to prevent refetch
-			queryClient.setQueryData(["mindMapProject", data.id], data);
+			queryClient.setQueryData(mindMapsQueryKeys.detail(data.id), data);
 			// Update the projects list cache as well
 			queryClient.setQueryData<MindMapProject[]>(
-				["mindMapProjects", data.user_id],
+				mindMapsQueryKeys.list(data.user_id),
 				(oldData) => {
 					if (!oldData) return [data];
 					return oldData.map((p) => (p.id === data.id ? data : p));
@@ -141,7 +154,9 @@ export function useDeleteMindMapProject() {
 			if (error) throw error;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["mindMapProjects"] });
+			queryClient.invalidateQueries({
+				queryKey: mindMapsQueryKeys.list(user?.id),
+			});
 		},
 	});
 }

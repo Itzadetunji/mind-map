@@ -1,12 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	SUBSCRIPTION_TIERS,
 	TABLE_USER_CREDITS,
 	TABLE_USER_SUBSCRIPTIONS,
 	TABLES,
-	type UserCreditsInsert,
 	type UserCreditsUpdate,
-	type UserSubscriptionInsert,
 } from "@/lib/database.constants";
 import type {
 	SubscriptionTier,
@@ -16,39 +13,68 @@ import type {
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 
+export const creditsQueryKeys = {
+	all: ["credits"] as const,
+	user: (userId?: string) => [...creditsQueryKeys.all, userId] as const,
+	subscription: (userId?: string) =>
+		[...creditsQueryKeys.user(userId), "subscription"] as const,
+	balance: (userId?: string) =>
+		[...creditsQueryKeys.user(userId), "balance"] as const,
+	transactions: (userId?: string) =>
+		[...creditsQueryKeys.user(userId), "transactions"] as const,
+	dailyCheck: (userId?: string) =>
+		[...creditsQueryKeys.user(userId), "daily-check"] as const,
+} as const;
+
+export interface DailyCreditsResponse {
+	success: boolean;
+	added: number;
+	new_total: number;
+	days?: number;
+	message?: string;
+}
+
 // Helper to get monthly credits for a tier
-export function getTierMonthlyCredits(tier: SubscriptionTier): number {
+export function getTierMonthlyCredits(tier: SubscriptionTier | null): number {
 	switch (tier) {
-		case "free":
-			return 30;
 		case "hobby":
-			return 75;
+			return 30;
 		case "pro":
 			return 150;
 		default:
-			return 30;
+			return 0;
 	}
 }
 
 // Helper to get tier price
-export function getTierPrice(tier: SubscriptionTier): number {
+export function getTierPrice(tier: SubscriptionTier | null): number {
 	switch (tier) {
-		case "free":
-			return 0;
 		case "hobby":
-			return 9;
+			return 9.99;
 		case "pro":
-			return 25;
+			return 24.99;
 		default:
 			return 0;
 	}
 }
 
 // Helper to get top-up bonus percentage for a tier
-export function getTierTopUpBonus(tier: SubscriptionTier): number {
+export function getTierTopUpBonus(tier: SubscriptionTier | null): number {
 	switch (tier) {
 		case "pro":
 			return 0.2; // 20% bonus on top-ups
+		default:
+			return 0;
+	}
+}
+
+// Helper to get initial credits for a tier (on subscription)
+export function getTierInitialCredits(tier: SubscriptionTier | null): number {
+	switch (tier) {
+		case "hobby":
+			return 35;
+		case "pro":
+			return 70;
 		default:
 			return 0;
 	}
@@ -58,7 +84,7 @@ export function useUserSubscription() {
 	const user = useAuthStore((state) => state.user);
 
 	return useQuery({
-		queryKey: ["userSubscription", user?.id],
+		queryKey: creditsQueryKeys.subscription(user?.id),
 		queryFn: async () => {
 			if (!user) return null;
 
@@ -69,25 +95,9 @@ export function useUserSubscription() {
 				.single();
 
 			if (error) {
-				// If no record exists, create one with free tier
+				// If no record exists, return null (user has no subscription)
 				if (error.code === "PGRST116") {
-					const insertData: UserSubscriptionInsert = {
-						[TABLE_USER_SUBSCRIPTIONS.USER_ID]: user.id,
-						[TABLE_USER_SUBSCRIPTIONS.TIER]: SUBSCRIPTION_TIERS.FREE,
-						[TABLE_USER_SUBSCRIPTIONS.STRIPE_CUSTOMER_ID]: null,
-						[TABLE_USER_SUBSCRIPTIONS.STRIPE_SUBSCRIPTION_ID]: null,
-						[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]: null,
-						[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_END]: null,
-						[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]: false,
-					};
-					const { data: newSub, error: insertError } = await supabase
-						.from(TABLES.USER_SUBSCRIPTIONS)
-						.insert(insertData)
-						.select()
-						.single();
-
-					if (insertError) throw insertError;
-					return newSub as UserSubscription;
+					return null;
 				}
 				throw error;
 			}
@@ -101,7 +111,7 @@ export function useUserCredits() {
 	const user = useAuthStore((state) => state.user);
 
 	return useQuery({
-		queryKey: ["userCredits", user?.id],
+		queryKey: creditsQueryKeys.balance(user?.id),
 		queryFn: async () => {
 			if (!user) return null;
 
@@ -112,21 +122,9 @@ export function useUserCredits() {
 				.single();
 
 			if (error) {
-				// If no record exists, create one with free tier default (30 credits)
+				// If no record exists, return null (credits initialized on subscription)
 				if (error.code === "PGRST116") {
-					const insertData: UserCreditsInsert = {
-						[TABLE_USER_CREDITS.USER_ID]: user.id,
-						[TABLE_USER_CREDITS.CREDITS]: 30,
-						[TABLE_USER_CREDITS.MONTHLY_CREDITS_REMAINING]: 30,
-					};
-					const { data: newCredits, error: insertError } = await supabase
-						.from(TABLES.USER_CREDITS)
-						.insert(insertData)
-						.select()
-						.single();
-
-					if (insertError) throw insertError;
-					return newCredits as UserCredits;
+					return null;
 				}
 				throw error;
 			}
@@ -143,7 +141,7 @@ export function useDeductCredits() {
 	return useMutation({
 		mutationFn: async ({
 			amount,
-			description,
+			description: _description,
 		}: {
 			amount: number;
 			description: string;
@@ -177,9 +175,11 @@ export function useDeductCredits() {
 			return { success: true };
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["userCredits", user?.id] });
 			queryClient.invalidateQueries({
-				queryKey: ["creditTransactions", user?.id],
+				queryKey: creditsQueryKeys.balance(user?.id),
+			});
+			queryClient.invalidateQueries({
+				queryKey: creditsQueryKeys.transactions(user?.id),
 			});
 		},
 	});
@@ -192,6 +192,8 @@ export function useAddCredits() {
 	return useMutation({
 		mutationFn: async ({
 			amount,
+			transactionType: _transactionType,
+			description: _description,
 		}: {
 			amount: number;
 			transactionType: "purchase" | "bonus" | "refund";
@@ -223,10 +225,59 @@ export function useAddCredits() {
 			return { success: true };
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["userCredits", user?.id] });
 			queryClient.invalidateQueries({
-				queryKey: ["creditTransactions", user?.id],
+				queryKey: creditsQueryKeys.balance(user?.id),
 			});
 		},
+	});
+}
+
+export function useDailyCreditsCheck() {
+	const user = useAuthStore((state) => state.user);
+	const queryClient = useQueryClient();
+
+	return useQuery({
+		queryKey: creditsQueryKeys.dailyCheck(user?.id),
+		queryFn: async () => {
+			if (!user) return null;
+
+			// Get user's timezone
+			const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+			const { data, error } = await supabase.rpc("claim_daily_credits", {
+				p_user_id: user.id,
+				p_timezone: userTimezone,
+			});
+
+			if (error) {
+				console.error("Error checking daily credits:", error);
+				return null;
+			}
+
+			const response = data as DailyCreditsResponse | null;
+			if (response && response.added > 0) {
+				console.log("Daily credits claimed:", response.added);
+				// Update credits cache directly with the new total
+				queryClient.setQueryData<UserCredits>(
+					creditsQueryKeys.balance(user.id),
+					(oldData) => {
+						if (!oldData) return oldData;
+						return {
+							...oldData,
+							[TABLE_USER_CREDITS.CREDITS]: response.new_total,
+						};
+					},
+				);
+
+				queryClient.invalidateQueries({
+					queryKey: creditsQueryKeys.balance(user.id),
+				});
+			}
+
+			return data;
+		},
+		enabled: !!user,
+		refetchOnWindowFocus: false,
+		staleTime: 1000 * 60 * 60,
 	});
 }
