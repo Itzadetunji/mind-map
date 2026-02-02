@@ -70,7 +70,7 @@ export function SubscriptionModal({
 							<ul className="space-y-3">
 								<li className="flex items-center gap-2 text-sm">
 									<Check className="h-4 w-4 text-green-500" />
-									15 Active Projects
+									20 Active Projects
 								</li>
 								<li className="flex items-center gap-2 text-sm">
 									<Check className="h-4 w-4 text-green-500" />

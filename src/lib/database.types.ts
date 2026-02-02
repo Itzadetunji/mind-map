@@ -33,12 +33,19 @@ export interface ChatMessage {
 	created_at: string;
 }
 
-export type SubscriptionTier = "free" | "hobby" | "pro";
+export const SubscriptionTier = {
+	FREE: "free",
+	HOBBY: "hobby",
+	PRO: "pro",
+} as const;
+
+export type SubscriptionTierType =
+	(typeof SubscriptionTier)[keyof typeof SubscriptionTier];
 
 export interface UserSubscription {
 	id: string;
 	user_id: string;
-	tier: SubscriptionTier;
+	tier: SubscriptionTierType;
 	stripe_customer_id: string | null;
 	stripe_subscription_id: string | null;
 	current_period_start: string | null;

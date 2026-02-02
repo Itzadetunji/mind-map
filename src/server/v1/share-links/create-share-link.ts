@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { v4 as uuidv4 } from "uuid";
-import { createShareLinkSchema } from "@/lib/database.constants";
+import { createShareLinkSchema } from "@/lib/constants/database.constants";
 import { generateShareUrl, getSupabaseClient } from "./utils";
 
 // Create or update share link (one per mind map)

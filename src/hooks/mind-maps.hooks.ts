@@ -6,7 +6,7 @@ import {
 	type MindMapUpdate,
 	TABLE_MIND_MAPS,
 	TABLES,
-} from "@/lib/database.constants";
+} from "@/lib/constants/database.constants";
 import type { MindMapProject } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";

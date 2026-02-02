@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getSharedMindMapSchema } from "@/lib/database.constants";
+import { getSharedMindMapSchema } from "@/lib/constants/database.constants";
 import { getSupabaseClient } from "./utils";
 
 // Get shared mind map by token (public, no auth required)

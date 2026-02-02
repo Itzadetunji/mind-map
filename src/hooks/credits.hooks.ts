@@ -4,9 +4,9 @@ import {
 	TABLE_USER_SUBSCRIPTIONS,
 	TABLES,
 	type UserCreditsUpdate,
-} from "@/lib/database.constants";
+} from "@/lib/constants/database.constants";
 import type {
-	SubscriptionTier,
+	SubscriptionTierType,
 	UserCredits,
 	UserSubscription,
 } from "@/lib/database.types";
@@ -35,7 +35,9 @@ export interface DailyCreditsResponse {
 }
 
 // Helper to get monthly credits for a tier
-export function getTierMonthlyCredits(tier: SubscriptionTier | null): number {
+export function getTierMonthlyCredits(
+	tier: SubscriptionTierType | null,
+): number {
 	switch (tier) {
 		case "hobby":
 			return 150; // Updated to match "up to 150" request
@@ -47,7 +49,7 @@ export function getTierMonthlyCredits(tier: SubscriptionTier | null): number {
 }
 
 // Helper to get tier price
-export function getTierPrice(tier: SubscriptionTier | null): number {
+export function getTierPrice(tier: SubscriptionTierType | null): number {
 	switch (tier) {
 		case "hobby":
 			return 9.99;
@@ -59,7 +61,7 @@ export function getTierPrice(tier: SubscriptionTier | null): number {
 }
 
 // Helper to get top-up bonus percentage for a tier
-export function getTierTopUpBonus(tier: SubscriptionTier | null): number {
+export function getTierTopUpBonus(tier: SubscriptionTierType | null): number {
 	switch (tier) {
 		case "pro":
 			return 0.2; // 20% bonus on top-ups
@@ -69,7 +71,9 @@ export function getTierTopUpBonus(tier: SubscriptionTier | null): number {
 }
 
 // Helper to get initial credits for a tier (on subscription)
-export function getTierInitialCredits(tier: SubscriptionTier | null): number {
+export function getTierInitialCredits(
+	tier: SubscriptionTierType | null,
+): number {
 	switch (tier) {
 		case "hobby":
 			return 35;

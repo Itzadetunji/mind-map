@@ -37,10 +37,10 @@ const ProjectsPage = () => {
 		const isPro = userSubscriptionQuery.data?.tier === "pro";
 		const projectCount = projects?.length ?? 0;
 
-		if (!isPro && projectCount >= 15) {
+		if (!isPro && projectCount >= 20) {
 			toast.error("Project limit reached", {
 				description:
-					"Hobby plan is limited to 15 projects. Please upgrade to Pro for unlimited projects.",
+					"Hobby plan is limited to 20 projects. Please upgrade to Pro for unlimited projects.",
 			});
 			navigate({ to: "/account" });
 			return;

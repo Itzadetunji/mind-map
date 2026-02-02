@@ -9,7 +9,7 @@ import {
 	TABLE_MIND_MAPS,
 	TABLE_USER_CREDITS,
 	TABLES,
-} from "@/lib/database.constants";
+} from "@/lib/constants/database.constants";
 
 // Server-side Supabase client
 const getSupabaseClient = () => {

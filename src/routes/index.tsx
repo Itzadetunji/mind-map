@@ -13,6 +13,7 @@ import {
 	Users,
 	Zap,
 } from "lucide-react";
+
 import { MindMapConnectionLines } from "@/components/svg-icons/MindMapConnectionLines";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,8 +24,28 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { subscriptionPlans } from "@/lib/constants";
+import { SubscriptionTier } from "@/lib/database.types";
 
 const LandingPage = () => {
+	const iconMap = {
+		Star: Star,
+		Crown: Crown,
+	} as const;
+
+	const pricingMeta = {
+		[SubscriptionTier.HOBBY]: {
+			description: "Perfect for getting started with your side projects",
+			badge: null,
+			highlight: false,
+		},
+		[SubscriptionTier.PRO]: {
+			description: "For serious founders who want to ship faster.",
+			badge: "Best Value",
+			highlight: true,
+		},
+	} as const;
+
 	return (
 		<div className="min-h-screen bg-white dark:bg-black overflow-x-hidden">
 			{/* Navigation */}
@@ -84,7 +105,7 @@ const LandingPage = () => {
 					<h1 className="text-5xl md:text-7xl font-bold text-primary dark:text-white mb-6 leading-tight">
 						Build your ideas,
 						<br />
-						<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#0077B6]">
+						<span className="text-transparent bg-clip-text bg-linear-to-r from-primary to-[#0077B6]">
 							visually.
 						</span>
 					</h1>
@@ -368,6 +389,7 @@ const LandingPage = () => {
 			</section>
 
 			{/* Pricing Section */}
+			{/** biome-ignore lint/correctness/useUniqueElementIds: It's a landing page */}
 			<section
 				id="pricing"
 				className="py-24 px-6 bg-slate-50 dark:bg-slate-900/50"
@@ -383,115 +405,69 @@ const LandingPage = () => {
 					</div>
 
 					<div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-						{/* Hobby Plan */}
-						<Card className="flex flex-col border-2 relative">
-							<CardHeader>
-								<div className="flex items-center gap-2 mb-2">
-									<Star className="w-5 h-5 text-primary" />
-									<CardTitle className="text-xl">Hobby</CardTitle>
-								</div>
-								<CardDescription>
-									Perfect for getting started with your side projects
-								</CardDescription>
-								<div className="mt-4">
-									<span className="text-4xl font-bold">$9.99</span>
-									<span className="text-muted-foreground">/month</span>
-								</div>
-							</CardHeader>
-							<CardContent className="flex-1">
-								<ul className="space-y-3">
-									<li className="flex items-center gap-3 text-sm">
-										<Check className="h-4 w-4 text-green-500 shrink-0" />
-										15 Active Projects
-									</li>
-									<li className="flex items-center gap-3 text-sm">
-										<Check className="h-4 w-4 text-green-500 shrink-0" />
-										35 Initial Credits
-									</li>
-									<li className="flex items-center gap-3 text-sm">
-										<Check className="h-4 w-4 text-green-500 shrink-0" />5 Daily
-										Credits (up to 150/mo)
-									</li>
-									<li className="flex items-center gap-3 text-sm">
-										<Check className="h-4 w-4 text-green-500 shrink-0" />
-										Unlimited document export
-									</li>
-									<li className="flex items-center gap-3 text-sm">
-										<Check className="h-4 w-4 text-green-500 shrink-0" />
-										Share your maps
-									</li>
-								</ul>
-							</CardContent>
-							<CardFooter>
-								<Link to="/projects" className="w-full">
-									<Button
-										variant="outline"
-										className="w-full h-12 rounded-full text-base"
-									>
-										Start 3-day free trial
-									</Button>
-								</Link>
-							</CardFooter>
-						</Card>
+						{subscriptionPlans.map((plan) => {
+							const meta = pricingMeta[plan.id];
+							const Icon = iconMap[plan.icon as keyof typeof iconMap] ?? Star;
 
-						{/* Pro Plan */}
-						<Card className="flex flex-col border-2 border-primary bg-primary/5 relative">
-							<div className="absolute -top-3 left-1/2 -translate-x-1/2">
-								<span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
-									Best Value
-								</span>
-							</div>
-							<CardHeader>
-								<div className="flex items-center gap-2 mb-2">
-									<Crown className="w-5 h-5 text-primary" />
-									<CardTitle className="text-xl">Pro</CardTitle>
-								</div>
-								<CardDescription>
-									For serious founders who want to ship faster.
-								</CardDescription>
-								<div className="mt-4">
-									<span className="text-4xl font-bold">$24.99</span>
-									<span className="text-muted-foreground line-through ml-2 text-sm">
-										$40
-									</span>
-									<span className="text-muted-foreground">/month</span>
-								</div>
-								<p className="text-primary text-xs font-semibold mt-1">
-									Early deal - Limited time
-								</p>
-							</CardHeader>
-							<CardContent className="flex-1">
-								<ul className="space-y-3">
-									<li className="flex items-center gap-3 text-sm">
-										<Check className="h-4 w-4 text-green-500 shrink-0" />
-										Everything in Hobby
-									</li>
-									<li className="flex items-center gap-3 text-sm">
-										<Check className="h-4 w-4 text-green-500 shrink-0" />
-										Unlimited active projects
-									</li>
-									<li className="flex items-center gap-3 text-sm">
-										<Check className="h-4 w-4 text-green-500 shrink-0" />
-										70 Initial Credits
-									</li>
-									<li className="flex items-center gap-3 text-sm">
-										<Check className="h-4 w-4 text-green-500 shrink-0" />
-										Priority Support
-									</li>
-									<li className="flex items-center gap-3 text-sm">
-										<Check className="h-4 w-4 text-green-500 shrink-0" />
-										Early access to new features
-									</li>
-								</ul>
-							</CardContent>
-							<CardFooter>
-								<Link to="/projects" className="w-full">
-									<Button className="w-full h-12 rounded-full text-base bg-primary text-white hover:bg-primary/90">
-										Start 3-day free trial
-									</Button>
-								</Link>
-							</CardFooter>
-						</Card>
+							return (
+								<Card
+									key={plan.id}
+									className={`flex flex-col border-2 relative ${meta.highlight ? "border-primary bg-primary/5" : ""}`}
+								>
+									{meta.badge && (
+										<div className="absolute -top-3 left-1/2 -translate-x-1/2">
+											<span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
+												{meta.badge}
+											</span>
+										</div>
+									)}
+									<CardHeader>
+										<div className="flex items-center gap-2 mb-2">
+											<Icon className="w-5 h-5 text-primary" />
+											<CardTitle className="text-xl">{plan.name}</CardTitle>
+										</div>
+										<CardDescription>{meta.description}</CardDescription>
+										<div className="mt-4">
+											<span className="text-4xl font-bold">${plan.price}</span>
+											{plan.id === "pro" && (
+												<span className="text-muted-foreground line-through ml-2 text-sm">
+													$40
+												</span>
+											)}
+											<span className="text-muted-foreground">/month</span>
+										</div>
+										{plan.id === "pro" && (
+											<p className="text-primary text-xs font-semibold mt-1">
+												Early deal - Limited time
+											</p>
+										)}
+									</CardHeader>
+									<CardContent className="flex-1">
+										<ul className="space-y-3">
+											{plan.features.map((feature) => (
+												<li
+													key={feature}
+													className="flex items-center gap-3 text-sm"
+												>
+													<Check className="h-4 w-4 text-green-500 shrink-0" />
+													{feature}
+												</li>
+											))}
+										</ul>
+									</CardContent>
+									<CardFooter>
+										<Link to="/projects" className="w-full">
+											<Button
+												variant={plan.id === "hobby" ? "outline" : "default"}
+												className={`w-full h-12 rounded-full text-base ${plan.id === "pro" ? "bg-primary text-white hover:bg-primary/90" : ""}`}
+											>
+												Start 3-day free trial
+											</Button>
+										</Link>
+									</CardFooter>
+								</Card>
+							);
+						})}
 					</div>
 
 					{/* Trust badges */}
@@ -519,7 +495,7 @@ const LandingPage = () => {
 			{/* CTA Section */}
 			<section className="py-24 px-6">
 				<div className="max-w-4xl mx-auto text-center">
-					<div className="bg-gradient-to-br from-primary to-[#0077B6] rounded-3xl p-12 md:p-16 text-white">
+					<div className="bg-linear-to-br from-primary to-[#0077B6] rounded-3xl p-12 md:p-16 text-white">
 						<h2 className="text-3xl md:text-4xl font-bold mb-4">
 							Ready to build your next big idea?
 						</h2>

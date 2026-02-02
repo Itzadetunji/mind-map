@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { revokeShareLinkSchema } from "@/lib/database.constants";
+import { revokeShareLinkSchema } from "@/lib/constants/database.constants";
 import { getSupabaseClient } from "./utils";
 
 // Revoke share link

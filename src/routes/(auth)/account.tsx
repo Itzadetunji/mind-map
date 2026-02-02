@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, CreditCard, Crown, RefreshCw, Star, Zap } from "lucide-react";
-import { useState } from "react";
+import { Check, RefreshCw, Subscript, Zap } from "lucide-react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -11,71 +12,18 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import {
 	getTierMonthlyCredits,
 	getTierPrice,
 	useUserCredits,
 	useUserSubscription,
 } from "@/hooks/credits.hooks";
-import type { SubscriptionTier } from "@/lib/database.types";
+import { subscriptionPlans } from "@/lib/constants";
+import {
+	SubscriptionTier,
+	type SubscriptionTierType,
+} from "@/lib/database.types";
+import { createDodoCheckoutSession } from "@/server/v1/checkout/dodo-checkout";
 import { useAuthStore } from "@/stores/authStore";
-
-// Subscription plans - Only Hobby and Pro
-const subscriptionPlans: {
-	id: SubscriptionTier;
-	name: string;
-	price: number;
-	initialCredits: number;
-	monthlyCredits: number;
-	dailyCredits: number;
-	features: string[];
-	popular: boolean;
-	icon: React.ReactNode;
-}[] = [
-	{
-		id: "hobby",
-		name: "Hobby",
-		price: 9.99,
-		initialCredits: 35,
-		monthlyCredits: 30, // Max monthly allowance via daily credits? Or cap? The prompt says "5 every day up to 150" for Hobby.. wait.
-		dailyCredits: 5,
-		features: [
-			"15 Projects",
-			"35 credits a month",
-			"5 daily credits (up to 150/month)",
-			"Unlimited document export",
-			"Unlimited photo exports",
-			"Share documents",
-		],
-		popular: true,
-		icon: <Star className="w-5 h-5" />,
-	},
-	{
-		id: "pro",
-		name: "Pro",
-		price: 24.99,
-		initialCredits: 70,
-		monthlyCredits: 150,
-		dailyCredits: 5,
-		features: [
-			"Everything in Hobby",
-			"Unlimited projects",
-			"70 credits + 5 everyday",
-			"Team collaboration (coming soon)",
-			"Priority Support",
-			"Early access to new features",
-		],
-		popular: false,
-		icon: <Crown className="w-5 h-5" />,
-	},
-];
 
 function AccountPage() {
 	const { user } = useAuthStore();
@@ -83,15 +31,30 @@ function AccountPage() {
 		useUserSubscription();
 	const { data: credits, isLoading: creditsLoading } = useUserCredits();
 
-	const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
-	const [selectedTier, setSelectedTier] = useState<SubscriptionTier | null>(
-		null,
-	);
+	const handleSubscribe = async (tier: SubscriptionTierType) => {
+		if (tier === SubscriptionTier.FREE) {
+			return;
+		}
 
-	const handleSubscribe = (tier: SubscriptionTier) => {
-		// TODO: Integrate with Stripe for subscription
-		setSelectedTier(tier);
-		setShowSubscriptionDialog(true);
+		try {
+			const { checkoutUrl } = await createDodoCheckoutSession({
+				data: {
+					tier: "hobby",
+					email: user?.email as string,
+					name: user?.user_metadata?.full_name as string,
+				},
+			});
+
+			window.location.assign(checkoutUrl);
+		} catch (error) {
+			const message =
+				error instanceof Error
+					? error.message
+					: "Unable to start Dodo checkout";
+			toast.error("Dodo checkout unavailable", {
+				description: message,
+			});
+		}
 	};
 
 	const currentTier = subscription?.tier || null;
@@ -284,36 +247,6 @@ function AccountPage() {
 					</div>
 				</div>
 			</div>
-
-			{/* Subscription Dialog */}
-			<Dialog
-				open={showSubscriptionDialog}
-				onOpenChange={setShowSubscriptionDialog}
-			>
-				<DialogContent className="sm:max-w-md">
-					<DialogHeader>
-						<div className="flex items-center gap-3 mb-2">
-							<div className="p-2 rounded-full bg-primary/10 dark:bg-[#0077B6]/20">
-								<CreditCard className="w-6 h-6 text-primary dark:text-[#0077B6]" />
-							</div>
-							<DialogTitle className="text-xl">Subscription</DialogTitle>
-						</div>
-						<DialogDescription className="text-base pt-2">
-							Subscription to {selectedTier} plan would be processed via Stripe.
-							This will be implemented with Stripe Checkout.
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => setShowSubscriptionDialog(false)}
-						>
-							Cancel
-						</Button>
-						<Button onClick={() => setShowSubscriptionDialog(false)}>OK</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 		</main>
 	);
 }

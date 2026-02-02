@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getShareLinkSchema } from "@/lib/database.constants";
+import { getShareLinkSchema } from "@/lib/constants/database.constants";
 import { generateShareUrl, getSupabaseClient } from "./utils";
 
 // Get share link for a mind map

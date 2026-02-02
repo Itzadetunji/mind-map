@@ -38,7 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMindMapContext } from "@/context/MindMapContext";
-import { STORAGE_BUCKETS } from "@/lib/database.constants";
+import { STORAGE_BUCKETS } from "@/lib/constants/database.constants";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { AutoResizeTextarea } from "../shared/AutoResizeTextArea";

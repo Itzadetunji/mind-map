@@ -8,7 +8,7 @@ import {
 	type ChatMessageInsert,
 	TABLE_CHAT_MESSAGES,
 	TABLES,
-} from "@/lib/database.constants";
+} from "@/lib/constants/database.constants";
 import type { ChatMessage } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
 
