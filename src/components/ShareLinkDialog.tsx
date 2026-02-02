@@ -68,7 +68,7 @@ export function ShareLinkDialog({
 				<div className="space-y-4">
 					{shareLinkQuery.isLoading ? (
 						<div className="flex items-center justify-center py-8">
-							<Loader2 className="w-6 h-6 animate-spin text-[#03045E] dark:text-[#0077B6]" />
+							<Loader2 className="w-6 h-6 animate-spin text-primary dark:text-[#0077B6]" />
 						</div>
 					) : shareLinkQuery.data ? (
 						<div className="space-y-4">

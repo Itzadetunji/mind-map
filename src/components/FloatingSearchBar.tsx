@@ -99,7 +99,7 @@ export function FloatingSearchBar({
 			{mutation.isPending && (
 				<div className="mb-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
 					<div className="flex items-center gap-2">
-						<Brain className="w-4 h-4 text-[#03045E] dark:text-[#0077B6] animate-pulse" />
+						<Brain className="w-4 h-4 text-primary dark:text-[#0077B6] animate-pulse" />
 						<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
 							AI is thinking...
 						</span>
@@ -110,13 +110,13 @@ export function FloatingSearchBar({
 			{/* Search Bar */}
 			<form
 				onSubmit={handleSubmit}
-				className="relative flex items-center w-full shadow-lg rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-all focus-within:ring-2 focus-within:ring-[#03045E]/20 dark:focus-within:ring-[#0077B6]/30 focus-within:ring-offset-2 dark:focus-within:ring-offset-slate-900 "
+				className="relative flex items-center w-full shadow-lg rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-all focus-within:ring-2 focus-within:ring-primary/20 dark:focus-within:ring-[#0077B6]/30 focus-within:ring-offset-2 dark:focus-within:ring-offset-slate-900 "
 			>
 				<div className="pl-4 text-slate-400">
 					{mutation.isPending ? (
-						<Loader2 className="w-5 h-5 animate-spin text-[#03045E] dark:text-[#0077B6]" />
+						<Loader2 className="w-5 h-5 animate-spin text-primary dark:text-[#0077B6]" />
 					) : (
-						<Sparkles className="w-5 h-5 text-[#03045E] dark:text-[#0077B6]" />
+						<Sparkles className="w-5 h-5 text-primary dark:text-[#0077B6]" />
 					)}
 				</div>
 				<AutoResizeTextarea
@@ -144,7 +144,7 @@ export function FloatingSearchBar({
 					disabled={!prompt.trim() || mutation.isPending}
 					variant="ghost"
 					size="icon"
-					className="mr-1.5 rounded-full hover:bg-[#03045E] hover:text-white dark:hover:bg-[#0077B6] dark:hover:text-white"
+					className="mr-1.5 rounded-full hover:bg-primary hover:text-white dark:hover:bg-[#0077B6] dark:hover:text-white"
 				>
 					<Send className="w-4 h-4" />
 				</Button>

@@ -281,8 +281,8 @@ export const AIChatSidebar = ({
 				{/* Header */}
 				<div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
 					<div className="flex items-center gap-2">
-						<div className="p-1.5 rounded-lg bg-[#03045E]/10 dark:bg-[#0077B6]/20">
-							<Bot className="w-5 h-5 text-[#03045E] dark:text-[#0077B6]" />
+						<div className="p-1.5 rounded-lg bg-primary/10 dark:bg-[#0077B6]/20">
+							<Bot className="w-5 h-5 text-primary dark:text-[#0077B6]" />
 						</div>
 						<div>
 							<h2 className="font-semibold text-slate-900 dark:text-white">
@@ -312,7 +312,7 @@ export const AIChatSidebar = ({
 						value={projectTitle}
 						onChange={(e) => setProjectTitle(e.target.value)}
 						placeholder="Enter project name..."
-						className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#03045E]/50 dark:focus:ring-[#0077B6]/50"
+						className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 dark:focus:ring-[#0077B6]/50"
 					/>
 				</div>
 
@@ -350,14 +350,14 @@ export const AIChatSidebar = ({
 							<div
 								className={`max-w-[90%] ${
 									message.role === "user"
-										? "bg-[#03045E] dark:bg-[#0077B6] text-white rounded-2xl px-4 py-2"
+										? "bg-primary dark:bg-[#0077B6] text-white rounded-2xl px-4 py-2"
 										: "space-y-2"
 								}`}
 							>
 								{message.role === "assistant" && message.thinking && (
 									<button
 										type="button"
-										className="flex items-center gap-2 text-xs text-[#03045E] dark:text-[#0077B6] hover:text-[#023E8A] dark:hover:text-[#0096C7] transition-colors"
+										className="flex items-center gap-2 text-xs text-primary dark:text-[#0077B6] hover:text-[#023E8A] dark:hover:text-[#0096C7] transition-colors"
 									>
 										<Brain className="w-3 h-3" />
 									</button>
@@ -399,7 +399,7 @@ export const AIChatSidebar = ({
 					{chatMutation.isPending && (
 						<div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
 							<div className="flex items-center gap-2">
-								<Brain className="w-4 h-4 text-[#03045E] dark:text-[#0077B6] animate-pulse" />
+								<Brain className="w-4 h-4 text-primary dark:text-[#0077B6] animate-pulse" />
 								<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
 									Thinking...
 								</span>
@@ -414,7 +414,7 @@ export const AIChatSidebar = ({
 				<div className="p-4 border-t border-slate-200 dark:border-slate-800">
 					<form
 						onSubmit={handleSubmit}
-						className="relative flex items-center p-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus-within:ring-2 focus-within:ring-[#03045E]/50 dark:focus-within:ring-[#0077B6]/50"
+						className="relative flex items-center p-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus-within:ring-2 focus-within:ring-primary/50 dark:focus-within:ring-[#0077B6]/50"
 					>
 						<AutoResizeTextarea
 							value={input}

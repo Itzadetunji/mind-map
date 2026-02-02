@@ -101,7 +101,7 @@ function AccountPage() {
 	if (isLoading) {
 		return (
 			<main className="w-full flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#03045E] dark:border-[#0077B6]" />
+				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary dark:border-[#0077B6]" />
 			</main>
 		);
 	}
@@ -146,7 +146,7 @@ function AccountPage() {
 				</div>
 
 				{/* Credits overview */}
-				<Card className=" bg-linear-to-br from-[#03045E] to-[#023E8A] dark:from-[#0077B6] dark:to-[#0096C7] text-white border-0">
+				<Card className=" bg-linear-to-br from-primary to-[#023E8A] dark:from-[#0077B6] dark:to-[#0096C7] text-white border-0">
 					<CardHeader className="pb-2">
 						<div className="flex items-center justify-between">
 							<CardDescription className="text-white/80">
@@ -200,11 +200,11 @@ function AccountPage() {
 							return (
 								<Card
 									key={plan.id}
-									className={`relative ${plan.popular ? "border-[#03045E] dark:border-[#0077B6] border-2" : ""} ${isCurrentPlan ? "ring-2 ring-[#03045E] dark:ring-[#0077B6] ring-offset-2" : ""}`}
+									className={`relative ${plan.popular ? "border-primary dark:border-[#0077B6] border-2" : ""} ${isCurrentPlan ? "ring-2 ring-primary dark:ring-[#0077B6] ring-offset-2" : ""}`}
 								>
 									{plan.popular && (
 										<div className="absolute -top-3 left-1/2 -translate-x-1/2">
-											<span className="bg-[#03045E] dark:bg-[#0077B6] text-white text-xs font-medium px-3 py-1 rounded-full">
+											<span className="bg-primary dark:bg-[#0077B6] text-white text-xs font-medium px-3 py-1 rounded-full">
 												Most Popular
 											</span>
 										</div>
@@ -222,7 +222,7 @@ function AccountPage() {
 												<span
 													className={
 														plan.popular
-															? "text-[#03045E] dark:text-[#0077B6]"
+															? "text-primary dark:text-[#0077B6]"
 															: "text-slate-400"
 													}
 												>
@@ -239,9 +239,9 @@ function AccountPage() {
 										</CardDescription>
 									</CardHeader>
 									<CardContent>
-										<div className="flex items-center gap-2 mb-4 p-2 bg-[#03045E]/10 dark:bg-[#0077B6]/20 rounded-lg">
-											<Zap className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />
-											<span className="font-semibold text-[#03045E] dark:text-[#0077B6]">
+										<div className="flex items-center gap-2 mb-4 p-2 bg-primary/10 dark:bg-[#0077B6]/20 rounded-lg">
+											<Zap className="w-4 h-4 text-primary dark:text-[#0077B6]" />
+											<span className="font-semibold text-primary dark:text-[#0077B6]">
 												{plan.initialCredits} initial + {plan.dailyCredits}/day
 											</span>
 										</div>
@@ -293,8 +293,8 @@ function AccountPage() {
 				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
 						<div className="flex items-center gap-3 mb-2">
-							<div className="p-2 rounded-full bg-[#03045E]/10 dark:bg-[#0077B6]/20">
-								<CreditCard className="w-6 h-6 text-[#03045E] dark:text-[#0077B6]" />
+							<div className="p-2 rounded-full bg-primary/10 dark:bg-[#0077B6]/20">
+								<CreditCard className="w-6 h-6 text-primary dark:text-[#0077B6]" />
 							</div>
 							<DialogTitle className="text-xl">Subscription</DialogTitle>
 						</div>

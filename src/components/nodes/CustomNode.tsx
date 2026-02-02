@@ -59,7 +59,7 @@ export default function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
 				</div>
 			)}
 
-			<Card className="border-[#03045E]/40 dark:border-[#0077B6]/40 shadow-md bg-white dark:bg-slate-900 border-2 relative overflow-hidden">
+			<Card className="border-primary/40 dark:border-[#0077B6]/40 shadow-md bg-white dark:bg-slate-900 border-2 relative overflow-hidden">
 				<div
 					className={cn(
 						`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
@@ -70,9 +70,9 @@ export default function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
 				>
 					<GripVertical className="size-3.5 text-slate-400" />
 				</div>
-				<CardHeader className="flex flex-row space-y-0 gap-2 p-3 bg-[#03045E]/10 dark:bg-[#0077B6]/20">
+				<CardHeader className="flex flex-row space-y-0 gap-2 p-3 bg-primary/10 dark:bg-[#0077B6]/20">
 					<div className="mt-0.75">
-						<Cpu className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />
+						<Cpu className="w-4 h-4 text-primary dark:text-[#0077B6]" />
 					</div>
 					<AutoResizeTextarea
 						className="nodrag resize-none rounded-none bg-transparent text-sm font-bold transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0 col-auto overflow-hidden max-w-80"
@@ -102,7 +102,7 @@ export default function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
 						e.stopPropagation();
 						openAddMenu(id, e.clientX, e.clientY);
 					}}
-					className="bg-[#03045E] dark:bg-[#0077B6] hover:bg-[#023E8A] dark:hover:bg-[#0096C7] rounded-full shadow-sm"
+					className="bg-primary dark:bg-[#0077B6] hover:bg-[#023E8A] dark:hover:bg-[#0096C7] rounded-full shadow-sm"
 					title="Add Child Node"
 				>
 					<Plus size={12} />

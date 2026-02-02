@@ -1,4 +1,5 @@
 import { AlertTriangle } from "lucide-react";
+import { Button } from "../ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -7,7 +8,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "../ui/dialog";
-import { Button } from "../ui/button";
 
 interface ConfirmDialogProps {
 	open: boolean;
@@ -44,14 +44,14 @@ export function ConfirmDialog({
 							className={`p-2 rounded-full ${
 								variant === "destructive"
 									? "bg-red-100 dark:bg-red-900/20"
-									: "bg-[#03045E]/10 dark:bg-[#0077B6]/20"
+									: "bg-primary/10 dark:bg-[#0077B6]/20"
 							}`}
 						>
 							<AlertTriangle
 								className={`w-6 h-6 ${
 									variant === "destructive"
 										? "text-red-600 dark:text-red-400"
-										: "text-[#03045E] dark:text-[#0077B6]"
+										: "text-primary dark:text-[#0077B6]"
 								}`}
 							/>
 						</div>

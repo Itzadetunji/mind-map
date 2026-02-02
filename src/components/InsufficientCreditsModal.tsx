@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { AlertCircle, Zap } from "lucide-react";
+import { Button } from "./ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -8,7 +9,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "./ui/dialog";
-import { Button } from "./ui/button";
 
 interface InsufficientCreditsModalProps {
 	open: boolean;
@@ -26,12 +26,10 @@ export function InsufficientCreditsModal({
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<div className="flex items-center gap-3 mb-2">
-						<div className="p-2 rounded-full bg-[#03045E]/10 dark:bg-[#0077B6]/20">
-							<AlertCircle className="w-6 h-6 text-[#03045E] dark:text-[#0077B6]" />
+						<div className="p-2 rounded-full bg-primary/10 dark:bg-[#0077B6]/20">
+							<AlertCircle className="w-6 h-6 text-primary dark:text-[#0077B6]" />
 						</div>
-						<DialogTitle className="text-xl">
-							Insufficient Credits
-						</DialogTitle>
+						<DialogTitle className="text-xl">Insufficient Credits</DialogTitle>
 					</div>
 					<DialogDescription className="text-base pt-2">
 						You don't have enough credits to generate a mind map. Each AI
@@ -42,7 +40,7 @@ export function InsufficientCreditsModal({
 				<div className="py-4">
 					<div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
 						<div className="flex items-center gap-2">
-							<Zap className="w-5 h-5 text-[#03045E] dark:text-[#0077B6]" />
+							<Zap className="w-5 h-5 text-primary dark:text-[#0077B6]" />
 							<span className="text-sm font-medium text-slate-700 dark:text-slate-300">
 								Current Credits
 							</span>

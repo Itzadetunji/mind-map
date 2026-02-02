@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { Edge, Node } from "@xyflow/react";
 import { useEffect, useState } from "react";
 import { MindMap } from "@/components/MindMap";
 import { Button } from "@/components/ui/button";
+import type { MindMapProject } from "@/lib/database.types";
 import { getSharedMindMap } from "@/server/v1/share-links";
 import { useAuthStore } from "@/stores/authStore";
-import type { MindMapProject } from "@/lib/database.types";
-import type { Node, Edge } from "@xyflow/react";
 
 const SharedMindMapPage = () => {
 	const { shareToken } = Route.useParams();
@@ -56,7 +56,7 @@ const SharedMindMapPage = () => {
 	if (loading) {
 		return (
 			<div className="min-h-screen w-full flex items-center justify-center bg-white dark:bg-black">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#03045E] dark:border-[#0077B6]" />
+				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary dark:border-[#0077B6]" />
 			</div>
 		);
 	}
@@ -104,7 +104,7 @@ const SharedMindMapPage = () => {
 				</div>
 				<Button
 					onClick={signInWithGoogle}
-					className="bg-[#03045E] hover:bg-[#03045E]/90 dark:bg-[#0077B6] dark:hover:bg-[#0077B6]/90 text-white"
+					className="bg-primary hover:bg-primary/90 dark:bg-[#0077B6] dark:hover:bg-[#0077B6]/90 text-white"
 				>
 					Login to Edit
 				</Button>

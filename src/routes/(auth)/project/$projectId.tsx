@@ -204,7 +204,7 @@ const ProjectPage = () => {
 	if (projectLoading) {
 		return (
 			<main className="w-full flex-1 flex items-center justify-center">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#03045E] dark:border-[#0077B6]" />
+				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary dark:border-[#0077B6]" />
 			</main>
 		);
 	}
@@ -223,7 +223,7 @@ const ProjectPage = () => {
 				<button
 					type="button"
 					onClick={handleBackToProjects}
-					className="text-sm text-slate-600 dark:text-slate-400 hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
+					className="text-sm text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-[#0077B6] transition-colors"
 				>
 					← All Projects
 				</button>
@@ -244,7 +244,7 @@ const ProjectPage = () => {
 					variant="outline"
 					size="sm"
 					onClick={() => setShowShareDialog(true)}
-					className="ml-4 flex items-center gap-2 bg-[#03045E]/10 dark:bg-[#0077B6]/20 text-[#03045E] dark:text-[#0077B6] hover:bg-[#03045E]/20 dark:hover:bg-[#0077B6]/30 border-[#03045E]/20 dark:border-[#0077B6]/30"
+					className="ml-4 flex items-center gap-2 bg-primary/10 dark:bg-[#0077B6]/20 text-primary dark:text-[#0077B6] hover:bg-primary/20 dark:hover:bg-[#0077B6]/30 border-primary/20 dark:border-[#0077B6]/30"
 				>
 					<Share2 className="w-4 h-4" />
 					<span>Share</span>

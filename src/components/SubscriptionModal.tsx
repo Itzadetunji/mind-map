@@ -102,9 +102,9 @@ export function SubscriptionModal({
 					</Card>
 
 					{/* Pro Plan */}
-					<Card className="flex flex-col border-2 border-[#03045E] bg-[#03045E]/5 relative">
+					<Card className="flex flex-col border-2 border-primary bg-primary/5 relative">
 						<div className="absolute -top-3 left-1/2 -translate-x-1/2">
-							<span className="bg-[#03045E] text-white text-xs font-bold px-3 py-1 rounded-full">
+							<span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
 								Best Value
 							</span>
 						</div>
@@ -120,7 +120,7 @@ export function SubscriptionModal({
 								</span>
 								<span className="text-muted-foreground">/month</span>
 							</div>
-							<p className="text-[#03045E] text-xs font-semibold mt-1">
+							<p className="text-primary text-xs font-semibold mt-1">
 								Early deal - Limited time
 							</p>
 						</CardHeader>
@@ -151,7 +151,7 @@ export function SubscriptionModal({
 						<CardFooter>
 							<Button
 								onClick={handleSubscribe}
-								className="w-full h-12 rounded-full text-base bg-[#03045E] text-white hover:bg-[#03045E]/90"
+								className="w-full h-12 rounded-full text-base bg-primary text-white hover:bg-primary/90"
 							>
 								Start 3-day free trial
 							</Button>

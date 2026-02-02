@@ -21,7 +21,7 @@ export function AuthButton() {
 				<Link to="/account">
 					<Button
 						variant="outline"
-						className="flex items-center gap-1.5 bg-[#03045E]/10 dark:bg-[#0077B6]/20 text-[#03045E] dark:text-[#0077B6] hover:bg-[#03045E]/20 dark:hover:bg-[#0077B6]/30 border-[#03045E]/20 dark:border-[#0077B6]/30"
+						className="flex items-center gap-1.5 bg-primary/10 dark:bg-[#0077B6]/20 text-primary dark:text-[#0077B6] hover:bg-primary/20 dark:hover:bg-[#0077B6]/30 border-primary/20 dark:border-[#0077B6]/30"
 					>
 						<Zap className="w-4 h-4" />
 						<span className="font-medium">{credits?.credits ?? 0}</span>
@@ -35,10 +35,10 @@ export function AuthButton() {
 						<img
 							src={user.user_metadata.avatar_url}
 							alt={user.user_metadata.full_name || "User"}
-							className="w-8 h-8 rounded-full hover:ring-2 hover:ring-[#03045E] dark:hover:ring-[#0077B6] transition-all"
+							className="w-8 h-8 rounded-full hover:ring-2 hover:ring-primary dark:hover:ring-[#0077B6] transition-all"
 						/>
 					) : (
-						<div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center hover:ring-2 hover:ring-[#03045E] dark:hover:ring-[#0077B6] transition-all">
+						<div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center hover:ring-2 hover:ring-primary dark:hover:ring-[#0077B6] transition-all">
 							<User className="w-4 h-4 text-slate-500" />
 						</div>
 					)}
@@ -53,7 +53,7 @@ export function AuthButton() {
 	return (
 		<Button
 			onClick={signInWithGoogle}
-			className="bg-[#03045E] dark:bg-[#0077B6] text-white hover:bg-[#023E8A] dark:hover:bg-[#0096C7]"
+			className="bg-primary dark:bg-[#0077B6] text-white hover:bg-[#023E8A] dark:hover:bg-[#0096C7]"
 		>
 			<LogIn className="w-4 h-4" />
 			<p>Sign in with Google</p>

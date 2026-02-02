@@ -54,7 +54,7 @@ export function ProjectSelector({
 					<Button
 						onClick={onNewProject}
 						disabled={isCreating}
-						className="bg-[#03045E] hover:bg-[#023E8A] text-white dark:bg-[#0077B6] dark:hover:bg-[#0096C7]"
+						className="bg-primary hover:bg-[#023E8A] text-white dark:bg-[#0077B6] dark:hover:bg-[#0096C7]"
 					>
 						{isCreating ? (
 							<Loader2 className="w-4 h-4 animate-spin" />
@@ -75,11 +75,11 @@ export function ProjectSelector({
 							<button
 								type="button"
 								key={project.id}
-								className="group relative bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 hover:border-[#03045E]/30 dark:hover:border-[#0077B6]/50 hover:shadow-lg transition-all cursor-pointer text-left w-full"
+								className="group relative bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 hover:border-primary/30 dark:hover:border-[#0077B6]/50 hover:shadow-lg transition-all cursor-pointer text-left w-full"
 								onClick={() => onSelectProject(project)}
 							>
 								<div className="flex items-start justify-between mb-3">
-									<div className="p-2 rounded-lg bg-[#03045E]/10 dark:bg-[#0077B6]/20">
+									<div className="p-2 rounded-lg bg-primary/10 dark:bg-[#0077B6]/20">
 										<img
 											src="/assets/brand/logo-transparent.png"
 											alt="logo"
@@ -182,7 +182,7 @@ export function ProjectSelector({
 						</div>
 						<Button
 							onClick={onNewProject}
-							className="bg-[#03045E] hover:bg-[#023E8A] text-white dark:bg-[#0077B6] dark:hover:bg-[#0096C7]"
+							className="bg-primary hover:bg-[#023E8A] text-white dark:bg-[#0077B6] dark:hover:bg-[#0096C7]"
 						>
 							<Plus className="w-4 h-4" />
 							Create Mind Map
@@ -195,14 +195,14 @@ export function ProjectSelector({
 				<div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600 dark:text-slate-400">
 					<Link
 						to="/privacy"
-						className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
+						className="hover:text-primary dark:hover:text-[#0077B6] transition-colors"
 					>
 						Privacy Policy
 					</Link>
 					<span className="text-slate-400 dark:text-slate-600">•</span>
 					<Link
 						to="/terms"
-						className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
+						className="hover:text-primary dark:hover:text-[#0077B6] transition-colors"
 					>
 						Terms and Conditions
 					</Link>

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/privacy")({
@@ -8,38 +8,65 @@ export const Route = createFileRoute("/privacy")({
 
 function PrivacyPage() {
 	return (
-		<main className="min-h-dvh bg-slate-50 dark:bg-slate-950 flex-1 overflow-scroll">
-			<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col gap-8">
-				{/* Header */}
-				<div className="flex flex-col gap-6">
-					<Link to="/">
-						<Button variant="ghost">
-							<ArrowLeft className="w-4 h-4 mr-2" />
-							Back to Home
+		<div className="min-h-screen bg-white dark:bg-black overflow-x-hidden">
+			{/* Navigation */}
+			<nav className="sticky top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+					<Link to="/" className="flex items-center gap-2">
+						<img
+							src="/assets/brand/logo-transparent.png"
+							alt="ProtoMap"
+							className="h-8 w-8"
+						/>
+						<span className="text-xl font-bold text-primary dark:text-white">
+							ProtoMap
+						</span>
+					</Link>
+					<div className="hidden md:flex items-center gap-8">
+						<Link
+							to="/"
+							className="text-sm text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors"
+						>
+							Home
+						</Link>
+						<Link
+							to="/terms"
+							className="text-sm text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors"
+						>
+							Terms
+						</Link>
+					</div>
+					<Link to="/projects">
+						<Button className="bg-primary hover:bg-primary/90 text-white rounded-full px-6">
+							Launch App
 						</Button>
 					</Link>
-					<div className="flex flex-col gap-4">
-						<div className="flex items-center gap-3">
-							<div className="p-3 rounded-lg bg-[#03045E]/10 dark:bg-[#0077B6]/20">
-								<Shield className="w-6 h-6 text-[#03045E] dark:text-[#0077B6]" />
-							</div>
-							<h1 className="text-4xl font-bold text-slate-900 dark:text-white">
-								Privacy Policy
-							</h1>
-						</div>
-						<p className="text-slate-600 dark:text-slate-400">
-							Last updated:{" "}
-							{new Date().toLocaleDateString("en-US", {
-								year: "numeric",
-								month: "long",
-								day: "numeric",
-							})}
-						</p>
-					</div>
 				</div>
+			</nav>
 
-				{/* Content */}
-				<div className="bg-slate-50 dark:bg-slate-950 p-8 flex flex-col gap-8">
+			{/* Header Section */}
+			<section className="pt-16 pb-12 px-6">
+				<div className="max-w-4xl mx-auto text-center">
+					<div className="inline-flex items-center justify-center p-3 rounded-xl bg-primary/10 dark:bg-[#0077B6]/20 mb-6">
+						<Shield className="w-8 h-8 text-primary dark:text-[#0077B6]" />
+					</div>
+					<h1 className="text-4xl md:text-5xl font-bold text-primary dark:text-white mb-4">
+						Privacy Policy
+					</h1>
+					<p className="text-slate-600 dark:text-slate-400">
+						Last updated:{" "}
+						{new Date().toLocaleDateString("en-US", {
+							year: "numeric",
+							month: "long",
+							day: "numeric",
+						})}
+					</p>
+				</div>
+			</section>
+
+			{/* Content */}
+			<section className="pb-24 px-6">
+				<div className="max-w-4xl mx-auto flex flex-col gap-12">
 					<section className="flex flex-col gap-4">
 						<h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
 							Introduction
@@ -135,7 +162,7 @@ function PrivacyPage() {
 										href="https://openai.com/policies/privacy-policy"
 										target="_blank"
 										rel="noopener noreferrer"
-										className="text-[#03045E] dark:text-[#0077B6] hover:underline"
+										className="text-primary dark:text-[#0077B6] hover:underline"
 									>
 										OpenAI's Privacy Policy
 									</a>{" "}
@@ -153,7 +180,7 @@ function PrivacyPage() {
 										href="https://supabase.com/privacy"
 										target="_blank"
 										rel="noopener noreferrer"
-										className="text-[#03045E] dark:text-[#0077B6] hover:underline"
+										className="text-primary dark:text-[#0077B6] hover:underline"
 									>
 										Supabase's Privacy Policy
 									</a>{" "}
@@ -266,7 +293,30 @@ function PrivacyPage() {
 						</p>
 					</section>
 				</div>
-			</div>
-		</main>
+			</section>
+
+			{/* Footer */}
+			<footer className="py-12 px-6 border-t border-slate-200 dark:border-slate-800">
+				<div className="max-w-6xl mx-auto">
+					<div className="flex flex-col md:flex-row items-center justify-between text-sm text-slate-500">
+						<p>© 2026 ProtoMap. All rights reserved.</p>
+						<div className="flex items-center gap-6 mt-4 md:mt-0">
+							<Link
+								to="/privacy"
+								className="hover:text-primary dark:hover:text-white transition-colors"
+							>
+								Privacy Policy
+							</Link>
+							<Link
+								to="/terms"
+								className="hover:text-primary dark:hover:text-white transition-colors"
+							>
+								Terms of Service
+							</Link>
+						</div>
+					</div>
+				</div>
+			</footer>
+		</div>
 	);
 }

@@ -43,7 +43,7 @@ export function Header({
 					<Button
 						variant="link"
 						onClick={onBackToProjects}
-						className="text-sm text-[#03045E] dark:text-[#0077B6]"
+						className="text-sm text-primary dark:text-[#0077B6]"
 					>
 						← All Projects
 					</Button>
@@ -54,7 +54,7 @@ export function Header({
 					<Button
 						variant="outline"
 						onClick={onShareClick}
-						className="flex items-center gap-2 bg-[#03045E]/10 dark:bg-[#0077B6]/20 text-[#03045E] dark:text-[#0077B6] hover:bg-[#03045E]/20 dark:hover:bg-[#0077B6]/30 border-[#03045E]/20 dark:border-[#0077B6]/30"
+						className="flex items-center gap-2 bg-primary/10 dark:bg-[#0077B6]/20 text-primary dark:text-[#0077B6] hover:bg-primary/20 dark:hover:bg-[#0077B6]/30 border-primary/20 dark:border-[#0077B6]/30"
 					>
 						<Share2 className="w-4 h-4" />
 						<span className="hidden sm:inline">Share</span>
@@ -64,7 +64,7 @@ export function Header({
 					<Button
 						variant="outline"
 						onClick={onChatToggle}
-						className="flex items-center gap-2 bg-[#03045E]/10 dark:bg-[#0077B6]/20 text-[#03045E] dark:text-[#0077B6] hover:bg-[#03045E]/20 dark:hover:bg-[#0077B6]/30 border-[#03045E]/20 dark:border-[#0077B6]/30"
+						className="flex items-center gap-2 bg-primary/10 dark:bg-[#0077B6]/20 text-primary dark:text-[#0077B6] hover:bg-primary/20 dark:hover:bg-[#0077B6]/30 border-primary/20 dark:border-[#0077B6]/30"
 					>
 						<MessageSquare className="w-4 h-4" />
 						<span className="hidden sm:inline">AI Chat</span>

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
+import { useMemo } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { GoogleIcon } from "./svg-icons/google-icon";
 import { Button } from "./ui/button";
@@ -9,7 +10,7 @@ export function AuthScreen() {
 
 	if (loading) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+			<div className="min-h-screen flex items-center justify-center bg-white">
 				<Loader2 className="w-8 h-8 animate-spin text-slate-400" />
 			</div>
 		);
@@ -20,53 +21,70 @@ export function AuthScreen() {
 	}
 
 	return (
-		<div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-			<div className="max-w-md w-full text-center">
-				<div className="mb-8 flex flex-col items-center">
-					<img
-						src="/assets/brand/logo-transparent.png"
-						alt="logo"
-						className="size-16"
-					/>
-					<h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-						Proto Map
-					</h1>
-					<p className="text-slate-600 dark:text-slate-400">
-						Transform your app ideas into visual user flow diagrams with AI
+		<div className="min-h-dvh grid grid-cols-1 lg:grid-cols-2 bg-white text-slate-900">
+			<div className="relative flex flex-col justify-between px-6 py-6 sm:px-10 sm:py-8 bg-white">
+				<header className="flex items-center gap-3 text-slate-900">
+					<div className="flex size-10 items-center justify-center rounded-md border border-slate-200 bg-white shadow-xs">
+						<img
+							src="/assets/brand/logo-transparent.png"
+							alt="Proto Map"
+							className="size-6"
+						/>
+					</div>
+					<div className="text-sm font-medium tracking-wide">Protomap</div>
+				</header>
+
+				<div className="hidden lg:block" aria-hidden />
+
+				<footer className="max-w-xl text-sm text-slate-600">
+					<p className="leading-relaxed">
+						"I have always wanted to visualize my idea before building it out.
+						Seems I can do that now."
 					</p>
-				</div>
+					<p>- Adetunji</p>
+				</footer>
+			</div>
 
-				<Button
-					onClick={signInWithGoogle}
-					variant="outline"
-					className="w-full"
-					size="lg"
-				>
-					<GoogleIcon className="size-5" />
-					Continue with Google
-				</Button>
+			<div className="relative flex items-center justify-center px-6 py-16 sm:px-10 bg-primary">
+				<div
+					className="absolute inset-0 bg-linear-to-b from-white/5 to-transparent pointer-events-none"
+					aria-hidden
+				/>
+				<div className="relative w-full max-w-md text-center text-white">
+					<h1 className="text-2xl font-semibold">Welcome to Protomap</h1>
+					<p className="mt-2 text-sm text-white/70">
+						Sign in to manage your projects
+					</p>
 
-				<p className="mt-6 text-sm text-slate-500 dark:text-slate-500">
-					Sign in to save and manage your mind maps
-				</p>
+					<div className="mt-8">
+						<Button
+							onClick={signInWithGoogle}
+							variant="outline"
+							size="lg"
+							className="w-full justify-center rounded-full bg-white text-slate-900 hover:bg-slate-100 border-0 shadow-md"
+						>
+							<GoogleIcon className="size-5" />
+							Sign in with Google
+						</Button>
+					</div>
 
-				{/* Footer Links */}
-				<footer className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800">
-					<div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600 dark:text-slate-400">
+					<p className="mt-6 text-xs text-white/60">
+						By continuing, you agree to our{" "}
+						<Link
+							to="/terms"
+							className="underline decoration-white/40 underline-offset-4"
+						>
+							Terms of Service
+						</Link>{" "}
+						and{" "}
 						<Link
 							to="/privacy"
-							className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
+							className="underline decoration-white/40 underline-offset-4"
 						>
 							Privacy Policy
 						</Link>
-						<Link
-							to="/terms"
-							className="hover:text-[#03045E] dark:hover:text-[#0077B6] transition-colors"
-						>
-							Terms of Service
-						</Link>
-					</div>
-				</footer>
+					</p>
+				</div>
 			</div>
 		</div>
 	);

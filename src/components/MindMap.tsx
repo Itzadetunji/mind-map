@@ -578,7 +578,7 @@ export const MindMap = ({
 								onClick={() => setShowChatSidebar(!showChatSidebar)}
 								variant="outline"
 								size="sm"
-								className="bg-[#03045E]/10 dark:bg-[#0077B6]/20 text-[#03045E] dark:text-[#0077B6] hover:bg-[#03045E]/20 dark:hover:bg-[#0077B6]/30 border-[#03045E]/20 dark:border-[#0077B6]/30 shadow-sm"
+								className="bg-primary/10 dark:bg-[#0077B6]/20 text-primary dark:text-[#0077B6] hover:bg-primary/20 dark:hover:bg-[#0077B6]/30 border-primary/20 dark:border-[#0077B6]/30 shadow-sm"
 							>
 								💬 AI Chat
 							</Button>
@@ -691,7 +691,7 @@ export const MindMap = ({
 													onClick={() => handleDownload("prd")}
 													className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
 												>
-													<FileText className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />
+													<FileText className="w-4 h-4 text-primary dark:text-[#0077B6]" />
 													<div>
 														<div className="font-medium">PRD Document</div>
 														<div className="text-xs text-slate-500">
