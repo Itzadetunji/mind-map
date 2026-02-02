@@ -3,14 +3,11 @@ import { createServerFn } from "@tanstack/react-start";
 import OpenAI from "openai";
 import { z } from "zod";
 import {
-	type CreditTransactionInsert,
 	type MindMapInsert,
 	type MindMapUpdate,
-	TABLE_CREDIT_TRANSACTIONS,
 	TABLE_MIND_MAPS,
 	TABLE_USER_CREDITS,
 	TABLES,
-	TRANSACTION_TYPES,
 } from "@/lib/database.constants";
 
 // Server-side Supabase client
@@ -1184,17 +1181,6 @@ QUALITY:
 							.from(TABLES.USER_CREDITS)
 							.update(updateData)
 							.eq(TABLE_USER_CREDITS.USER_ID, data.userId);
-
-						// Log transaction
-						const transaction: CreditTransactionInsert = {
-							[TABLE_CREDIT_TRANSACTIONS.USER_ID]: data.userId,
-							[TABLE_CREDIT_TRANSACTIONS.AMOUNT]: -1,
-							[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_TYPE]:
-								TRANSACTION_TYPES.USAGE,
-							[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_DESCRIPTION]:
-								"AI mind map generation",
-						};
-						await supabase.from(TABLES.CREDIT_TRANSACTIONS).insert(transaction);
 					}
 				}
 

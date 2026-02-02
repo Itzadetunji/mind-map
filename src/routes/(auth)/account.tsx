@@ -2,14 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowLeft,
 	Check,
-	Clock,
 	CreditCard,
 	Crown,
-	Gift,
-	Minus,
 	Plus,
 	RefreshCw,
-	Sparkles,
 	Star,
 	Zap,
 } from "lucide-react";
@@ -35,11 +31,10 @@ import {
 	getTierMonthlyCredits,
 	getTierPrice,
 	getTierTopUpBonus,
-	useCreditTransactions,
 	useUserCredits,
 	useUserSubscription,
 } from "@/hooks/credits.hooks";
-import type { CreditTransaction, SubscriptionTier } from "@/lib/database.types";
+import type { SubscriptionTier } from "@/lib/database.types";
 import { useAuthStore } from "@/stores/authStore";
 
 // Subscription plans
@@ -118,49 +113,11 @@ const creditPackages = [
 	},
 ];
 
-function getTransactionIcon(type: CreditTransaction["transaction_type"]) {
-	switch (type) {
-		case "initial":
-			return <Gift className="w-4 h-4 text-green-500" />;
-		case "subscription":
-			return <Star className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />;
-		case "purchase":
-			return <CreditCard className="w-4 h-4 text-blue-500" />;
-		case "usage":
-			return <Minus className="w-4 h-4 text-orange-500" />;
-		case "bonus":
-			return (
-				<Sparkles className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />
-			);
-		case "refund":
-			return <RefreshCw className="w-4 h-4 text-green-500" />;
-		case "monthly_reset":
-			return (
-				<RefreshCw className="w-4 h-4 text-[#03045E] dark:text-[#0077B6]" />
-			);
-		default:
-			return <Zap className="w-4 h-4 text-slate-500" />;
-	}
-}
-
-function formatDate(dateString: string) {
-	const date = new Date(dateString);
-	return date.toLocaleDateString("en-US", {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-		hour: "numeric",
-		minute: "2-digit",
-	});
-}
-
 function AccountPage() {
 	const { user } = useAuthStore();
 	const { data: subscription, isLoading: subscriptionLoading } =
 		useUserSubscription();
 	const { data: credits, isLoading: creditsLoading } = useUserCredits();
-	const { data: transactions, isLoading: transactionsLoading } =
-		useCreditTransactions();
 
 	const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
 	const [showCreditsDialog, setShowCreditsDialog] = useState(false);
@@ -217,7 +174,7 @@ function AccountPage() {
 				</div>
 
 				{/* Credits overview */}
-				<Card className="mb-8 bg-gradient-to-br from-[#03045E] to-[#023E8A] dark:from-[#0077B6] dark:to-[#0096C7] text-white border-0">
+				<Card className="mb-8 bg-linear-to-br from-[#03045E] to-[#023E8A] dark:from-[#0077B6] dark:to-[#0096C7] text-white border-0">
 					<CardHeader className="pb-2">
 						<div className="flex items-center justify-between">
 							<CardDescription className="text-white/80">
@@ -423,65 +380,6 @@ function AccountPage() {
 							);
 						})}
 					</div>
-				</div>
-
-				{/* Transaction history */}
-				<div className="mb-8">
-					<h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4">
-						Transaction History
-					</h2>
-					<Card>
-						<CardContent className="p-0">
-							{transactionsLoading ? (
-								<div className="p-8 text-center">
-									<div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#03045E] dark:border-[#0077B6] mx-auto" />
-								</div>
-							) : transactions && transactions.length > 0 ? (
-								<div className="divide-y divide-slate-200 dark:divide-slate-800">
-									{transactions.map((transaction) => (
-										<div
-											key={transaction.id}
-											className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-900/50"
-										>
-											<div className="flex items-center gap-3">
-												<div className="p-2 rounded-full bg-slate-100 dark:bg-slate-800">
-													{getTransactionIcon(transaction.transaction_type)}
-												</div>
-												<div>
-													<p className="font-medium text-slate-900 dark:text-slate-100 capitalize">
-														{transaction.transaction_type.replace("_", " ")}
-													</p>
-													<p className="text-sm text-slate-500">
-														{transaction.description || "No description"}
-													</p>
-												</div>
-											</div>
-											<div className="text-right">
-												<p
-													className={`font-semibold ${transaction.amount > 0 ? "text-green-600" : "text-orange-600"}`}
-												>
-													{transaction.amount > 0 ? "+" : ""}
-													{transaction.amount} credits
-												</p>
-												<p className="text-xs text-slate-500 flex items-center gap-1 justify-end">
-													<Clock className="w-3 h-3" />
-													{formatDate(transaction.created_at)}
-												</p>
-											</div>
-										</div>
-									))}
-								</div>
-							) : (
-								<div className="p-8 text-center text-slate-500">
-									<Zap className="w-8 h-8 mx-auto mb-2 opacity-50" />
-									<p>No transactions yet</p>
-									<p className="text-sm">
-										Your credit usage history will appear here
-									</p>
-								</div>
-							)}
-						</CardContent>
-					</Card>
 				</div>
 
 				{/* User info */}

@@ -13,7 +13,6 @@ export const TABLES = {
 	CHAT_MESSAGES: "chat_messages",
 	USER_CREDITS: "user_credits",
 	USER_SUBSCRIPTIONS: "user_subscriptions",
-	CREDIT_TRANSACTIONS: "credit_transactions",
 	SHARE_LINKS: "share_links",
 } as const;
 
@@ -72,13 +71,6 @@ export const TABLE_USER_SUBSCRIPTIONS = {
 	CANCEL_AT_PERIOD_END: "cancel_at_period_end",
 } as const;
 
-export const TABLE_CREDIT_TRANSACTIONS = {
-	...COMMON,
-	AMOUNT: "amount",
-	TRANSACTION_TYPE: "transaction_type",
-	TRANSACTION_DESCRIPTION: "description",
-} as const;
-
 export const TABLE_SHARE_LINKS = {
 	...COMMON,
 	MIND_MAP_ID: "mind_map_id",
@@ -105,26 +97,6 @@ export const SUBSCRIPTION_TIERS = {
 export type SubscriptionTier =
 	(typeof SUBSCRIPTION_TIERS)[keyof typeof SUBSCRIPTION_TIERS];
 
-export const TRANSACTION_TYPES = {
-	INITIAL: "initial",
-	SUBSCRIPTION: "subscription",
-	PURCHASE: "purchase",
-	USAGE: "usage",
-	BONUS: "bonus",
-	REFUND: "refund",
-	MONTHLY_RESET: "monthly_reset",
-} as const;
-
-export type TransactionType =
-	(typeof TRANSACTION_TYPES)[keyof typeof TRANSACTION_TYPES];
-
-// ════════════════════════════════════════════════════════════════════════════════
-// TYPE HELPERS FOR DATABASE OPERATIONS
-// ════════════════════════════════════════════════════════════════════════════════
-
-/**
- * Type-safe table name
- */
 export type TableName = (typeof TABLES)[keyof typeof TABLES];
 
 /**
@@ -189,13 +161,6 @@ export type UserCreditsUpdate = Partial<{
 	[TABLE_USER_CREDITS.MONTHLY_CREDITS_REMAINING]: number;
 	[TABLE_USER_CREDITS.UPDATED_AT]: string;
 }>;
-
-export type CreditTransactionInsert = {
-	[TABLE_CREDIT_TRANSACTIONS.USER_ID]: string;
-	[TABLE_CREDIT_TRANSACTIONS.AMOUNT]: number;
-	[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_TYPE]: TransactionType;
-	[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_DESCRIPTION]: string | null;
-};
 
 export type UserSubscriptionInsert = {
 	[TABLE_USER_SUBSCRIPTIONS.USER_ID]: string;

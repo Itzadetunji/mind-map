@@ -57,22 +57,6 @@ export interface UserCredits {
 	updated_at: string;
 }
 
-export interface CreditTransaction {
-	id: string;
-	user_id: string;
-	amount: number;
-	transaction_type:
-		| "initial"
-		| "subscription"
-		| "purchase"
-		| "usage"
-		| "bonus"
-		| "refund"
-		| "monthly_reset";
-	description: string | null;
-	created_at: string;
-}
-
 export interface ShareLink {
 	id: string;
 	mind_map_id: string;
@@ -104,11 +88,6 @@ export interface Database {
 				Row: UserCredits;
 				Insert: Omit<UserCredits, "id" | "created_at" | "updated_at">;
 				Update: Partial<Omit<UserCredits, "id" | "created_at">>;
-			};
-			credit_transactions: {
-				Row: CreditTransaction;
-				Insert: Omit<CreditTransaction, "id" | "created_at">;
-				Update: Partial<Omit<CreditTransaction, "id" | "created_at">>;
 			};
 			share_links: {
 				Row: ShareLink;

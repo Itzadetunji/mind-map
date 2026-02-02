@@ -1,23 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type {
-	CreditTransaction,
-	SubscriptionTier,
-	UserCredits,
-	UserSubscription,
-} from "@/lib/database.types";
 import {
 	SUBSCRIPTION_TIERS,
-	TABLES,
-	TABLE_CREDIT_TRANSACTIONS,
 	TABLE_USER_CREDITS,
 	TABLE_USER_SUBSCRIPTIONS,
-	TRANSACTION_TYPES,
-	type CreditTransactionInsert,
-	type SubscriptionTier as SubscriptionTierType,
+	TABLES,
 	type UserCreditsInsert,
 	type UserCreditsUpdate,
 	type UserSubscriptionInsert,
 } from "@/lib/database.constants";
+import type {
+	SubscriptionTier,
+	UserCredits,
+	UserSubscription,
+} from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -141,28 +136,6 @@ export function useUserCredits() {
 	});
 }
 
-export function useCreditTransactions() {
-	const user = useAuthStore((state) => state.user);
-
-	return useQuery({
-		queryKey: ["creditTransactions", user?.id],
-		queryFn: async () => {
-			if (!user) return [];
-
-			const { data, error } = await supabase
-				.from(TABLES.CREDIT_TRANSACTIONS)
-				.select("*")
-				.eq(TABLE_CREDIT_TRANSACTIONS.USER_ID, user.id)
-				.order(TABLE_CREDIT_TRANSACTIONS.CREATED_AT, { ascending: false })
-				.limit(50);
-
-			if (error) throw error;
-			return data as CreditTransaction[];
-		},
-		enabled: !!user,
-	});
-}
-
 export function useDeductCredits() {
 	const user = useAuthStore((state) => state.user);
 	const queryClient = useQueryClient();
@@ -191,7 +164,8 @@ export function useDeductCredits() {
 
 			// Deduct credits
 			const updateData: UserCreditsUpdate = {
-				[TABLE_USER_CREDITS.CREDITS]: currentCredits[TABLE_USER_CREDITS.CREDITS] - amount,
+				[TABLE_USER_CREDITS.CREDITS]:
+					currentCredits[TABLE_USER_CREDITS.CREDITS] - amount,
 			};
 			const { error: updateError } = await supabase
 				.from(TABLES.USER_CREDITS)
@@ -199,21 +173,6 @@ export function useDeductCredits() {
 				.eq(TABLE_USER_CREDITS.USER_ID, user.id);
 
 			if (updateError) throw updateError;
-
-			// Log transaction
-			const transaction: CreditTransactionInsert = {
-				[TABLE_CREDIT_TRANSACTIONS.USER_ID]: user.id,
-				[TABLE_CREDIT_TRANSACTIONS.AMOUNT]: -amount,
-				[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_TYPE]: TRANSACTION_TYPES.USAGE,
-				[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_DESCRIPTION]: description,
-			};
-			const { error: transactionError } = await supabase
-				.from(TABLES.CREDIT_TRANSACTIONS)
-				.insert(transaction);
-
-			if (transactionError) {
-				console.error("Failed to log transaction:", transactionError);
-			}
 
 			return { success: true };
 		},
@@ -233,8 +192,6 @@ export function useAddCredits() {
 	return useMutation({
 		mutationFn: async ({
 			amount,
-			transactionType,
-			description,
 		}: {
 			amount: number;
 			transactionType: "purchase" | "bonus" | "refund";
@@ -253,7 +210,8 @@ export function useAddCredits() {
 
 			// Add credits
 			const updateData: UserCreditsUpdate = {
-				[TABLE_USER_CREDITS.CREDITS]: currentCredits[TABLE_USER_CREDITS.CREDITS] + amount,
+				[TABLE_USER_CREDITS.CREDITS]:
+					currentCredits[TABLE_USER_CREDITS.CREDITS] + amount,
 			};
 			const { error: updateError } = await supabase
 				.from(TABLES.USER_CREDITS)
@@ -261,21 +219,6 @@ export function useAddCredits() {
 				.eq(TABLE_USER_CREDITS.USER_ID, user.id);
 
 			if (updateError) throw updateError;
-
-			// Log transaction
-			const transaction: CreditTransactionInsert = {
-				[TABLE_CREDIT_TRANSACTIONS.USER_ID]: user.id,
-				[TABLE_CREDIT_TRANSACTIONS.AMOUNT]: amount,
-				[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_TYPE]: transactionType as typeof TRANSACTION_TYPES[keyof typeof TRANSACTION_TYPES],
-				[TABLE_CREDIT_TRANSACTIONS.TRANSACTION_DESCRIPTION]: description,
-			};
-			const { error: transactionError } = await supabase
-				.from(TABLES.CREDIT_TRANSACTIONS)
-				.insert(transaction);
-
-			if (transactionError) {
-				console.error("Failed to log transaction:", transactionError);
-			}
 
 			return { success: true };
 		},
