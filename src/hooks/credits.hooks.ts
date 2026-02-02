@@ -38,7 +38,7 @@ export interface DailyCreditsResponse {
 export function getTierMonthlyCredits(tier: SubscriptionTier | null): number {
 	switch (tier) {
 		case "hobby":
-			return 30;
+			return 150; // Updated to match "up to 150" request
 		case "pro":
 			return 150;
 		default:
@@ -278,6 +278,6 @@ export function useDailyCreditsCheck() {
 		},
 		enabled: !!user,
 		refetchOnWindowFocus: false,
-		staleTime: 1000 * 60 * 60,
+		staleTime: Infinity,
 	});
 }

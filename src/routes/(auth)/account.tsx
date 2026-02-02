@@ -1,13 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-	ArrowLeft,
-	Check,
-	CreditCard,
-	Crown,
-	RefreshCw,
-	Star,
-	Zap,
-} from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Check, CreditCard, Crown, RefreshCw, Star, Zap } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,15 +44,15 @@ const subscriptionPlans: {
 		name: "Hobby",
 		price: 9.99,
 		initialCredits: 35,
-		monthlyCredits: 30,
+		monthlyCredits: 30, // Max monthly allowance via daily credits? Or cap? The prompt says "5 every day up to 150" for Hobby.. wait.
 		dailyCredits: 5,
 		features: [
-			"35 credits upon subscription",
-			"5 daily credits (up to 30/month)",
-			"Unlimited maps",
-			"Export to PNG & Markdown",
-			"Priority support",
-			"AI chat assistant",
+			"15 Projects",
+			"35 credits a month",
+			"5 daily credits (up to 150/month)",
+			"Unlimited document export",
+			"Unlimited photo exports",
+			"Share documents",
 		],
 		popular: true,
 		icon: <Star className="w-5 h-5" />,
@@ -73,13 +65,12 @@ const subscriptionPlans: {
 		monthlyCredits: 150,
 		dailyCredits: 5,
 		features: [
-			"70 credits upon subscription",
-			"5 daily credits (up to 150/month)",
-			"Unlimited maps",
-			"All export formats (PNG, Markdown, PRD)",
-			"Advanced AI features",
-			"20% bonus on credit top-ups",
+			"Everything in Hobby",
+			"Unlimited projects",
+			"70 credits + 5 everyday",
 			"Team collaboration (coming soon)",
+			"Priority Support",
+			"Early access to new features",
 		],
 		popular: false,
 		icon: <Crown className="w-5 h-5" />,
@@ -118,15 +109,6 @@ function AccountPage() {
 	return (
 		<main className="w-full flex-1 overflow-auto bg-slate-50 dark:bg-slate-950">
 			<div className="max-w-6xl mx-auto px-4 py-8 flex flex-col gap-8">
-				{/* Back button */}
-				<Link
-					to="/projects"
-					className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 mb-6"
-				>
-					<ArrowLeft className="w-4 h-4" />
-					Back to Projects
-				</Link>
-
 				{/* Page header */}
 				<div className="">
 					<h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">

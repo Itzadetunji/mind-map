@@ -33,7 +33,7 @@ export interface ChatMessage {
 	created_at: string;
 }
 
-export type SubscriptionTier = "hobby" | "pro";
+export type SubscriptionTier = "free" | "hobby" | "pro";
 
 export interface UserSubscription {
 	id: string;

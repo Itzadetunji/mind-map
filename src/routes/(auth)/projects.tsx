@@ -1,17 +1,51 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useLayoutEffect, useState } from "react";
+import { toast } from "sonner";
+
 import { ProjectSelector } from "@/components/ProjectSelector";
-import { useCreateMindMapProject } from "@/hooks/mind-maps.hooks";
+import { SubscriptionModal } from "@/components/SubscriptionModal";
+import { useUserSubscription } from "@/hooks/credits.hooks";
+import {
+	useCreateMindMapProject,
+	useMindMapProjects,
+} from "@/hooks/mind-maps.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 
 const ProjectsPage = () => {
 	const navigate = useNavigate();
 	const createMutation = useCreateMindMapProject();
+	const { data: projects } = useMindMapProjects();
+	const userSubscriptionQuery = useUserSubscription();
+	const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
 	const handleSelectProject = (project: MindMapProject) => {
 		navigate({ to: "/project/$projectId", params: { projectId: project.id } });
 	};
 
 	const handleNewProject = async () => {
+		// Check subscription status
+		const isSubscribed =
+			userSubscriptionQuery.data?.tier &&
+			userSubscriptionQuery.data.tier !== "free";
+
+		if (!isSubscribed) {
+			setShowSubscriptionModal(true);
+			return;
+		}
+
+		// Check subscription limits
+		const isPro = userSubscriptionQuery.data?.tier === "pro";
+		const projectCount = projects?.length ?? 0;
+
+		if (!isPro && projectCount >= 15) {
+			toast.error("Project limit reached", {
+				description:
+					"Hobby plan is limited to 15 projects. Please upgrade to Pro for unlimited projects.",
+			});
+			navigate({ to: "/account" });
+			return;
+		}
+
 		try {
 			// Create the project in Supabase first
 			const newProject = await createMutation.mutateAsync({
@@ -40,12 +74,24 @@ const ProjectsPage = () => {
 		}
 	};
 
+	useLayoutEffect(() => {
+		if (userSubscriptionQuery.data?.tier === "free") {
+			setShowSubscriptionModal(true);
+		}
+	}, [userSubscriptionQuery.data]);
+
 	return (
-		<ProjectSelector
-			onSelectProject={handleSelectProject}
-			onNewProject={handleNewProject}
-			isCreating={createMutation.isPending}
-		/>
+		<>
+			<ProjectSelector
+				onSelectProject={handleSelectProject}
+				onNewProject={handleNewProject}
+				isCreating={createMutation.isPending}
+			/>
+			<SubscriptionModal
+				open={showSubscriptionModal}
+				onOpenChange={setShowSubscriptionModal}
+			/>
+		</>
 	);
 };
 
