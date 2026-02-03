@@ -7,12 +7,12 @@ import { MindMap } from "@/components/MindMap";
 import { ShareLinkDialog } from "@/components/ShareLinkDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useUserSubscription } from "@/hooks/credits.hooks";
+import { useUserSubscription } from "@/hooks/api/credits.hooks";
 import {
 	mindMapsQueryKeys,
 	useMindMapProject,
 	useUpdateMindMapProject,
-} from "@/hooks/mind-maps.hooks";
+} from "@/hooks/api/mind-maps.hooks";
 import { useProjectStore } from "@/stores/projectStore";
 
 const AUTOSAVE_DELAY = 1000; // 1s debounce

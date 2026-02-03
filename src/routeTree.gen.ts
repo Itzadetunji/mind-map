@@ -14,8 +14,8 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShareShareTokenRouteImport } from './routes/share/$shareToken'
-import { Route as authProjectsRouteImport } from './routes/(auth)/projects'
-import { Route as authAccountRouteImport } from './routes/(auth)/account'
+import { Route as authProjectsRouteRouteImport } from './routes/(auth)/projects/route'
+import { Route as authAccountRouteRouteImport } from './routes/(auth)/account/route'
 import { Route as authProjectProjectIdRouteImport } from './routes/(auth)/project/$projectId'
 
 const TermsRoute = TermsRouteImport.update({
@@ -42,12 +42,12 @@ const ShareShareTokenRoute = ShareShareTokenRouteImport.update({
   path: '/share/$shareToken',
   getParentRoute: () => rootRouteImport,
 } as any)
-const authProjectsRoute = authProjectsRouteImport.update({
+const authProjectsRouteRoute = authProjectsRouteRouteImport.update({
   id: '/projects',
   path: '/projects',
   getParentRoute: () => authRouteRoute,
 } as any)
-const authAccountRoute = authAccountRouteImport.update({
+const authAccountRouteRoute = authAccountRouteRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => authRouteRoute,
@@ -62,8 +62,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/account': typeof authAccountRoute
-  '/projects': typeof authProjectsRoute
+  '/account': typeof authAccountRouteRoute
+  '/projects': typeof authProjectsRouteRoute
   '/share/$shareToken': typeof ShareShareTokenRoute
   '/project/$projectId': typeof authProjectProjectIdRoute
 }
@@ -71,8 +71,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/account': typeof authAccountRoute
-  '/projects': typeof authProjectsRoute
+  '/account': typeof authAccountRouteRoute
+  '/projects': typeof authProjectsRouteRoute
   '/share/$shareToken': typeof ShareShareTokenRoute
   '/project/$projectId': typeof authProjectProjectIdRoute
 }
@@ -82,8 +82,8 @@ export interface FileRoutesById {
   '/(auth)': typeof authRouteRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/(auth)/account': typeof authAccountRoute
-  '/(auth)/projects': typeof authProjectsRoute
+  '/(auth)/account': typeof authAccountRouteRoute
+  '/(auth)/projects': typeof authProjectsRouteRoute
   '/share/$shareToken': typeof ShareShareTokenRoute
   '/(auth)/project/$projectId': typeof authProjectProjectIdRoute
 }
@@ -167,14 +167,14 @@ declare module '@tanstack/react-router' {
       id: '/(auth)/projects'
       path: '/projects'
       fullPath: '/projects'
-      preLoaderRoute: typeof authProjectsRouteImport
+      preLoaderRoute: typeof authProjectsRouteRouteImport
       parentRoute: typeof authRouteRoute
     }
     '/(auth)/account': {
       id: '/(auth)/account'
       path: '/account'
       fullPath: '/account'
-      preLoaderRoute: typeof authAccountRouteImport
+      preLoaderRoute: typeof authAccountRouteRouteImport
       parentRoute: typeof authRouteRoute
     }
     '/(auth)/project/$projectId': {
@@ -188,14 +188,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface authRouteRouteChildren {
-  authAccountRoute: typeof authAccountRoute
-  authProjectsRoute: typeof authProjectsRoute
+  authAccountRouteRoute: typeof authAccountRouteRoute
+  authProjectsRouteRoute: typeof authProjectsRouteRoute
   authProjectProjectIdRoute: typeof authProjectProjectIdRoute
 }
 
 const authRouteRouteChildren: authRouteRouteChildren = {
-  authAccountRoute: authAccountRoute,
-  authProjectsRoute: authProjectsRoute,
+  authAccountRouteRoute: authAccountRouteRoute,
+  authProjectsRouteRoute: authProjectsRouteRoute,
   authProjectProjectIdRoute: authProjectProjectIdRoute,
 }
 

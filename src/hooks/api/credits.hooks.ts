@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import {
 	TABLE_USER_CREDITS,
 	TABLE_USER_SUBSCRIPTIONS,
@@ -11,6 +12,8 @@ import type {
 	UserSubscription,
 } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
+import { cancelDodoSubscription } from "@/server/v1/subscriptions/cancel-dodo-subscription";
+import { getDodoSubscriptionDetails } from "@/server/v1/subscriptions/dodo-subscription";
 import { useAuthStore } from "@/stores/authStore";
 
 export const creditsQueryKeys = {
@@ -18,6 +21,8 @@ export const creditsQueryKeys = {
 	user: (userId?: string) => [...creditsQueryKeys.all, userId] as const,
 	subscription: (userId?: string) =>
 		[...creditsQueryKeys.user(userId), "subscription"] as const,
+	dodoStatus: (userId?: string) =>
+		[...creditsQueryKeys.subscription(userId), "dodo-status"] as const,
 	balance: (userId?: string) =>
 		[...creditsQueryKeys.user(userId), "balance"] as const,
 	transactions: (userId?: string) =>
@@ -32,6 +37,68 @@ export interface DailyCreditsResponse {
 	new_total: number;
 	days?: number;
 	message?: string;
+}
+
+export function useDodoSubscriptionStatus(options?: {
+	enabled?: boolean;
+	refetchInterval?: number | false;
+}) {
+	const user = useAuthStore((state) => state.user);
+	const userSubscriptionQuery = useUserSubscription();
+	const subscriptionId = userSubscriptionQuery.data?.dodo_subscription_id;
+
+	return useQuery({
+		queryKey: creditsQueryKeys.dodoStatus(user?.id),
+		queryFn: async () => {
+			if (!subscriptionId) return null;
+			return getDodoSubscriptionDetails({
+				data: { subscriptionId },
+			});
+		},
+		enabled:
+			(options?.enabled ?? true) &&
+			!!user &&
+			!!subscriptionId &&
+			!userSubscriptionQuery.isLoading,
+		refetchInterval: options?.refetchInterval ?? false,
+	});
+}
+
+export function useCancelDodoSubscription() {
+	const user = useAuthStore((state) => state.user);
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async ({ subscriptionId }: { subscriptionId: string }) => {
+			if (!user) throw new Error("User not authenticated");
+
+			const result = await cancelDodoSubscription({
+				data: { subscriptionId },
+			});
+
+			const { error } = await supabase
+				.from(TABLES.USER_SUBSCRIPTIONS)
+				.update({
+					[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]:
+						!!result.cancelAtPeriodEnd,
+					[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_END]:
+						result.currentPeriodEnd,
+				})
+				.eq(TABLE_USER_SUBSCRIPTIONS.USER_ID, user.id);
+
+			if (error) throw error;
+
+			return result;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: creditsQueryKeys.subscription(user?.id),
+			});
+			queryClient.invalidateQueries({
+				queryKey: creditsQueryKeys.dodoStatus(user?.id),
+			});
+		},
+	});
 }
 
 // Helper to get monthly credits for a tier

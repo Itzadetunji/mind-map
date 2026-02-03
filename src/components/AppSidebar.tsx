@@ -24,7 +24,7 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 } from "@/components/ui/sidebar";
-import { useUserCredits } from "@/hooks/credits.hooks";
+import { useUserCredits } from "@/hooks/api/credits.hooks";
 import { useAuthStore } from "@/stores/authStore";
 
 export function AppSidebar() {

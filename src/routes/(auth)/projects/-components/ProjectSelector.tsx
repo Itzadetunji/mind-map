@@ -12,13 +12,17 @@ import { useState } from "react";
 import {
 	useDeleteMindMapProject,
 	useMindMapProjects,
-} from "@/hooks/mind-maps.hooks";
+} from "@/hooks/api/mind-maps.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatRelativeDate } from "@/lib/date-utils";
-import { ShareLinkDialog } from "./ShareLinkDialog";
-import { ConfirmDialog } from "./shared/ConfirmDialog";
-import { Button } from "./ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { ShareLinkDialog } from "../../../../components/ShareLinkDialog";
+import { ConfirmDialog } from "../../../../components/shared/ConfirmDialog";
+import { Button } from "../../../../components/ui/button";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "../../../../components/ui/popover";
 
 interface ProjectSelectorProps {
 	onSelectProject: (project: MindMapProject) => void;

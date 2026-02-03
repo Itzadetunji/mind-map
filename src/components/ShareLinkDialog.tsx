@@ -4,7 +4,7 @@ import {
 	useCreateShareLink,
 	useRevokeShareLink,
 	useShareLink,
-} from "@/hooks/share-links.hooks";
+} from "@/hooks/api/share-links.hooks";
 import { Button } from "./ui/button";
 import {
 	Dialog,

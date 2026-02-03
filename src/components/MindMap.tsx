@@ -28,7 +28,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MindMapContext } from "@/context/MindMapContext";
-import { useHistory } from "@/hooks/mind-maps.hooks";
+import { useHistory } from "@/hooks/api/mind-maps.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { generateDocumentation } from "@/server/v1/generate-documentation";
 import { AIChatSidebar } from "./AIChatSidebar";

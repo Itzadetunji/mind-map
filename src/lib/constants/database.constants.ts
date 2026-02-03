@@ -66,8 +66,8 @@ export const TABLE_USER_CREDITS = {
 export const TABLE_USER_SUBSCRIPTIONS = {
 	...COMMON,
 	TIER: "tier",
-	STRIPE_CUSTOMER_ID: "stripe_customer_id",
-	STRIPE_SUBSCRIPTION_ID: "stripe_subscription_id",
+	DODO_CUSTOMER_ID: "dodo_customer_id",
+	DODO_SUBSCRIPTION_ID: "dodo_subscription_id",
 	CURRENT_PERIOD_START: "current_period_start",
 	CURRENT_PERIOD_END: "current_period_end",
 	CANCEL_AT_PERIOD_END: "cancel_at_period_end",
@@ -162,8 +162,8 @@ export type UserCreditsUpdate = Partial<{
 export type UserSubscriptionInsert = {
 	[TABLE_USER_SUBSCRIPTIONS.USER_ID]: string;
 	[TABLE_USER_SUBSCRIPTIONS.TIER]: SubscriptionTierType;
-	[TABLE_USER_SUBSCRIPTIONS.STRIPE_CUSTOMER_ID]: string | null;
-	[TABLE_USER_SUBSCRIPTIONS.STRIPE_SUBSCRIPTION_ID]: string | null;
+	[TABLE_USER_SUBSCRIPTIONS.DODO_CUSTOMER_ID]: string | null;
+	[TABLE_USER_SUBSCRIPTIONS.DODO_SUBSCRIPTION_ID]: string | null;
 	[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]: string | null;
 	[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_END]: string | null;
 	[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]: boolean;
@@ -171,8 +171,8 @@ export type UserSubscriptionInsert = {
 
 export type UserSubscriptionUpdate = Partial<{
 	[TABLE_USER_SUBSCRIPTIONS.TIER]: SubscriptionTierType;
-	[TABLE_USER_SUBSCRIPTIONS.STRIPE_CUSTOMER_ID]: string | null;
-	[TABLE_USER_SUBSCRIPTIONS.STRIPE_SUBSCRIPTION_ID]: string | null;
+	[TABLE_USER_SUBSCRIPTIONS.DODO_CUSTOMER_ID]: string | null;
+	[TABLE_USER_SUBSCRIPTIONS.DODO_SUBSCRIPTION_ID]: string | null;
 	[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]: string | null;
 	[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_END]: string | null;
 	[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]: boolean;
@@ -195,7 +195,7 @@ export type ShareLinkUpdate = Partial<{
 // ════════════════════════════════════════════════════════════════════════════════
 
 import { z } from "zod";
-import { SubscriptionTierType } from "../database.types";
+import type { SubscriptionTierType } from "../database.types";
 
 export const createShareLinkSchema = z.object({
 	mindMapId: z.string().min(1),

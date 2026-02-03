@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
 import { Brain, Loader2, Send, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { creditsQueryKeys, useUserCredits } from "@/hooks/credits.hooks";
+import { creditsQueryKeys, useUserCredits } from "@/hooks/api/credits.hooks";
 import { generateMindMap } from "@/server/v1/generate-mind-map";
 import { useAuthStore } from "@/stores/authStore";
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal";

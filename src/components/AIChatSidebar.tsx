@@ -3,8 +3,8 @@ import type { Edge, Node } from "@xyflow/react";
 import { Bot, Brain, Loader2, Send, X, Zap } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { chatsQueryKeys, useChatHistory } from "@/hooks/chats.hooks";
-import { creditsQueryKeys, useUserCredits } from "@/hooks/credits.hooks";
+import { chatsQueryKeys, useChatHistory } from "@/hooks/api/chats.hooks";
+import { creditsQueryKeys, useUserCredits } from "@/hooks/api/credits.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatTime } from "@/lib/date-utils";
 import { chatWithAIStreaming } from "@/server/v1/ai-updates-nodes";

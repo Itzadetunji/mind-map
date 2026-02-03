@@ -1,15 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLayoutEffect, useState } from "react";
 import { toast } from "sonner";
-
-import { ProjectSelector } from "@/components/ProjectSelector";
-import { SubscriptionModal } from "@/components/SubscriptionModal";
-import { useUserSubscription } from "@/hooks/credits.hooks";
+import { useUserSubscription } from "@/hooks/api/credits.hooks";
 import {
 	useCreateMindMapProject,
 	useMindMapProjects,
-} from "@/hooks/mind-maps.hooks";
+} from "@/hooks/api/mind-maps.hooks";
 import type { MindMapProject } from "@/lib/database.types";
+import { SubscriptionModal } from "@/routes/(auth)/account/-components/SubscriptionModal";
+import { ProjectSelector } from "@/routes/(auth)/projects/-components/ProjectSelector";
 
 const ProjectsPage = () => {
 	const navigate = useNavigate();
@@ -70,7 +69,13 @@ const ProjectsPage = () => {
 				params: { projectId: newProject.id },
 			});
 		} catch (error) {
-			console.error("Failed to create project:", error);
+			/* eslint-disable */ console.error(
+				...oo_tx(
+					`1504517547_73_3_73_52_11`,
+					"Failed to create project:",
+					error,
+				),
+			);
 		}
 	};
 

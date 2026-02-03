@@ -29,7 +29,7 @@ export interface ChatMessage {
 	user_id: string;
 	role: "user" | "ai";
 	content: string;
-	map_data?: any;
+	map_data?: unknown;
 	created_at: string;
 }
 
@@ -46,8 +46,8 @@ export interface UserSubscription {
 	id: string;
 	user_id: string;
 	tier: SubscriptionTierType;
-	stripe_customer_id: string | null;
-	stripe_subscription_id: string | null;
+	dodo_customer_id: string | null;
+	dodo_subscription_id: string | null;
 	current_period_start: string | null;
 	current_period_end: string | null;
 	cancel_at_period_end: boolean;

@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Check, Loader2, RefreshCw } from "lucide-react";
-import React, { useLayoutEffect } from "react";
+import React from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { SubscriptionSuccessModal } from "@/components/SubscriptionSuccessModal";
+
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/card";
 import {
 	getTierMonthlyCredits,
+	useDodoSubscriptionStatus,
 	useUserCredits,
 	useUserSubscription,
-} from "@/hooks/credits.hooks";
+} from "@/hooks/api/credits.hooks";
 import {
 	SubscriptionIconMap,
 	SubscriptionPricingMeta,
@@ -27,6 +28,7 @@ import {
 	SubscriptionTier,
 	type SubscriptionTierType,
 } from "@/lib/database.types";
+import { SubscriptionSuccessModal } from "@/routes/(auth)/projects/-components/SubscriptionSuccessModal";
 import { createDodoCheckoutSession } from "@/server/v1/checkout/dodo-checkout";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -36,6 +38,10 @@ const AccountPage = () => {
 	const search = Route.useSearch();
 	const userSubscriptionQuery = useUserSubscription();
 	const userCreditsQuery = useUserCredits();
+	const dodoStatusQuery = useDodoSubscriptionStatus({
+		enabled: search.checkout === "complete",
+		refetchInterval: search.checkout === "complete" ? 5000 : false,
+	});
 
 	const [isLoading, setIsLoading] = React.useState(false);
 
@@ -70,8 +76,10 @@ const AccountPage = () => {
 	};
 
 	const currentTier = userSubscriptionQuery.data?.tier || null;
-	const hasActiveSubscription = !!userSubscriptionQuery.data?.tier;
+	const hasActiveSubscription =
+		dodoStatusQuery.data?.status?.toLowerCase() === "active";
 	const isCurrentTier = (tier: SubscriptionTierType) => currentTier === tier;
+	const isCheckingSubscription = dodoStatusQuery.isFetching;
 
 	const handleSuccessModalChange = (open: boolean) => {
 		if (!open) {
@@ -79,7 +87,11 @@ const AccountPage = () => {
 		}
 	};
 
-	if (userSubscriptionQuery.isLoading || userCreditsQuery.isLoading) {
+	if (
+		userSubscriptionQuery.isLoading ||
+		userCreditsQuery.isLoading ||
+		dodoStatusQuery.isLoading
+	) {
 		return (
 			<main className="w-full flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-950">
 				<Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -246,7 +258,9 @@ const AccountPage = () => {
 												variant={plan.id === "hobby" ? "outline" : "default"}
 												className={`w-full h-12 rounded-full text-base ${plan.id === "pro" ? "bg-primary text-white hover:bg-primary/90" : ""}`}
 												onClick={() => handleSubscribe(plan.id)}
-												disabled={isLoading || isCurrent}
+												disabled={
+													isLoading || isCurrent || isCheckingSubscription
+												}
 											>
 												{isCurrent ? "Current Plan" : "Start 3-day free trial"}
 											</Button>
