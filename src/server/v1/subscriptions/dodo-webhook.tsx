@@ -193,7 +193,7 @@ const verifySignature = (
 	return crypto.timingSafeEqual(signatureBuffer, digestBuffer);
 };
 
-export const Route = createAPIFileRoute("/api/dodo-webhook")({
+export const Route = createAPIFileRoute("/api/v1/dodo-webhook")({
 	POST: async ({ request }) => {
 		const rawBody = await request.text();
 		const webhookSecret = process.env.DODO_WEBHOOK_SECRET;
@@ -205,11 +205,15 @@ export const Route = createAPIFileRoute("/api/dodo-webhook")({
 				request.headers.get("x-webhook-signature");
 
 			if (!signatureHeader) {
-				return new Response("Missing signature", { status: 401 });
+				return new Response("Missing signature", {
+					status: StatusCodes.UNAUTHORIZED,
+				});
 			}
 
 			if (!verifySignature(rawBody, signatureHeader, webhookSecret)) {
-				return new Response("Invalid signature", { status: 401 });
+				return new Response("Invalid signature", {
+					status: StatusCodes.UNAUTHORIZED,
+				});
 			}
 		}
 
