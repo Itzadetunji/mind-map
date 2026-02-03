@@ -6,10 +6,6 @@ import {
 	SubscriptionTier,
 	type SubscriptionTierType,
 } from "@/lib/database.types";
-import {
-	DODO_PAYMENTS_HOBBY_PRODUCT_ID,
-	DODO_PAYMENTS_PRO_PRODUCT_ID,
-} from "@/server/utils/constants";
 
 const productTierSchema = z.enum([
 	SubscriptionTier.HOBBY,
@@ -23,9 +19,13 @@ const createDodoCheckoutSchema = z.object({
 });
 
 const getProductIdForTier = (tier: SubscriptionTierType) =>
-	tier === SubscriptionTier.HOBBY
-		? DODO_PAYMENTS_HOBBY_PRODUCT_ID
-		: DODO_PAYMENTS_PRO_PRODUCT_ID;
+	process.env.NODE_ENV === "development"
+		? tier === SubscriptionTier.HOBBY
+			? process.env.TEST_DODO_PAYMENTS_HOBBY_PRODUCT_ID
+			: process.env.TEST_DODO_PAYMENTS_PRO_PRODUCT_ID
+		: tier === SubscriptionTier.HOBBY
+			? process.env.DODO_PAYMENTS_HOBBY_PRODUCT_ID
+			: process.env.DODO_PAYMENTS_PRO_PRODUCT_ID;
 
 export const createDodoCheckoutSession = createServerFn({ method: "POST" })
 	.inputValidator(createDodoCheckoutSchema)
