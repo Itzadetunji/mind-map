@@ -214,6 +214,7 @@ export const Route = createAPIFileRoute("/api/dodo-webhook")({
 		}
 
 		let payload: DodoWebhookPaymentIntentPayload;
+		console.log("Received Dodo webhook:", rawBody);
 		try {
 			payload = JSON.parse(rawBody) as DodoWebhookPaymentIntentPayload;
 		} catch {
