@@ -1,13 +1,12 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Edge, Node } from "@xyflow/react";
 import { Bot, Brain, Loader2, Send, X, Zap } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-
+import { useChatWithAIStreaming } from "@/hooks/api/ai.hooks";
 import { chatsQueryKeys, useChatHistory } from "@/hooks/api/chats.hooks";
 import { creditsQueryKeys, useUserCredits } from "@/hooks/api/credits.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatTime } from "@/lib/date-utils";
-import { chatWithAIStreaming } from "@/server/v1/ai-updates-nodes";
 import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
@@ -137,104 +136,92 @@ export const AIChatSidebar = ({
 		}
 	}, [historyMessages.length, isFetchingNextPage]);
 
-	const chatMutation = useMutation<ChatResponse, Error, string>({
-		mutationFn: async (message: string): Promise<ChatResponse> => {
-			if (!project?.id || !user?.id)
-				throw new Error("Project or user not found");
-
-			const chatHistory = historyMessages.map((m) => ({
-				role: m.role as "user" | "assistant",
-				content: m.content,
-			}));
-
-			// Check if this is the first message
-			const isFirstMessage = chatHistory.length === 0;
-
-			// Backend now handles saving user message and AI response
-			const response = await chatWithAIStreaming({
-				data: {
-					message,
-					userId: user.id,
-					projectId: project.id,
-					projectContext: {
-						title: projectTitle || "New Project",
-						prompt: project?.first_prompt || "",
-						nodes: nodes,
-						edges: edges,
-					},
-					chatHistory,
-					isFirstMessage,
-				},
-			});
-			return response as ChatResponse;
-		},
-		onSuccess: async (data: ChatResponse) => {
-			if (!project?.id || !user?.id) return;
-
-			// Refresh credits if action was generate or modify (credits were deducted)
-			if (data.action === "generate" || data.action === "modify") {
-				queryClient.invalidateQueries({
-					queryKey: creditsQueryKeys.balance(user.id),
-				});
-				queryClient.invalidateQueries({
-					queryKey: creditsQueryKeys.transactions(user.id),
-				});
-			}
-
-			// Refresh chat history since backend saved the messages
-			queryClient.invalidateQueries({
-				queryKey: chatsQueryKeys.messages(project.id),
-			});
-
-			// Apply graph changes if any
-			if (
-				(data.action === "generate" || data.action === "modify") &&
-				data.graphData &&
-				onApplyChanges
-			) {
-				onApplyChanges(
-					data.graphData.nodes as Node[],
-					data.graphData.edges as Edge[],
-				);
-			}
-		},
-		onError: (error) => {
-			console.error("Chat error:", error);
-			// Show credits modal if insufficient credits
-			const errorMessage =
-				error instanceof Error
-					? error.message
-					: typeof error === "string"
-						? error
-						: String(error);
-			if (errorMessage.includes("INSUFFICIENT_CREDITS")) {
-				setShowCreditsModal(true);
-			}
-		},
-	});
+	const chatMutation = useChatWithAIStreaming();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!input.trim() || chatMutation.isPending) return;
 
-		// Check if user has enough credits (1 credit per generation)
 		if (!credits || credits.credits < 1) {
 			setShowCreditsModal(true);
 			return;
 		}
 
+		if (!project?.id || !user?.id) return;
+
 		const msg = input.trim();
 		setInput("");
-		chatMutation.mutate(msg);
+
+		const chatHistory = historyMessages.map((m) => ({
+			role: m.role as "user" | "assistant",
+			content: m.content,
+		}));
+
+		chatMutation.mutate(
+			{
+				message: msg,
+				userId: user.id,
+				projectId: project.id,
+				projectContext: {
+					title: projectTitle || "New Project",
+					prompt: project?.first_prompt || "",
+					nodes: nodes,
+					edges: edges,
+				},
+				chatHistory,
+				isFirstMessage: chatHistory.length === 0,
+			},
+			{
+				onSuccess: (data: ChatResponse) => {
+					if (!project?.id || !user?.id) return;
+
+					if (data.action === "generate" || data.action === "modify") {
+						queryClient.invalidateQueries({
+							queryKey: creditsQueryKeys.balance(user.id),
+						});
+						queryClient.invalidateQueries({
+							queryKey: creditsQueryKeys.transactions(user.id),
+						});
+					}
+
+					queryClient.invalidateQueries({
+						queryKey: chatsQueryKeys.messages(project.id),
+					});
+
+					if (
+						(data.action === "generate" || data.action === "modify") &&
+						data.graphData &&
+						onApplyChanges
+					) {
+						onApplyChanges(
+							data.graphData.nodes as Node[],
+							data.graphData.edges as Edge[],
+						);
+					}
+				},
+				onError: (error) => {
+					console.error("Chat error:", error);
+					const errorMessage =
+						error instanceof Error
+							? error.message
+							: typeof error === "string"
+								? error
+								: String(error);
+					if (errorMessage.includes("INSUFFICIENT_CREDITS")) {
+						setShowCreditsModal(true);
+					}
+				},
+			},
+		);
 	};
 
 	const displayMessages = useMemo(() => {
 		const msgs = [...historyMessages];
-		if (chatMutation.isPending && chatMutation.variables) {
+		if (chatMutation.isPending && chatMutation.variables?.message) {
 			const pendingMsg: ChatMessage = {
 				id: "pending-user",
 				role: "user",
-				content: chatMutation.variables,
+				content: chatMutation.variables.message,
 				timestamp: new Date(),
 			};
 			// Prevent duplicate showing if DB update was super fast
@@ -250,7 +237,11 @@ export const AIChatSidebar = ({
 			}
 		}
 		return msgs;
-	}, [historyMessages, chatMutation.isPending, chatMutation.variables]);
+	}, [
+		historyMessages,
+		chatMutation.isPending,
+		chatMutation.variables?.message,
+	]);
 
 	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
 		if (e.key === "Enter" && !e.shiftKey) {
