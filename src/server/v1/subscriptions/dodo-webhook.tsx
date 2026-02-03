@@ -193,7 +193,7 @@ const verifySignature = (
 	return crypto.timingSafeEqual(signatureBuffer, digestBuffer);
 };
 
-export const Route = createAPIFileRoute("/api/v1/dodo-webhook")({
+export const Route = createAPIFileRoute("/api/v1/subscriptions/dodo-webhook")({
 	POST: async ({ request }) => {
 		const rawBody = await request.text();
 		const webhookSecret = process.env.DODO_WEBHOOK_SECRET;
