@@ -1,57 +1,46 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { Edge, Node } from "@xyflow/react";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+
+import { useSharedMindMap } from "@/api/http/v1/share-links/share-links.hooks";
 import { MindMap } from "@/components/MindMap";
 import { Button } from "@/components/ui/button";
 import type { MindMapProject } from "@/lib/database.types";
-import { getSharedMindMap } from "@/server/v1/share-links";
 import { useAuthStore } from "@/stores/authStore";
 
 const SharedMindMapPage = () => {
 	const { shareToken } = Route.useParams();
-	const [mindMap, setMindMap] = useState<MindMapProject | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const {
+		data,
+		isLoading: loading,
+		error: queryError,
+	} = useSharedMindMap(shareToken);
 	const { signInWithGoogle } = useAuthStore();
 
-	useEffect(() => {
-		const fetchSharedMindMap = async () => {
-			try {
-				setLoading(true);
-				const result = await getSharedMindMap({
-					data: { shareToken },
-				});
-
-				// Transform the result to match MindMapProject format
-				const transformedMindMap: MindMapProject = {
-					id: result.mindMap.id,
-					user_id: "",
-					title: result.mindMap.title,
-					description: result.mindMap.description,
-					first_prompt: "",
-					graph_data: result.mindMap.graph_data as {
-						reasoning?: string;
-						nodes: Node[];
-						edges: Edge[];
-					},
-					created_at: "",
-					updated_at: "",
-				};
-
-				setMindMap(transformedMindMap);
-			} catch (err) {
-				setError(
-					err instanceof Error ? err.message : "Failed to load shared mind map",
-				);
-			} finally {
-				setLoading(false);
-			}
+	const mindMap = useMemo((): MindMapProject | null => {
+		if (!data?.mindMap) return null;
+		const m = data.mindMap;
+		return {
+			id: m.id,
+			user_id: "",
+			title: m.title,
+			description: m.description,
+			first_prompt: "",
+			graph_data: m.graph_data as {
+				reasoning?: string;
+				nodes: Node[];
+				edges: Edge[];
+			},
+			created_at: "",
+			updated_at: "",
 		};
+	}, [data]);
 
-		if (shareToken) {
-			fetchSharedMindMap();
-		}
-	}, [shareToken]);
+	const error = queryError
+		? queryError instanceof Error
+			? queryError.message
+			: "Failed to load shared mind map"
+		: null;
 
 	if (loading) {
 		return (
@@ -71,7 +60,11 @@ const SharedMindMapPage = () => {
 					<p className="text-slate-600 dark:text-slate-400">
 						{error || "The shared mind map could not be loaded."}
 					</p>
-					<Button onClick={() => (window.location.href = "/")}>
+					<Button
+						onClick={() => {
+							window.location.href = "/";
+						}}
+					>
 						Go to Home
 					</Button>
 				</div>

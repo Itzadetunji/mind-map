@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLayoutEffect, useState } from "react";
 import { toast } from "sonner";
-import { useUserSubscription } from "@/hooks/api/credits.hooks";
+
+import { useUserSubscription } from "@/api/http/v1/credits/credits.hooks";
 import {
 	useCreateMindMapProject,
 	useMindMapProjects,
-} from "@/hooks/api/mind-maps.hooks";
+} from "@/api/http/v1/mind-maps/mind-maps.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { SubscriptionModal } from "@/routes/(auth)/account/-components/SubscriptionModal";
 import { ProjectSelector } from "@/routes/(auth)/projects/-components/ProjectSelector";

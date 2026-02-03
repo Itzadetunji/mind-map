@@ -9,10 +9,11 @@ import {
 	Trash2,
 } from "lucide-react";
 import { useState } from "react";
+
 import {
 	useDeleteMindMapProject,
 	useMindMapProjects,
-} from "@/hooks/api/mind-maps.hooks";
+} from "@/api/http/v1/mind-maps/mind-maps.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatRelativeDate } from "@/lib/date-utils";
 import { ShareLinkDialog } from "../../../../components/ShareLinkDialog";

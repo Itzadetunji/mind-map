@@ -1,11 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { useDailyCreditsCheck } from "@/api/http/v1/credits/credits.hooks";
 import { AuthGuard } from "@/components/AuthGuard";
-import { useDailyCreditsCheck } from "@/hooks/api/credits.hooks";
 
 const AuthLayout = () => {
 	useDailyCreditsCheck();
-
 	return <AuthGuard />;
 };
 

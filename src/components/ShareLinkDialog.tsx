@@ -1,10 +1,11 @@
 import { Check, Copy, Link2, Loader2, X } from "lucide-react";
 import { useState } from "react";
+
 import {
 	useCreateShareLink,
 	useRevokeShareLink,
 	useShareLink,
-} from "@/hooks/api/share-links.hooks";
+} from "@/api/http/v1/share-links/share-links.hooks";
 import { Button } from "./ui/button";
 import {
 	Dialog,

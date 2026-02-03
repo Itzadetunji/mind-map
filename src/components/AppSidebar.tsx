@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Home, LogOut, Settings, User, Zap } from "lucide-react";
 
+import { useUserCredits } from "@/api/http/v1/credits/credits.hooks";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -24,7 +25,6 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 } from "@/components/ui/sidebar";
-import { useUserCredits } from "@/hooks/api/credits.hooks";
 import { useAuthStore } from "@/stores/authStore";
 
 export function AppSidebar() {

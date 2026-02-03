@@ -3,7 +3,13 @@ import { Check, Loader2, RefreshCw } from "lucide-react";
 import React, { useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-
+import { useCreateCheckout } from "@/api/http/v1/checkout/checkout.hooks";
+import {
+	getTierMonthlyCredits,
+	useDodoSubscriptionStatus,
+	useUserCredits,
+	useUserSubscription,
+} from "@/api/http/v1/credits/credits.hooks";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -14,12 +20,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	getTierMonthlyCredits,
-	useDodoSubscriptionStatus,
-	useUserCredits,
-	useUserSubscription,
-} from "@/hooks/api/credits.hooks";
-import {
 	SubscriptionIconMap,
 	SubscriptionPricingMeta,
 	subscriptionPlans,
@@ -29,7 +29,6 @@ import {
 	type SubscriptionTierType,
 } from "@/lib/database.types";
 import { SubscriptionSuccessModal } from "@/routes/(auth)/projects/-components/SubscriptionSuccessModal";
-import { createDodoCheckoutSession } from "@/server/v1/checkout/dodo-checkout";
 import { useAuthStore } from "@/stores/authStore";
 
 const AccountPage = () => {
@@ -52,24 +51,13 @@ const AccountPage = () => {
 	});
 
 	const [showSuccessModal, setShowSuccessModal] = React.useState(false);
-	const [isLoading, setIsLoading] = React.useState(false);
+	const createCheckout = useCreateCheckout();
 
 	const handleSubscribe = async (tier: SubscriptionTierType) => {
-		setIsLoading(true);
-		if (tier === SubscriptionTier.FREE) {
-			setIsLoading(false);
-			return;
-		}
+		if (tier === SubscriptionTier.FREE) return;
 
 		try {
-			const { checkoutUrl } = await createDodoCheckoutSession({
-				data: {
-					tier,
-					email: user?.email as string,
-					name: user?.user_metadata?.full_name as string,
-				},
-			});
-
+			const { checkoutUrl } = await createCheckout.mutateAsync({ tier });
 			window.location.assign(checkoutUrl);
 		} catch (error) {
 			const message =
@@ -79,10 +67,10 @@ const AccountPage = () => {
 			toast.error("Dodo checkout unavailable", {
 				description: message,
 			});
-		} finally {
-			setIsLoading(false);
 		}
 	};
+
+	const isLoading = createCheckout.isPending;
 
 	const currentTier = userSubscriptionQuery.data?.tier || null;
 	const hasActiveSubscription =

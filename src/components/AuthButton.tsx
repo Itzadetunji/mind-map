@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { LogIn, User, Zap } from "lucide-react";
-import { useUserCredits } from "@/hooks/api/credits.hooks";
+import { useUserCredits } from "@/api/http/v1/credits/credits.hooks";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "./ui/button";
 

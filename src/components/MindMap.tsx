@@ -26,11 +26,10 @@ import {
 	Undo,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-
+import { useGenerateDocumentation } from "@/api/http/v1/docs/docs.hooks";
+import { useHistory } from "@/api/http/v1/mind-maps/mind-maps.hooks";
 import { MindMapContext } from "@/context/MindMapContext";
-import { useHistory } from "@/hooks/api/mind-maps.hooks";
 import type { MindMapProject } from "@/lib/database.types";
-import { generateDocumentation } from "@/server/v1/generate-documentation";
 import { AIChatSidebar } from "./AIChatSidebar";
 import { FloatingSearchBar } from "./FloatingSearchBar";
 import { MindMapContextMenu } from "./MindMapContextMenu";
@@ -115,6 +114,7 @@ export const MindMap = ({
 	// Error dialog states
 	const [showDocErrorDialog, setShowDocErrorDialog] = useState(false);
 	const [showImageErrorDialog, setShowImageErrorDialog] = useState(false);
+	const generateDocumentation = useGenerateDocumentation();
 
 	// Track previous state to detect actual saveable changes
 	const prevNodesRef = useRef<string>("");
@@ -147,32 +147,29 @@ export const MindMap = ({
 	// Download documentation handler
 	const handleDownload = useCallback(
 		async (format: "readme" | "prd") => {
-			if (isDownloading) return;
+			if (isDownloading || generateDocumentation.isPending) return;
 			setIsDownloading(true);
 			setShowDownloadMenu(false);
 
 			try {
-				const result = await generateDocumentation({
-					data: {
-						projectTitle: project?.title || "Mind Map Project",
-						firstPrompt: project?.first_prompt || undefined,
-						nodes: nodes.map((n) => ({
-							id: n.id,
-							type: n.type,
-							data: n.data,
-						})),
-						edges: edges.map((e) => ({
-							id: e.id,
-							source: e.source,
-							target: e.target,
-							label: typeof e.label === "string" ? e.label : undefined,
-							sourceHandle: e.sourceHandle,
-						})),
-						format,
-					},
+				const result = await generateDocumentation.mutateAsync({
+					projectTitle: project?.title || "Mind Map Project",
+					firstPrompt: project?.first_prompt || undefined,
+					nodes: nodes.map((n) => ({
+						id: n.id,
+						type: n.type,
+						data: n.data,
+					})),
+					edges: edges.map((e) => ({
+						id: e.id,
+						source: e.source,
+						target: e.target,
+						label: typeof e.label === "string" ? e.label : undefined,
+						sourceHandle: e.sourceHandle,
+					})),
+					format,
 				});
 
-				// Create blob and download
 				const blob = new Blob([result.content], { type: "text/markdown" });
 				const url = URL.createObjectURL(blob);
 				const a = document.createElement("a");
@@ -189,7 +186,14 @@ export const MindMap = ({
 				setIsDownloading(false);
 			}
 		},
-		[isDownloading, project, nodes, edges],
+		[
+			isDownloading,
+			generateDocumentation.isPending,
+			generateDocumentation.mutateAsync,
+			project,
+			nodes,
+			edges,
+		],
 	);
 
 	// Download mind map as image

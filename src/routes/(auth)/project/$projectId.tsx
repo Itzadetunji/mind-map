@@ -3,16 +3,17 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { Edge, Node } from "@xyflow/react";
 import { Share2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MindMap } from "@/components/MindMap";
-import { ShareLinkDialog } from "@/components/ShareLinkDialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useUserSubscription } from "@/hooks/api/credits.hooks";
+
+import { useUserSubscription } from "@/api/http/v1/credits/credits.hooks";
 import {
 	mindMapsQueryKeys,
 	useMindMapProject,
 	useUpdateMindMapProject,
-} from "@/hooks/api/mind-maps.hooks";
+} from "@/api/http/v1/mind-maps/mind-maps.hooks";
+import { MindMap } from "@/components/MindMap";
+import { ShareLinkDialog } from "@/components/ShareLinkDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useProjectStore } from "@/stores/projectStore";
 
 const AUTOSAVE_DELAY = 1000; // 1s debounce

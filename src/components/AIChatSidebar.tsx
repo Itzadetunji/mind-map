@@ -2,9 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Edge, Node } from "@xyflow/react";
 import { Bot, Brain, Loader2, Send, X, Zap } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { useChatWithAIStreaming } from "@/hooks/api/ai.hooks";
-import { chatsQueryKeys, useChatHistory } from "@/hooks/api/chats.hooks";
-import { creditsQueryKeys, useUserCredits } from "@/hooks/api/credits.hooks";
+
 import type { MindMapProject } from "@/lib/database.types";
 import { formatTime } from "@/lib/date-utils";
 import { useAuthStore } from "@/stores/authStore";
@@ -13,6 +11,9 @@ import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
 import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
+import { useChatWithAIStreaming } from "@/api/http/v1/ai/ai.hooks";
+import { useChatHistory, chatsQueryKeys } from "@/api/http/v1/chats/chats.hooks";
+import { useUserCredits, creditsQueryKeys } from "@/api/http/v1/credits/credits.hooks";
 
 interface AIThinking {
 	task: string;

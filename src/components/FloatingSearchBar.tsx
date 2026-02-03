@@ -1,9 +1,13 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
 import { Brain, Loader2, Send, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { creditsQueryKeys, useUserCredits } from "@/hooks/api/credits.hooks";
-import { generateMindMap } from "@/server/v1/generate-mind-map";
+
+import {
+	creditsQueryKeys,
+	useUserCredits,
+} from "@/api/http/v1/credits/credits.hooks";
+import { useGenerateMindMap } from "@/api/http/v1/mind-maps/mind-maps.hooks";
 import { useAuthStore } from "@/stores/authStore";
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
 import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
@@ -28,69 +32,60 @@ export function FloatingSearchBar({
 	const { data: credits } = useUserCredits();
 	const queryClient = useQueryClient();
 
-	const mutation = useMutation({
-		mutationFn: async (text: string) => {
-			return await generateMindMap({
-				data: {
-					prompt: text,
-					userId: user?.id,
-					projectId,
+	const mutation = useGenerateMindMap();
+
+	const mutateWithCallbacks = () => {
+		mutation.mutate(
+			{ prompt, userId: user?.id, projectId },
+			{
+				onSuccess: (data) => {
+					queryClient.invalidateQueries({
+						queryKey: creditsQueryKeys.balance(user?.id),
+					});
+					queryClient.invalidateQueries({
+						queryKey: creditsQueryKeys.transactions(user?.id),
+					});
+
+					setTimeout(() => {
+						if (data?.nodes && data?.edges) {
+							setNodes(data.nodes);
+							setEdges(data.edges);
+							setTimeout(() => fitView(), 100);
+						}
+
+						if (data?.projectId && onProjectCreated) {
+							onProjectCreated(data.projectId);
+						}
+					}, 500);
 				},
-			});
-		},
-		onSuccess: (data) => {
-			// Refresh credits after successful generation
-			queryClient.invalidateQueries({
-				queryKey: creditsQueryKeys.balance(user?.id),
-			});
-			queryClient.invalidateQueries({
-				queryKey: creditsQueryKeys.transactions(user?.id),
-			});
+				onError: (error) => {
+					console.error("Failed to generate:", error);
+					const errorMessage =
+						error instanceof Error
+							? error.message
+							: typeof error === "string"
+								? error
+								: String(error);
+					if (errorMessage.includes("INSUFFICIENT_CREDITS")) {
+						setShowCreditsModal(true);
+					} else if (errorMessage.includes("OFF_TOPIC_REQUEST")) {
+						setShowOffTopicDialog(true);
+					} else {
+						setShowErrorDialog(true);
+					}
+				},
+			},
+		);
+	};
 
-			// Mark all steps as completed
-			setTimeout(() => {
-				if (data?.nodes && data?.edges) {
-					setNodes(data.nodes);
-					setEdges(data.edges);
-					setTimeout(() => fitView(), 100);
-				}
-
-				// If a new project was created, notify parent
-				if (data?.projectId && onProjectCreated) {
-					onProjectCreated(data.projectId);
-				}
-			}, 500);
-		},
-		onError: (error) => {
-			console.error("Failed to generate:", error);
-			const errorMessage =
-				error instanceof Error
-					? error.message
-					: typeof error === "string"
-						? error
-						: String(error);
-			if (errorMessage.includes("INSUFFICIENT_CREDITS")) {
-				setShowCreditsModal(true);
-			} else if (errorMessage.includes("OFF_TOPIC_REQUEST")) {
-				setShowOffTopicDialog(true);
-			} else {
-				setShowErrorDialog(true);
-			}
-		},
-	});
-
-	const handleSubmit = async (e: React.FormEvent) => {
+	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!prompt.trim()) return;
-
-		// Check if user has enough credits (1 credit per generation)
+		if (!prompt.trim() || mutation.isPending) return;
 		if (!credits || credits.credits < 1) {
 			setShowCreditsModal(true);
 			return;
 		}
-
-		// Start actual generation
-		mutation.mutate(prompt);
+		mutateWithCallbacks();
 	};
 
 	return (
@@ -126,12 +121,11 @@ export function FloatingSearchBar({
 						if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
 							e.preventDefault();
 							if (prompt.trim() && !mutation.isPending) {
-								// Check credits before submitting
 								if (!credits || credits.credits < 1) {
 									setShowCreditsModal(true);
 									return;
 								}
-								mutation.mutate(prompt);
+								mutateWithCallbacks();
 							}
 						}
 					}}
