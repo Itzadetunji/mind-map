@@ -46,7 +46,7 @@ export function useDodoSubscriptionStatus(options?: {
 	const user = useAuthStore((state) => state.user);
 	const userSubscriptionQuery = useUserSubscription();
 	const subscriptionId = userSubscriptionQuery.data?.dodo_subscription_id;
-
+	console.log(userSubscriptionQuery);
 	return useQuery({
 		queryKey: creditsQueryKeys.dodoStatus(user?.id),
 		queryFn: async () => {

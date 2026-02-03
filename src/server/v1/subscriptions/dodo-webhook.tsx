@@ -288,7 +288,9 @@ export const Route = createAPIFileRoute("/api/dodo-webhook")({
 
 		const { error: upsertError } = await supabase
 			.from(TABLES.USER_SUBSCRIPTIONS)
-			.insert(upsertData);
+			.upsert(upsertData, {
+				onConflict: TABLE_USER_SUBSCRIPTIONS.USER_ID,
+			});
 
 		if (upsertError) {
 			return new Response(

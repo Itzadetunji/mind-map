@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Check, Loader2, RefreshCw } from "lucide-react";
-import React from "react";
+import React, { useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -38,11 +38,20 @@ const AccountPage = () => {
 	const search = Route.useSearch();
 	const userSubscriptionQuery = useUserSubscription();
 	const userCreditsQuery = useUserCredits();
+
+	const isCheckoutSuccessful =
+		search.checkout === "complete" &&
+		(search.subscription === SubscriptionTier.HOBBY ||
+			search.subscription === SubscriptionTier.PRO);
+
+	console.log(isCheckoutSuccessful);
+
 	const dodoStatusQuery = useDodoSubscriptionStatus({
-		enabled: search.checkout === "complete",
-		refetchInterval: search.checkout === "complete" ? 5000 : false,
+		enabled: isCheckoutSuccessful,
+		refetchInterval: isCheckoutSuccessful ? 5000 : false,
 	});
 
+	const [showSuccessModal, setShowSuccessModal] = React.useState(false);
 	const [isLoading, setIsLoading] = React.useState(false);
 
 	const handleSubscribe = async (tier: SubscriptionTierType) => {
@@ -86,6 +95,10 @@ const AccountPage = () => {
 			navigate({ to: "/account", replace: true });
 		}
 	};
+
+	useEffect(() => {
+		if (dodoStatusQuery.data?.status === "active") setShowSuccessModal(true);
+	}, [search.checkout, search.subscription]);
 
 	if (
 		userSubscriptionQuery.isLoading ||
@@ -274,11 +287,7 @@ const AccountPage = () => {
 			</main>
 
 			<SubscriptionSuccessModal
-				open={
-					search.checkout === "complete" &&
-					(search.subscription === SubscriptionTier.HOBBY ||
-						search.subscription === SubscriptionTier.PRO)
-				}
+				open={showSuccessModal}
 				onOpenChange={handleSuccessModalChange}
 				subscriptionTier={search.subscription as SubscriptionTierType}
 			/>
