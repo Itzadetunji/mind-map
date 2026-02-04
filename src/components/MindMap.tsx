@@ -15,6 +15,7 @@ import {
 } from "@xyflow/react";
 import { toPng } from "html-to-image";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import { useGenerateDocumentation } from "@/api/http/v1/docs/docs.hooks";
 import { useHistory } from "@/api/http/v1/mind-maps/mind-maps.hooks";
 import { MindMapContext } from "@/context/MindMapContext";
