@@ -11,12 +11,13 @@ export function useCreateCheckout() {
 			payload: Omit<CreateCheckoutPayload, "email" | "name">,
 		) => {
 			if (!user?.email) throw new Error("User email required");
-			return createCheckout({
+			return await createCheckout({
 				data: {
 					...payload,
 					tier: payload.tier as "hobby" | "pro",
 					email: user.email,
 					name: (user.user_metadata?.full_name as string) || user.email,
+					userId: user.id,
 				},
 			});
 		},

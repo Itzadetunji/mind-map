@@ -43,8 +43,6 @@ const AccountPage = () => {
 		(search.subscription === SubscriptionTier.HOBBY ||
 			search.subscription === SubscriptionTier.PRO);
 
-	console.log(isCheckoutSuccessful);
-
 	const dodoStatusQuery = useDodoSubscriptionStatus({
 		enabled: isCheckoutSuccessful,
 		refetchInterval: isCheckoutSuccessful ? 5000 : false,
@@ -58,6 +56,7 @@ const AccountPage = () => {
 
 		try {
 			const { checkoutUrl } = await createCheckout.mutateAsync({ tier });
+			console.log(checkoutUrl);
 			window.location.assign(checkoutUrl);
 		} catch (error) {
 			const message =

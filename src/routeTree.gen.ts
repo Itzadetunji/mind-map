@@ -13,9 +13,11 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as V1HelloRouteImport } from './routes/v1/hello'
 import { Route as ShareShareTokenRouteImport } from './routes/share/$shareToken'
 import { Route as authProjectsRouteRouteImport } from './routes/(auth)/projects/route'
 import { Route as authAccountRouteRouteImport } from './routes/(auth)/account/route'
+import { Route as V1DodoSubscriptionWebhookRouteImport } from './routes/v1/dodo/subscription-webhook'
 import { Route as authProjectProjectIdRouteImport } from './routes/(auth)/project/$projectId'
 
 const TermsRoute = TermsRouteImport.update({
@@ -37,6 +39,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const V1HelloRoute = V1HelloRouteImport.update({
+  id: '/v1/hello',
+  path: '/v1/hello',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShareShareTokenRoute = ShareShareTokenRouteImport.update({
   id: '/share/$shareToken',
   path: '/share/$shareToken',
@@ -52,6 +59,12 @@ const authAccountRouteRoute = authAccountRouteRouteImport.update({
   path: '/account',
   getParentRoute: () => authRouteRoute,
 } as any)
+const V1DodoSubscriptionWebhookRoute =
+  V1DodoSubscriptionWebhookRouteImport.update({
+    id: '/v1/dodo/subscription-webhook',
+    path: '/v1/dodo/subscription-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const authProjectProjectIdRoute = authProjectProjectIdRouteImport.update({
   id: '/project/$projectId',
   path: '/project/$projectId',
@@ -65,7 +78,9 @@ export interface FileRoutesByFullPath {
   '/account': typeof authAccountRouteRoute
   '/projects': typeof authProjectsRouteRoute
   '/share/$shareToken': typeof ShareShareTokenRoute
+  '/v1/hello': typeof V1HelloRoute
   '/project/$projectId': typeof authProjectProjectIdRoute
+  '/v1/dodo/subscription-webhook': typeof V1DodoSubscriptionWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -74,7 +89,9 @@ export interface FileRoutesByTo {
   '/account': typeof authAccountRouteRoute
   '/projects': typeof authProjectsRouteRoute
   '/share/$shareToken': typeof ShareShareTokenRoute
+  '/v1/hello': typeof V1HelloRoute
   '/project/$projectId': typeof authProjectProjectIdRoute
+  '/v1/dodo/subscription-webhook': typeof V1DodoSubscriptionWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -85,7 +102,9 @@ export interface FileRoutesById {
   '/(auth)/account': typeof authAccountRouteRoute
   '/(auth)/projects': typeof authProjectsRouteRoute
   '/share/$shareToken': typeof ShareShareTokenRoute
+  '/v1/hello': typeof V1HelloRoute
   '/(auth)/project/$projectId': typeof authProjectProjectIdRoute
+  '/v1/dodo/subscription-webhook': typeof V1DodoSubscriptionWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,7 +115,9 @@ export interface FileRouteTypes {
     | '/account'
     | '/projects'
     | '/share/$shareToken'
+    | '/v1/hello'
     | '/project/$projectId'
+    | '/v1/dodo/subscription-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -105,7 +126,9 @@ export interface FileRouteTypes {
     | '/account'
     | '/projects'
     | '/share/$shareToken'
+    | '/v1/hello'
     | '/project/$projectId'
+    | '/v1/dodo/subscription-webhook'
   id:
     | '__root__'
     | '/'
@@ -115,7 +138,9 @@ export interface FileRouteTypes {
     | '/(auth)/account'
     | '/(auth)/projects'
     | '/share/$shareToken'
+    | '/v1/hello'
     | '/(auth)/project/$projectId'
+    | '/v1/dodo/subscription-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -124,6 +149,8 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   ShareShareTokenRoute: typeof ShareShareTokenRoute
+  V1HelloRoute: typeof V1HelloRoute
+  V1DodoSubscriptionWebhookRoute: typeof V1DodoSubscriptionWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -156,6 +183,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v1/hello': {
+      id: '/v1/hello'
+      path: '/v1/hello'
+      fullPath: '/v1/hello'
+      preLoaderRoute: typeof V1HelloRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/share/$shareToken': {
       id: '/share/$shareToken'
       path: '/share/$shareToken'
@@ -176,6 +210,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/account'
       preLoaderRoute: typeof authAccountRouteRouteImport
       parentRoute: typeof authRouteRoute
+    }
+    '/v1/dodo/subscription-webhook': {
+      id: '/v1/dodo/subscription-webhook'
+      path: '/v1/dodo/subscription-webhook'
+      fullPath: '/v1/dodo/subscription-webhook'
+      preLoaderRoute: typeof V1DodoSubscriptionWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/(auth)/project/$projectId': {
       id: '/(auth)/project/$projectId'
@@ -209,6 +250,8 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   ShareShareTokenRoute: ShareShareTokenRoute,
+  V1HelloRoute: V1HelloRoute,
+  V1DodoSubscriptionWebhookRoute: V1DodoSubscriptionWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
