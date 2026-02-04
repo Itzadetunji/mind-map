@@ -1,8 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { Edge, Node } from "@xyflow/react";
-import { Share2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { useUserSubscription } from "@/api/http/v1/credits/credits.hooks";
 import {
@@ -10,8 +9,6 @@ import {
 	useMindMapProject,
 	useUpdateMindMapProject,
 } from "@/api/http/v1/mind-maps/mind-maps.hooks";
-import { ShareLinkDialog } from "@/components/ShareLinkDialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MindMap } from "@/routes/(auth)/project/-components/MindMap";
 import { useProjectStore } from "@/stores/projectStore";
@@ -24,7 +21,6 @@ const ProjectPage = () => {
 	const queryClient = useQueryClient();
 	const { data: subscription } = useUserSubscription();
 	const { projectTitle, setProjectTitle } = useProjectStore();
-	const [showShareDialog, setShowShareDialog] = useState(false);
 
 	// Fetch project from Supabase
 	const {
@@ -240,22 +236,7 @@ const ProjectPage = () => {
 				{updateMutation.isPending && (
 					<span className="text-xs text-slate-400">Saving...</span>
 				)}
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onClick={() => setShowShareDialog(true)}
-					className="ml-4 flex items-center gap-2 bg-primary/10 dark:bg-[#0077B6]/20 text-primary dark:text-[#0077B6] hover:bg-primary/20 dark:hover:bg-[#0077B6]/30 border-primary/20 dark:border-[#0077B6]/30"
-				>
-					<Share2 className="w-4 h-4" />
-					<span>Share</span>
-				</Button>
 			</div>
-			<ShareLinkDialog
-				open={showShareDialog}
-				onOpenChange={setShowShareDialog}
-				mindMapId={projectId}
-			/>
 			<MindMap
 				project={project}
 				onNodesChange={handleNodesChange}

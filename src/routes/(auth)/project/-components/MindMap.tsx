@@ -14,17 +14,6 @@ import {
 	useNodesState,
 } from "@xyflow/react";
 import { toPng } from "html-to-image";
-import {
-	ChevronDown,
-	Download,
-	FileText,
-	Hand,
-	Image as ImageIcon,
-	Loader2,
-	MousePointer2,
-	Redo,
-	Undo,
-} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useGenerateDocumentation } from "@/api/http/v1/docs/docs.hooks";
@@ -33,6 +22,7 @@ import { MindMapContext } from "@/context/MindMapContext";
 import type { MindMapProject } from "@/lib/database.types";
 import { AIChatSidebar } from "../../../../components/AIChatSidebar";
 import { FloatingSearchBar } from "../../../../components/FloatingSearchBar";
+import { MindMapToolbar } from "../../../../components/MindMapToolbar";
 import ConditionNode from "../../../../components/nodes/ConditionNode";
 import CoreConceptNode from "../../../../components/nodes/CoreConceptNode";
 import CustomNode from "../../../../components/nodes/CustomNode";
@@ -40,7 +30,6 @@ import FeatureNode from "../../../../components/nodes/FeatureNode";
 import UserFlowNode from "../../../../components/nodes/UserFlowNode";
 import { ErrorDialog } from "../../../../components/shared/ErrorDialog";
 import { Button } from "../../../../components/ui/button";
-import { Tooltip } from "../../../../components/ui/tooltip-custom";
 import { MindMapContextMenu } from "./MindMapContextMenu";
 import { MobileExperienceDialog } from "./MobileExperienceDialog";
 
@@ -113,6 +102,9 @@ export const MindMap = ({
 	const [showDownloadMenu, setShowDownloadMenu] = useState(false);
 	const [isDownloading, setIsDownloading] = useState(false);
 	const downloadMenuRef = useRef<HTMLDivElement>(null);
+	// Share dropdown state
+	const [showShareMenu, setShowShareMenu] = useState(false);
+	const shareMenuRef = useRef<HTMLDivElement>(null);
 	// Error dialog states
 	const [showDocErrorDialog, setShowDocErrorDialog] = useState(false);
 	const [showImageErrorDialog, setShowImageErrorDialog] = useState(false);
@@ -132,14 +124,21 @@ export const MindMap = ({
 		setHasLocalPrompt(hasPrompt);
 	}, [hasPrompt]);
 
-	// Close download menu when clicking outside
+	// Close download and share menus when clicking outside
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
+			const target = event.target as globalThis.Node;
 			if (
 				downloadMenuRef.current &&
-				!downloadMenuRef.current.contains(event.target as globalThis.Node)
+				!downloadMenuRef.current.contains(target)
 			) {
 				setShowDownloadMenu(false);
+			}
+			if (
+				shareMenuRef.current &&
+				!shareMenuRef.current.contains(target)
+			) {
+				setShowShareMenu(false);
 			}
 		};
 		document.addEventListener("mousedown", handleClickOutside);
@@ -592,125 +591,25 @@ export const MindMap = ({
 					)}
 					{!readOnly && <Controls />}
 					{!readOnly && (
-						<Panel
-							position="top-center"
-							className="flex items-center gap-1 p-1 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800"
-						>
-							<Tooltip content="Pan Tool (H)" side="bottom">
-								<button
-									type="button"
-									onClick={() => setTool("hand")}
-									className={`p-2 rounded-md transition-colors ${
-										tool === "hand"
-											? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-											: "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
-									}`}
-								>
-									<Hand className="w-4 h-4" />
-								</button>
-							</Tooltip>
-							<Tooltip content="Select Tool (V)" side="bottom">
-								<button
-									type="button"
-									onClick={() => setTool("select")}
-									className={`p-2 rounded-md transition-colors ${
-										tool === "select"
-											? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-											: "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
-									}`}
-								>
-									<MousePointer2 className="w-4 h-4" />
-								</button>
-							</Tooltip>
-							<div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
-							<Tooltip content="Undo (Ctrl+Z)" side="bottom">
-								<button
-									type="button"
-									onClick={handleUndo}
-									disabled={!canUndo}
-									className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
-								>
-									<Undo className="w-4 h-4" />
-								</button>
-							</Tooltip>
-							<Tooltip content="Redo (Ctrl+Y)" side="bottom">
-								<button
-									type="button"
-									onClick={handleRedo}
-									disabled={!canRedo}
-									className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
-								>
-									<Redo className="w-4 h-4" />
-								</button>
-							</Tooltip>
-							{/* Download Documentation Button - shows when 2+ nodes */}
-							{nodes.length >= 2 && (
-								<>
-									<div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
-									<div className="relative" ref={downloadMenuRef}>
-										<Tooltip content="Download Documentation" side="bottom">
-											<button
-												type="button"
-												onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-												disabled={isDownloading}
-												className="flex items-center gap-1 p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md disabled:opacity-50"
-											>
-												{isDownloading ? (
-													<Loader2 className="w-4 h-4 animate-spin" />
-												) : (
-													<Download className="w-4 h-4" />
-												)}
-												<ChevronDown className="w-3 h-3" />
-											</button>
-										</Tooltip>
-										{showDownloadMenu && (
-											<div className="absolute top-full mt-1 left-0 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-45 z-50">
-												<button
-													type="button"
-													onClick={handleDownloadImage}
-													className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-												>
-													<ImageIcon className="w-4 h-4 text-green-500" />
-													<div>
-														<div className="font-medium">Image (PNG)</div>
-														<div className="text-xs text-slate-500">
-															Export as image
-														</div>
-													</div>
-												</button>
-												<div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
-												<button
-													type="button"
-													onClick={() => handleDownload("readme")}
-													className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-												>
-													<FileText className="w-4 h-4 text-blue-500" />
-													<div>
-														<div className="font-medium">README.md</div>
-														<div className="text-xs text-slate-500">
-															For AI & Developers
-														</div>
-													</div>
-												</button>
-												<button
-													type="button"
-													onClick={() => handleDownload("prd")}
-													className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-												>
-													<FileText className="w-4 h-4 text-primary dark:text-[#0077B6]" />
-													<div>
-														<div className="font-medium">PRD Document</div>
-														<div className="text-xs text-slate-500">
-															For Stakeholders
-														</div>
-													</div>
-												</button>
-											</div>
-										)}
-									</div>
-								</>
-							)}
-						</Panel>
+						<MindMapToolbar
+							tool={tool}
+							onToolChange={setTool}
+							onUndo={handleUndo}
+							onRedo={handleRedo}
+							canUndo={canUndo}
+							canRedo={canRedo}
+							nodesLength={nodes.length}
+							showDownloadMenu={showDownloadMenu}
+							onDownloadMenuToggle={() => setShowDownloadMenu(!showDownloadMenu)}
+							isDownloading={isDownloading}
+							onDownloadImage={handleDownloadImage}
+							onDownload={handleDownload}
+							downloadMenuRef={downloadMenuRef}
+							mindMapId={project?.id}
+							showShareMenu={showShareMenu}
+							onShareMenuToggle={() => setShowShareMenu(!showShareMenu)}
+							shareMenuRef={shareMenuRef}
+						/>
 					)}
 					<MiniMap />
 					{showGrid && <Background gap={12} size={1} />}
