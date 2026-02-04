@@ -77,14 +77,14 @@ export interface DodoWebhookCustomFieldResponse {
 }
 
 export const DodoSubscriptionStatuses = {
-	ACTIVE: "active",
-	CANCELLED: "cancelled",
-	EXPIRED: "expired",
-	FAILED: "failed",
-	ON_HOLD: "on_hold",
-	PLAN_CHANGED: "plan_changed",
-	RENEWED: "renewed",
-	UPDATED: "updated",
+	ACTIVE: "subscription.active",
+	CANCELLED: "subscription.cancelled",
+	EXPIRED: "subscription.expired",
+	FAILED: "subscription.failed",
+	ON_HOLD: "subscription.on_hold",
+	PLAN_CHANGED: "subscription.plan_changed",
+	RENEWED: "subscription.renewed",
+	UPDATED: "subscription.updated",
 } as const;
 
 export type DodoSubscriptionStatus =
@@ -132,14 +132,14 @@ export interface DodoWebhookPaymentIntentPayload {
 
 const resolveTierForEvent = (
 	type: DodoSubscriptionStatus,
-	tierFromProduct: SubscriptionTierType | null,
+	tierFromProduct: SubscriptionTierType,
 ): SubscriptionTierType => {
 	switch (type) {
 		case DodoSubscriptionStatuses.ACTIVE:
 		case DodoSubscriptionStatuses.RENEWED:
 		case DodoSubscriptionStatuses.PLAN_CHANGED:
 		case DodoSubscriptionStatuses.UPDATED:
-			return tierFromProduct ?? SubscriptionTier.FREE;
+			return tierFromProduct;
 		default:
 			return SubscriptionTier.FREE;
 	}
@@ -190,14 +190,23 @@ const upsertUserSubscription = async (args: {
 		),
 	};
 
-	const { error: upsertError } = await supabase
+	// Service role client bypasses RLS; if no error but 0 rows, RLS or conflict target may be wrong
+	const { data: upserted, error: upsertError } = await supabase
 		.from(TABLES.USER_SUBSCRIPTIONS)
 		.upsert(upsertData, {
 			onConflict: TABLE_USER_SUBSCRIPTIONS.USER_ID,
-		});
+			ignoreDuplicates: false,
+		})
+		.select("user_id")
+		.single();
 
 	if (upsertError) {
 		throw upsertError;
+	}
+	if (!upserted) {
+		throw new Error(
+			"Subscription upsert returned no row (check RLS and onConflict target)",
+		);
 	}
 };
 
@@ -228,7 +237,7 @@ const resolveTierFromProductId = (productId: string | null) => {
 	const proProductId = isTest
 		? process.env.TEST_DODO_PAYMENTS_PRO_PRODUCT_ID
 		: process.env.DODO_PAYMENTS_PRO_PRODUCT_ID;
-
+	console.log(productId);
 	if (productId === hobbyProductId) return SubscriptionTier.HOBBY;
 	if (productId === proProductId) return SubscriptionTier.PRO;
 
@@ -290,11 +299,13 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 
 					userId = user.id;
 				}
-
 				const tierFromProduct = resolveTierFromProductId(
 					payload.data.product_id,
 				);
-				const tierToSave = resolveTierForEvent(payload.type, tierFromProduct);
+				const tierToSave = resolveTierForEvent(
+					payload.type,
+					tierFromProduct as SubscriptionTierType,
+				);
 
 				const dodoClient = getDodoClient();
 				const subscription = await dodoClient.subscriptions.retrieve(
