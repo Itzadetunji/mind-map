@@ -1,11 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import DodoPayments from "dodopayments";
 import { StatusCodes } from "http-status-codes";
+
 import {
 	TABLE_USER_SUBSCRIPTIONS,
 	TABLES,
 } from "@/lib/constants/database.constants";
-import { SubscriptionTier, SubscriptionTierType } from "@/lib/database.types";
+import {
+	SubscriptionTier,
+	type SubscriptionTierType,
+} from "@/lib/database.types";
 import { getSupabaseAdminClient } from "../../../../supabase/index";
 import {
 	apiErrorResponse,
