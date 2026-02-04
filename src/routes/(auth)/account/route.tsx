@@ -78,19 +78,18 @@ const AccountPage = () => {
 	const isCheckingSubscription = dodoStatusQuery.isFetching;
 
 	const handleSuccessModalChange = (open: boolean) => {
-		setShowSuccessModal(open);
+		setShowSuccessModal(false);
+
 		if (!open) {
 			navigate({ to: "/account", replace: true });
 		}
 	};
 
-	console.log(userSubscriptionQuery.data);
-
 	useEffect(() => {
-		if (dodoStatusQuery.data?.status === "active") {
-			handleSuccessModalChange(true);
+		if (dodoStatusQuery.data?.status === "active" && isCheckoutSuccessful) {
+			setShowSuccessModal(true);
 		}
-	}, [search.checkout, search.subscription]);
+	}, [dodoStatusQuery.data?.status, isCheckoutSuccessful]);
 
 	if (
 		userSubscriptionQuery.isLoading ||

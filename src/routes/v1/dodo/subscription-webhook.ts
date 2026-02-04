@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import DodoPayments from "dodopayments";
 import { StatusCodes } from "http-status-codes";
 
 import {
@@ -11,11 +10,7 @@ import {
 	type SubscriptionTierType,
 } from "@/lib/database.types";
 import { getSupabaseAdminClient } from "../../../../supabase/index";
-import {
-	apiErrorResponse,
-	apiResponse,
-	getUserByEmail as getUserById,
-} from "../../../server/utils";
+import { apiErrorResponse, apiResponse } from "../../../server/utils";
 
 void createFileRoute;
 
@@ -147,7 +142,10 @@ const resolveTierForEvent = (
 
 const resolveCancelAtPeriodEnd = (
 	type: DodoSubscriptionStatus,
-	subscription: { cancel_at_next_billing_date: boolean },
+	subscription: {
+		cancel_at_next_billing_date: boolean;
+		cancelled_at?: string | null;
+	},
 ): boolean => {
 	switch (type) {
 		case DodoSubscriptionStatuses.CANCELLED:
@@ -167,12 +165,13 @@ const upsertUserSubscription = async (args: {
 	userId: string;
 	tierToSave: SubscriptionTierType;
 	payload: DodoWebhookPaymentIntentPayload;
-	subscription: {
-		next_billing_date: string;
-		cancel_at_next_billing_date: boolean;
-	};
 }) => {
-	const { supabase, userId, tierToSave, payload, subscription } = args;
+	const { supabase, userId, tierToSave, payload } = args;
+	const subscription = {
+		next_billing_date: payload.data.next_billing_date,
+		cancel_at_next_billing_date: payload.data.cancel_at_next_billing_date,
+		cancelled_at: payload.data.cancelled_at,
+	};
 
 	const upsertData = {
 		[TABLE_USER_SUBSCRIPTIONS.USER_ID]: userId,
@@ -181,13 +180,14 @@ const upsertUserSubscription = async (args: {
 			payload.data.customer.customer_id,
 		[TABLE_USER_SUBSCRIPTIONS.DODO_SUBSCRIPTION_ID]:
 			payload.data.subscription_id,
-		[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]: new Date().toISOString(),
+		[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]: payload.data.created_at,
 		[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_END]:
-			subscription.next_billing_date,
+			subscription.next_billing_date ?? null,
 		[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]: resolveCancelAtPeriodEnd(
 			payload.type,
 			subscription,
 		),
+		[TABLE_USER_SUBSCRIPTIONS.CANCELLED_AT]: subscription.cancelled_at,
 	};
 
 	// Service role client bypasses RLS; if no error but 0 rows, RLS or conflict target may be wrong
@@ -208,20 +208,6 @@ const upsertUserSubscription = async (args: {
 			"Subscription upsert returned no row (check RLS and onConflict target)",
 		);
 	}
-};
-
-const getDodoClient = () => {
-	const bearerToken = process.env.DODO_PAYMENTS_API_KEY;
-
-	if (!bearerToken) {
-		throw new Error("Missing DODO_PAYMENTS_API_KEY environment variable");
-	}
-
-	const environment = (process.env.DODO_PAYMENTS_ENVIRONMENT || "live_mode") as
-		| "test_mode"
-		| "live_mode";
-
-	return new DodoPayments({ bearerToken, environment });
 };
 
 const resolveTierFromProductId = (productId: string | null) => {
@@ -266,8 +252,8 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 				}
 
 				if (!payload.data.subscription_id) {
-					return apiResponse(
-						{ received: true, reason: "no-subscription-id" },
+					return apiErrorResponse(
+						StatusCodes.BAD_REQUEST,
 						"No subscription id",
 					);
 				}
@@ -275,29 +261,18 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 				const customerEmail = payload.data.customer?.email;
 
 				if (!customerEmail) {
-					return apiResponse(
-						{ received: true, reason: "no-customer-email" },
-						"No customer email",
-					);
+					return apiErrorResponse(StatusCodes.BAD_REQUEST, "No customer email");
 				}
 
 				const supabase = getSupabaseAdminClient();
 
-				let userId = payload.data.metadata.user_id;
+				const userId = payload.data.metadata.user_id;
 
 				if (!userId) {
-					const { user, error } = await getUserById(userId);
-
-					console.log("User lookup via email:", user?.id, "Error:", error);
-
-					if (error || !user?.id) {
-						return apiResponse(
-							{ received: true, reason: "user-not-found" },
-							"User not found",
-						);
-					}
-
-					userId = user.id;
+					return apiErrorResponse(
+						StatusCodes.BAD_REQUEST,
+						"No user id in metadata",
+					);
 				}
 				const tierFromProduct = resolveTierFromProductId(
 					payload.data.product_id,
@@ -307,18 +282,12 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 					tierFromProduct as SubscriptionTierType,
 				);
 
-				const dodoClient = getDodoClient();
-				const subscription = await dodoClient.subscriptions.retrieve(
-					payload.data.subscription_id,
-				);
-
 				try {
 					await upsertUserSubscription({
 						supabase,
 						userId: userId as string,
 						tierToSave,
 						payload,
-						subscription,
 					});
 				} catch (upsertError) {
 					return apiErrorResponse(
@@ -328,7 +297,7 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 							: "Failed to update subscription",
 					);
 				}
-				return apiResponse({ received: true }, "Webhook processed");
+				return apiResponse({ success: true }, "Webhook processed");
 			},
 		},
 	},

@@ -71,6 +71,7 @@ export const TABLE_USER_SUBSCRIPTIONS = {
 	CURRENT_PERIOD_START: "current_period_start",
 	CURRENT_PERIOD_END: "current_period_end",
 	CANCEL_AT_PERIOD_END: "cancel_at_period_end",
+	CANCELLED_AT: "cancelled_at",
 } as const;
 
 export const TABLE_SHARE_LINKS = {
@@ -99,103 +100,40 @@ export type StorageBucketName =
 	(typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS];
 
 // ════════════════════════════════════════════════════════════════════════════════
-// DATABASE INSERT/UPDATE TYPES
+// DATABASE INSERT/UPDATE TYPES (from Supabase-generated types)
 // ════════════════════════════════════════════════════════════════════════════════
 
-export type ChatMessageInsert = {
-	[TABLE_CHAT_MESSAGES.MIND_MAP_ID]: string;
-	[TABLE_CHAT_MESSAGES.USER_ID]: string;
-	[TABLE_CHAT_MESSAGES.ROLE]: ChatRole;
-	[TABLE_CHAT_MESSAGES.CONTENT]: string;
-	[TABLE_CHAT_MESSAGES.MAP_DATA]?: unknown;
-};
+import type { Database } from "../database.types";
 
-type GraphData = {
-	reasoning?: string;
-	nodes: Array<{
-		id: string;
-		type: string;
-		position: { x: number; y: number };
-		data: Record<string, unknown>;
-	}>;
-	edges: Array<{
-		id: string;
-		source: string;
-		target: string;
-		label?: string;
-		sourceHandle?: string;
-	}>;
-};
+// Re-export Insert and Update types from Supabase-generated types
+export type ChatMessageInsert =
+	Database["public"]["Tables"]["chat_messages"]["Insert"];
+export type ChatMessageUpdate =
+	Database["public"]["Tables"]["chat_messages"]["Update"];
 
-export type MindMapInsert = {
-	[TABLE_MIND_MAPS.USER_ID]: string;
-	[TABLE_MIND_MAPS.TITLE]: string;
-	[TABLE_MIND_MAPS.DESCRIPTION]: string | null;
-	[TABLE_MIND_MAPS.FIRST_PROMPT]: string;
-	[TABLE_MIND_MAPS.GRAPH_DATA]: GraphData;
-};
+export type MindMapInsert = Database["public"]["Tables"]["mind_maps"]["Insert"];
+export type MindMapUpdate = Database["public"]["Tables"]["mind_maps"]["Update"];
 
-export type MindMapUpdate = Partial<{
-	[TABLE_MIND_MAPS.TITLE]: string;
-	[TABLE_MIND_MAPS.DESCRIPTION]: string | null;
-	[TABLE_MIND_MAPS.FIRST_PROMPT]: string;
-	[TABLE_MIND_MAPS.GRAPH_DATA]: GraphData;
-	[TABLE_MIND_MAPS.UPDATED_AT]: string;
-}>;
+export type UserCreditsInsert =
+	Database["public"]["Tables"]["user_credits"]["Insert"];
+export type UserCreditsUpdate =
+	Database["public"]["Tables"]["user_credits"]["Update"];
 
-export type UserCreditsInsert = {
-	[TABLE_USER_CREDITS.USER_ID]: string;
-	[TABLE_USER_CREDITS.CREDITS]: number;
-	[TABLE_USER_CREDITS.MONTHLY_CREDITS_REMAINING]: number;
-	[TABLE_USER_CREDITS.MONTHLY_CREDITS_USED]?: number;
-	[TABLE_USER_CREDITS.LAST_DAILY_CREDIT_CLAIMED_AT]?: string | null;
-};
+export type UserSubscriptionInsert =
+	Database["public"]["Tables"]["user_subscriptions"]["Insert"];
+export type UserSubscriptionUpdate =
+	Database["public"]["Tables"]["user_subscriptions"]["Update"];
 
-export type UserCreditsUpdate = Partial<{
-	[TABLE_USER_CREDITS.CREDITS]: number;
-	[TABLE_USER_CREDITS.MONTHLY_CREDITS_REMAINING]: number;
-	[TABLE_USER_CREDITS.MONTHLY_CREDITS_USED]: number;
-	[TABLE_USER_CREDITS.LAST_DAILY_CREDIT_CLAIMED_AT]: string | null;
-	[TABLE_USER_CREDITS.UPDATED_AT]: string;
-}>;
-
-export type UserSubscriptionInsert = {
-	[TABLE_USER_SUBSCRIPTIONS.USER_ID]: string;
-	[TABLE_USER_SUBSCRIPTIONS.TIER]: SubscriptionTierType;
-	[TABLE_USER_SUBSCRIPTIONS.DODO_CUSTOMER_ID]: string | null;
-	[TABLE_USER_SUBSCRIPTIONS.DODO_SUBSCRIPTION_ID]: string | null;
-	[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]: string | null;
-	[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_END]: string | null;
-	[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]: boolean;
-};
-
-export type UserSubscriptionUpdate = Partial<{
-	[TABLE_USER_SUBSCRIPTIONS.TIER]: SubscriptionTierType;
-	[TABLE_USER_SUBSCRIPTIONS.DODO_CUSTOMER_ID]: string | null;
-	[TABLE_USER_SUBSCRIPTIONS.DODO_SUBSCRIPTION_ID]: string | null;
-	[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]: string | null;
-	[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_END]: string | null;
-	[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]: boolean;
-	[TABLE_USER_SUBSCRIPTIONS.UPDATED_AT]: string;
-}>;
-
-export type ShareLinkInsert = {
-	[TABLE_SHARE_LINKS.MIND_MAP_ID]: string;
-	[TABLE_SHARE_LINKS.USER_ID]: string;
-	[TABLE_SHARE_LINKS.SHARE_TOKEN]: string;
-};
-
-export type ShareLinkUpdate = Partial<{
-	[TABLE_SHARE_LINKS.SHARE_TOKEN]: string;
-	[TABLE_SHARE_LINKS.UPDATED_AT]: string;
-}>;
+export type ShareLinkInsert =
+	Database["public"]["Tables"]["share_links"]["Insert"];
+export type ShareLinkUpdate =
+	Database["public"]["Tables"]["share_links"]["Update"];
 
 // ════════════════════════════════════════════════════════════════════════════════
 // VALIDATION SCHEMAS (Zod)
 // ════════════════════════════════════════════════════════════════════════════════
 
 import { z } from "zod";
-import type { SubscriptionTierType } from "../database.types";
 
 export const createShareLinkSchema = z.object({
 	mindMapId: z.string().min(1),

@@ -47,7 +47,7 @@ export function apiResponse<T = unknown>(
 
 const supabaseAdmin = getSupabaseAdminClient();
 
-export const getUserByEmail = async (user_id: string) => {
+export const getUserById = async (user_id: string) => {
 	const { data, error } = await supabaseAdmin.auth.admin.getUserById(user_id);
 
 	if (error) {

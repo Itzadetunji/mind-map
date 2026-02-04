@@ -1,4 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -26,10 +27,14 @@ export function SubscriptionSuccessModal({
 	onOpenChange,
 	subscriptionTier,
 }: SubscriptionSuccessModalProps) {
-	const plan = subscriptionPlans.find((item) => item.id === subscriptionTier);
-	const meta = subscriptionTier
+	const subscriptionTierRef = useRef(subscriptionTier);
+
+	const plan = subscriptionPlans.find(
+		(item) => item.id === subscriptionTierRef.current,
+	);
+	const meta = subscriptionTierRef.current
 		? SubscriptionPricingMeta[
-				subscriptionTier as Exclude<SubscriptionTierType, "free">
+				subscriptionTierRef.current as Exclude<SubscriptionTierType, "free">
 			]
 		: null;
 	const Icon = plan ? SubscriptionIconMap[plan.icon] : null;

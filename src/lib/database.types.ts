@@ -1,38 +1,33 @@
-export interface MindMapProject {
-	id: string;
-	user_id: string;
-	title: string;
-	description: string | null;
-	first_prompt: string;
-	graph_data: {
-		reasoning?: string;
-		nodes: Array<{
-			id: string;
-			type: string;
-			position: { x: number; y: number };
-			data: Record<string, unknown>;
-		}>;
-		edges: Array<{
-			id: string;
-			source: string;
-			target: string;
-			label?: string;
-		}>;
-	};
-	created_at: string;
-	updated_at: string;
-}
+/**
+ * This file re-exports types from Supabase-generated types.
+ *
+ * To generate/update Supabase types, run:
+ *   npx supabase gen types typescript --local > src/lib/supabase-database.types.ts
+ *
+ * Or for remote projects:
+ *   npx supabase gen types typescript --project-id "$PROJECT_REF" > src/lib/supabase-database.types.ts
+ */
 
-export interface ChatMessage {
-	id: string;
-	mind_map_id: string;
-	user_id: string;
-	role: "user" | "ai";
-	content: string;
-	map_data?: unknown;
-	created_at: string;
-}
+// Import Supabase-generated types
+// This file should be generated using: npx supabase gen types typescript --local
+import type { Database as SupabaseDatabase } from "./supabase-database.types";
 
+// Re-export the Database type from Supabase
+export type Database = SupabaseDatabase;
+
+// Extract table row types from Supabase-generated types
+export type MindMapProject =
+	SupabaseDatabase["public"]["Tables"]["mind_maps"]["Row"];
+export type ChatMessage =
+	SupabaseDatabase["public"]["Tables"]["chat_messages"]["Row"];
+export type UserSubscription =
+	SupabaseDatabase["public"]["Tables"]["user_subscriptions"]["Row"];
+export type UserCredits =
+	SupabaseDatabase["public"]["Tables"]["user_credits"]["Row"];
+export type ShareLink =
+	SupabaseDatabase["public"]["Tables"]["share_links"]["Row"];
+
+// App-level constants (not database types)
 export const SubscriptionTier = {
 	FREE: "free",
 	HOBBY: "hobby",
@@ -41,68 +36,3 @@ export const SubscriptionTier = {
 
 export type SubscriptionTierType =
 	(typeof SubscriptionTier)[keyof typeof SubscriptionTier];
-
-export interface UserSubscription {
-	id: string;
-	user_id: string;
-	tier: SubscriptionTierType;
-	dodo_customer_id: string | null;
-	dodo_subscription_id: string | null;
-	current_period_start: string | null;
-	current_period_end: string | null;
-	cancel_at_period_end: boolean;
-	created_at: string;
-	updated_at: string;
-}
-
-export interface UserCredits {
-	id: string;
-	user_id: string;
-	credits: number;
-	monthly_credits_remaining: number;
-	monthly_credits_used: number;
-	last_daily_credit_claimed_at: string | null;
-	created_at: string;
-	updated_at: string;
-}
-
-export interface ShareLink {
-	id: string;
-	mind_map_id: string;
-	user_id: string;
-	share_token: string;
-	created_at: string;
-	updated_at: string;
-}
-
-export interface Database {
-	public: {
-		Tables: {
-			mind_maps: {
-				Row: MindMapProject;
-				Insert: Omit<MindMapProject, "id" | "created_at" | "updated_at">;
-				Update: Partial<Omit<MindMapProject, "id" | "created_at">>;
-			};
-			chat_messages: {
-				Row: ChatMessage;
-				Insert: Omit<ChatMessage, "id" | "created_at">;
-				Update: Partial<Omit<ChatMessage, "id" | "created_at">>;
-			};
-			user_subscriptions: {
-				Row: UserSubscription;
-				Insert: Omit<UserSubscription, "id" | "created_at" | "updated_at">;
-				Update: Partial<Omit<UserSubscription, "id" | "created_at">>;
-			};
-			user_credits: {
-				Row: UserCredits;
-				Insert: Omit<UserCredits, "id" | "created_at" | "updated_at">;
-				Update: Partial<Omit<UserCredits, "id" | "created_at">>;
-			};
-			share_links: {
-				Row: ShareLink;
-				Insert: Omit<ShareLink, "id" | "created_at" | "updated_at">;
-				Update: Partial<Omit<ShareLink, "id" | "created_at" | "updated_at">>;
-			};
-		};
-	};
-}
