@@ -167,6 +167,41 @@ code {
 	.animate-fade-in {
 		animation: fadeIn 0.3s ease-out;
 	}
+
+	@keyframes marquee-r2l {
+		from {
+			transform: translateX(0);
+		}
+		to {
+			transform: translateX(-50%);
+		}
+	}
+
+	.animate-marquee-r2l {
+		animation: marquee-r2l 40s linear infinite;
+	}
+
+	@keyframes advertiser-marquee-scroll {
+		from {
+			transform: translateX(0);
+		}
+		to {
+			transform: translateX(-50%);
+		}
+	}
+
+	.advertiser-marquee {
+		--advertiser-marquee-duration: 40s;
+	}
+
+	.advertiser-marquee-track {
+		animation: advertiser-marquee-scroll var(--advertiser-marquee-duration)
+			linear infinite;
+	}
+
+	.advertiser-marquee:hover .advertiser-marquee-track {
+		animation-play-state: paused;
+	}
 }
 
 

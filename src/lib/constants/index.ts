@@ -1,5 +1,9 @@
 import { Crown, Star } from "lucide-react";
-import { SubscriptionTier, type SubscriptionTierType } from "../database.types";
+import {
+	Database,
+	SubscriptionTier,
+	type SubscriptionTierType,
+} from "../database.types";
 
 type PlanTier = Exclude<SubscriptionTierType, typeof SubscriptionTier.FREE>;
 
@@ -77,3 +81,6 @@ export const SubscriptionPricingMeta = {
 		highlight: boolean;
 	}
 >;
+
+export const AdvertisersData: Database["public"]["Tables"]["advertisements"]["Row"][] =
+	[];

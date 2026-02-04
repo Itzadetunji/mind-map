@@ -14,6 +14,7 @@ export const TABLES = {
 	USER_CREDITS: "user_credits",
 	USER_SUBSCRIPTIONS: "user_subscriptions",
 	SHARE_LINKS: "share_links",
+	ADVERTISEMENTS: "advertisements",
 } as const;
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -31,6 +32,20 @@ export const STORAGE_BUCKETS = {
 export const COMMON = {
 	ID: "id",
 	USER_ID: "user_id",
+	CREATED_AT: "created_at",
+	UPDATED_AT: "updated_at",
+} as const;
+
+// Advertisements table
+export const TABLE_ADVERTISEMENTS = {
+	ID: "id",
+	USER_ID: "user_id",
+	WEBSITE_URL: "website_url",
+	NAME: "name",
+	DESCRIPTION: "description",
+	LOGO_URL: "logo_url",
+	STATUS: "status",
+	APPROVED: "approved",
 	CREATED_AT: "created_at",
 	UPDATED_AT: "updated_at",
 } as const;
@@ -106,6 +121,11 @@ export type StorageBucketName =
 import type { Database } from "../database.types";
 
 // Re-export Insert and Update types from Supabase-generated types
+export type AdvertisementInsert =
+	Database["public"]["Tables"]["advertisements"]["Insert"];
+export type AdvertisementUpdate =
+	Database["public"]["Tables"]["advertisements"]["Update"];
+
 export type ChatMessageInsert =
 	Database["public"]["Tables"]["chat_messages"]["Insert"];
 export type ChatMessageUpdate =

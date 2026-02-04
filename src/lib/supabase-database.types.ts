@@ -23,6 +23,44 @@ export type Json =
 export interface Database {
 	public: {
 		Tables: {
+			advertisements: {
+				Row: {
+					id: string;
+					user_id: string;
+					website_url: string;
+					name: string;
+					description: string;
+					logo_url: string | null;
+					status: "pending" | "active" | "rejected" | "expired";
+					approved: boolean;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id?: string;
+					user_id: string;
+					website_url: string;
+					name: string;
+					description: string;
+					logo_url?: string | null;
+					status?: "pending" | "active" | "rejected" | "expired";
+					approved?: boolean;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					id?: string;
+					user_id?: string;
+					website_url?: string;
+					name?: string;
+					description?: string;
+					logo_url?: string | null;
+					status?: "pending" | "active" | "rejected" | "expired";
+					approved?: boolean;
+					created_at?: string;
+					updated_at?: string;
+				};
+			};
 			mind_maps: {
 				Row: {
 					id: string;

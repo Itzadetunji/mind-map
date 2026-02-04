@@ -1,5 +1,6 @@
 import { Outlet } from "@tanstack/react-router";
 import { useAuthStore } from "@/stores/authStore";
+import { AdvertiseDialog } from "./AdvertiseDialog";
 import { AppSidebar } from "./AppSidebar";
 import { AuthScreen } from "./AuthScreen";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "./ui/sidebar";
@@ -22,9 +23,12 @@ export function AuthGuard() {
 		<SidebarProvider>
 			<AppSidebar />
 			<SidebarInset>
-				<header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
+				<header className="flex h-16 shrink-0 items-center justify-between border-b px-4 overflow-hidden gap-10">
 					<div className="flex items-center gap-2">
 						<SidebarTrigger className="-ml-1" />
+					</div>
+					<div className="flex items-center gap-3">
+						<AdvertiseDialog />
 					</div>
 				</header>
 				<div className="flex flex-1 flex-col w-full h-full overflow-hidden">

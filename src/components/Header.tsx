@@ -1,5 +1,6 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { MessageSquare, Share2 } from "lucide-react";
+import { AdvertiseDialog } from "./AdvertiseDialog";
 import { AuthButton } from "./AuthButton";
 import { Button } from "./ui/button";
 
@@ -50,6 +51,7 @@ export function Header({
 				)}
 			</div>
 			<div className="flex items-center gap-3">
+				<AdvertiseDialog />
 				{onShareClick && (
 					<Button
 						variant="outline"
