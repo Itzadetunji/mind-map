@@ -78,6 +78,7 @@ const AccountPage = () => {
 	const isCheckingSubscription = dodoStatusQuery.isFetching;
 
 	const handleSuccessModalChange = (open: boolean) => {
+		setShowSuccessModal(open);
 		if (!open) {
 			navigate({ to: "/account", replace: true });
 		}
@@ -86,7 +87,9 @@ const AccountPage = () => {
 	console.log(userSubscriptionQuery.data);
 
 	useEffect(() => {
-		if (dodoStatusQuery.data?.status === "active") setShowSuccessModal(true);
+		if (dodoStatusQuery.data?.status === "active") {
+			handleSuccessModalChange(true);
+		}
 	}, [search.checkout, search.subscription]);
 
 	if (
