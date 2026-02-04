@@ -60,7 +60,7 @@ export function useDodoSubscriptionStatus(options?: {
 	});
 }
 
-export function useCancelDodoSubscription() {
+export const useCancelDodoSubscription = () => {
 	const user = useAuthStore((state) => state.user);
 	const queryClient = useQueryClient();
 
@@ -93,11 +93,11 @@ export function useCancelDodoSubscription() {
 			});
 		},
 	});
-}
+};
 
-export function getTierMonthlyCredits(
+export const getTierMonthlyCredits = (
 	tier: SubscriptionTierType | null,
-): number {
+): number => {
 	switch (tier) {
 		case "hobby":
 			return 150;
@@ -106,9 +106,9 @@ export function getTierMonthlyCredits(
 		default:
 			return 0;
 	}
-}
+};
 
-export function getTierPrice(tier: SubscriptionTierType | null): number {
+export const getTierPrice = (tier: SubscriptionTierType | null): number => {
 	switch (tier) {
 		case "hobby":
 			return 9.99;
@@ -117,20 +117,22 @@ export function getTierPrice(tier: SubscriptionTierType | null): number {
 		default:
 			return 0;
 	}
-}
+};
 
-export function getTierTopUpBonus(tier: SubscriptionTierType | null): number {
+export const getTierTopUpBonus = (
+	tier: SubscriptionTierType | null,
+): number => {
 	switch (tier) {
 		case "pro":
 			return 0.2;
 		default:
 			return 0;
 	}
-}
+};
 
-export function getTierInitialCredits(
+export const getTierInitialCredits = (
 	tier: SubscriptionTierType | null,
-): number {
+): number => {
 	switch (tier) {
 		case "hobby":
 			return 35;
@@ -139,9 +141,9 @@ export function getTierInitialCredits(
 		default:
 			return 0;
 	}
-}
+};
 
-export function useUserSubscription() {
+export const useUserSubscription = () => {
 	const user = useAuthStore((state) => state.user);
 
 	return useQuery({
@@ -163,9 +165,9 @@ export function useUserSubscription() {
 		},
 		enabled: !!user,
 	});
-}
+};
 
-export function useUserCredits() {
+export const useUserCredits = () => {
 	const user = useAuthStore((state) => state.user);
 
 	return useQuery({
@@ -187,9 +189,9 @@ export function useUserCredits() {
 		},
 		enabled: !!user,
 	});
-}
+};
 
-export function useDeductCredits() {
+export const useDeductCredits = () => {
 	const user = useAuthStore((state) => state.user);
 	const queryClient = useQueryClient();
 
@@ -236,9 +238,9 @@ export function useDeductCredits() {
 			});
 		},
 	});
-}
+};
 
-export function useAddCredits() {
+export const useAddCredits = () => {
 	const user = useAuthStore((state) => state.user);
 	const queryClient = useQueryClient();
 
@@ -281,9 +283,9 @@ export function useAddCredits() {
 			});
 		},
 	});
-}
+};
 
-export function useDailyCreditsCheck() {
+export const useDailyCreditsCheck = () => {
 	const user = useAuthStore((state) => state.user);
 	const queryClient = useQueryClient();
 
@@ -327,4 +329,4 @@ export function useDailyCreditsCheck() {
 		refetchOnWindowFocus: false,
 		staleTime: Infinity,
 	});
-}
+};

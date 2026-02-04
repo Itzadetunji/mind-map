@@ -21,11 +21,11 @@ interface ShareLinkDialogProps {
 	mindMapId: string;
 }
 
-export function ShareLinkDialog({
+export const ShareLinkDialog = ({
 	open,
 	onOpenChange,
 	mindMapId,
-}: ShareLinkDialogProps) {
+}: ShareLinkDialogProps) => {
 	const shareLinkQuery = useShareLink(mindMapId);
 	const createShareLink = useCreateShareLink();
 	const revokeShareLink = useRevokeShareLink();
@@ -145,4 +145,4 @@ export function ShareLinkDialog({
 			</DialogContent>
 		</Dialog>
 	);
-}
+};

@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Check, Loader2, RefreshCw } from "lucide-react";
+import { Check, Loader2, RefreshCw, User, XCircle } from "lucide-react";
 import React, { useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+
 import { useCreateCheckout } from "@/api/http/v1/checkout/checkout.hooks";
 import {
 	getTierMonthlyCredits,
@@ -10,6 +11,7 @@ import {
 	useUserCredits,
 	useUserSubscription,
 } from "@/api/http/v1/credits/credits.hooks";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -28,6 +30,7 @@ import {
 	SubscriptionTier,
 	type SubscriptionTierType,
 } from "@/lib/database.types";
+import { CancelSubscriptionModal } from "@/routes/(auth)/account/-components/CancelSubscriptionModal";
 import { SubscriptionSuccessModal } from "@/routes/(auth)/projects/-components/SubscriptionSuccessModal";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -49,6 +52,7 @@ const AccountPage = () => {
 	});
 
 	const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+	const [showCancelModal, setShowCancelModal] = React.useState(false);
 	const createCheckout = useCreateCheckout();
 
 	const handleSubscribe = async (tier: SubscriptionTierType) => {
@@ -72,9 +76,12 @@ const AccountPage = () => {
 	const isLoading = createCheckout.isPending;
 
 	const currentTier = userSubscriptionQuery.data?.tier || null;
+
 	const hasActiveSubscription =
-		dodoStatusQuery.data?.status?.toLowerCase() === "active";
+		userSubscriptionQuery.data?.tier !== SubscriptionTier.FREE;
 	const isCurrentTier = (tier: SubscriptionTierType) => currentTier === tier;
+	const isCancelledAndActive =
+		hasActiveSubscription && userSubscriptionQuery.data?.cancel_at_period_end;
 	const isCheckingSubscription = dodoStatusQuery.isFetching;
 
 	const handleSuccessModalChange = (open: boolean) => {
@@ -126,11 +133,15 @@ const AccountPage = () => {
 							<CardContent className="p-4">
 								<div className="flex items-center gap-4">
 									{user?.user_metadata?.avatar_url && (
-										<img
-											src={user.user_metadata.avatar_url}
-											alt="Profile"
-											className="w-12 h-12 rounded-full"
-										/>
+										<Avatar className="h-12 w-12 rounded-lg">
+											<AvatarImage
+												src={user.user_metadata.avatar_url}
+												alt="Profile"
+											/>
+											<AvatarFallback className="rounded-lg">
+												<User className="size-6" />
+											</AvatarFallback>
+										</Avatar>
 									)}
 									<div>
 										<p className="font-medium text-slate-900 dark:text-slate-100">
@@ -150,6 +161,7 @@ const AccountPage = () => {
 								<CardDescription className="text-white/80">
 									Available Credits
 								</CardDescription>
+
 								{hasActiveSubscription ? (
 									<span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium capitalize">
 										{currentTier} Plan
@@ -168,19 +180,44 @@ const AccountPage = () => {
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<div className="flex items-center gap-4 text-white/80">
+							<div className="flex flex-wrap items-center justify-between gap-4 text-white/80">
 								<div className="flex items-center gap-2">
 									<RefreshCw className="w-4 h-4" />
 									{hasActiveSubscription ? (
 										<span>
 											5 daily credits (up to{" "}
-											{getTierMonthlyCredits(currentTier)}
+											{getTierMonthlyCredits(
+												currentTier as SubscriptionTierType | null,
+											)}
 											/month)
 										</span>
 									) : (
 										<span>Subscribe to earn daily credits</span>
 									)}
 								</div>
+								{hasActiveSubscription && !isCancelledAndActive && (
+									<Button
+										variant="ghost"
+										size="sm"
+										className="text-white/90 hover:bg-white/20 hover:text-white cursor-pointer"
+										onClick={() => setShowCancelModal(true)}
+									>
+										<XCircle className="w-4 h-4 mr-1.5" />
+										Cancel subscription
+									</Button>
+								)}
+								{isCancelledAndActive &&
+									userSubscriptionQuery.data?.current_period_end && (
+										<div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full text-sm border border-white/10">
+											<div className="w-1.5 h-1.5 rounded-full bg-amber-300" />
+											<span className="font-medium text-white/90">
+												Access until{" "}
+												{new Date(
+													userSubscriptionQuery.data.current_period_end,
+												).toLocaleDateString()}
+											</span>
+										</div>
+									)}
 							</div>
 						</CardContent>
 					</Card>
@@ -233,7 +270,7 @@ const AccountPage = () => {
 												</span>
 												{plan.id === "pro" && (
 													<span className="text-muted-foreground line-through ml-2 text-sm">
-														$40
+														$30
 													</span>
 												)}
 												<span className="text-muted-foreground">/month</span>
@@ -281,6 +318,14 @@ const AccountPage = () => {
 				open={showSuccessModal}
 				onOpenChange={handleSuccessModalChange}
 				subscriptionTier={search.subscription as SubscriptionTierType}
+			/>
+
+			<CancelSubscriptionModal
+				open={showCancelModal}
+				onOpenChange={setShowCancelModal}
+				subscriptionId={
+					userSubscriptionQuery.data?.dodo_subscription_id ?? null
+				}
 			/>
 		</>
 	);
