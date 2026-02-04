@@ -15,7 +15,7 @@ import {
 	apiErrorResponse,
 	apiResponse,
 	getUserByEmail,
-} from "../../api/v1/utils";
+} from "../../../server/utils";
 
 void createFileRoute;
 
@@ -76,15 +76,19 @@ export interface DodoWebhookCustomFieldResponse {
 	value: string;
 }
 
+export const DodoSubscriptionStatuses = {
+	ACTIVE: "active",
+	CANCELLED: "cancelled",
+	EXPIRED: "expired",
+	FAILED: "failed",
+	ON_HOLD: "on_hold",
+	PLAN_CHANGED: "plan_changed",
+	RENEWED: "renewed",
+	UPDATED: "updated",
+} as const;
+
 export type DodoSubscriptionStatus =
-	| "subscription.active"
-	| "subscription.cancelled"
-	| "subscription.expired"
-	| "subscription.failed"
-	| "subscription.on_hold"
-	| "subscription.plan_changed"
-	| "subscription.renewed"
-	| "subscription.updated";
+	(typeof DodoSubscriptionStatuses)[keyof typeof DodoSubscriptionStatuses];
 
 export interface DodoWebhookSubscriptionData {
 	addons: unknown[];
@@ -110,7 +114,7 @@ export interface DodoWebhookSubscriptionData {
 	product_id: string;
 	quantity: number;
 	recurring_pre_tax_amount: number;
-	status: "active" | string;
+	status: DodoSubscriptionStatus;
 	subscription_id: string;
 	subscription_period_count: number;
 	subscription_period_interval: string;
@@ -131,10 +135,10 @@ const resolveTierForEvent = (
 	tierFromProduct: SubscriptionTierType | null,
 ): SubscriptionTierType => {
 	switch (type) {
-		case "subscription.active":
-		case "subscription.renewed":
-		case "subscription.plan_changed":
-		case "subscription.updated":
+		case DodoSubscriptionStatuses.ACTIVE:
+		case DodoSubscriptionStatuses.RENEWED:
+		case DodoSubscriptionStatuses.PLAN_CHANGED:
+		case DodoSubscriptionStatuses.UPDATED:
 			return tierFromProduct ?? SubscriptionTier.FREE;
 		default:
 			return SubscriptionTier.FREE;
@@ -143,27 +147,18 @@ const resolveTierForEvent = (
 
 const resolveCancelAtPeriodEnd = (
 	type: DodoSubscriptionStatus,
-	subscription: { cancel_at_next_billing_date?: boolean | null },
-	data: DodoWebhookSubscriptionData,
+	subscription: { cancel_at_next_billing_date: boolean },
 ): boolean => {
 	switch (type) {
-		case "subscription.cancelled":
-		case "subscription.expired":
-		case "subscription.failed":
+		case DodoSubscriptionStatuses.CANCELLED:
+		case DodoSubscriptionStatuses.EXPIRED:
+		case DodoSubscriptionStatuses.FAILED:
 			return true;
-		case "subscription.on_hold":
+		case DodoSubscriptionStatuses.ON_HOLD:
 			// Respect Dodo's own flag for on-hold subscriptions
-			return (
-				subscription.cancel_at_next_billing_date ??
-				data.cancel_at_next_billing_date ??
-				false
-			);
+			return subscription.cancel_at_next_billing_date;
 		default:
-			return (
-				subscription.cancel_at_next_billing_date ??
-				data.cancel_at_next_billing_date ??
-				false
-			);
+			return subscription.cancel_at_next_billing_date;
 	}
 };
 
@@ -173,8 +168,8 @@ const upsertUserSubscription = async (args: {
 	tierToSave: SubscriptionTierType;
 	payload: DodoWebhookPaymentIntentPayload;
 	subscription: {
-		next_billing_date: string | null;
-		cancel_at_next_billing_date?: boolean | null;
+		next_billing_date: string;
+		cancel_at_next_billing_date: boolean;
 	};
 }) => {
 	const { supabase, userId, tierToSave, payload, subscription } = args;
@@ -192,7 +187,6 @@ const upsertUserSubscription = async (args: {
 		[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]: resolveCancelAtPeriodEnd(
 			payload.type,
 			subscription,
-			payload.data,
 		),
 	};
 

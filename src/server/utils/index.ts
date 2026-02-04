@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { getSupabaseAdminClient } from "../../../../supabase/index";
+import { getSupabaseAdminClient } from "../../../supabase/index";
 
 export interface ApiErrorBody {
 	success: false;
