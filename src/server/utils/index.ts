@@ -47,12 +47,8 @@ export function apiResponse<T = unknown>(
 
 const supabaseAdmin = getSupabaseAdminClient();
 
-export const getUserByEmail = async (email: string) => {
-	// The Supabase admin client exposes getUserByEmail on the auth.admin API,
-	// but the current type definitions don't include it, so we cast to any.
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const admin = supabaseAdmin.auth.admin as any;
-	const { data, error } = await admin.getUserByEmail(email);
+export const getUserByEmail = async (user_id: string) => {
+	const { data, error } = await supabaseAdmin.auth.admin.getUserById(user_id);
 
 	if (error) {
 		console.error("Error fetching user:", error);

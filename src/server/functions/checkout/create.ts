@@ -43,16 +43,11 @@ export const createCheckout = createServerFn({ method: "POST" })
 		const appUrl = process.env.VITE_APP_URL || "http://localhost:7000";
 		const returnUrl = `${appUrl}/account?checkout=complete&subscription=${data.tier}`;
 		try {
-			console.log({
-				product_cart: [{ product_id: productId, quantity: 1 }],
-				customer: { email: data.email, name: data.name },
-				return_url: returnUrl,
-				metadata: data.userId ? { user_id: data.userId } : undefined,
-			});
 			const session = await client.checkoutSessions.create({
 				product_cart: [{ product_id: productId, quantity: 1 }],
 				customer: { email: data.email, name: data.name },
 				return_url: returnUrl,
+				metadata: data.userId ? { user_id: data.userId } : undefined,
 			});
 
 			if (!session.checkout_url) {

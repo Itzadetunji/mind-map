@@ -14,7 +14,7 @@ import { getSupabaseAdminClient } from "../../../../supabase/index";
 import {
 	apiErrorResponse,
 	apiResponse,
-	getUserByEmail,
+	getUserByEmail as getUserById,
 } from "../../../server/utils";
 
 void createFileRoute;
@@ -102,7 +102,7 @@ export interface DodoWebhookSubscriptionData {
 	discount_cycles_remaining: number | null;
 	discount_id: string | null;
 	expires_at: string | null;
-	metadata: Record<string, unknown>;
+	metadata: { user_id: string };
 	meters: unknown[];
 	next_billing_date: string | null;
 	on_demand: boolean;
@@ -274,13 +274,10 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 
 				const supabase = getSupabaseAdminClient();
 
-				// Prefer an explicit user_id stored in the subscription metadata,
-
-				let userId =
-					(payload.data.metadata as { user_id?: string })?.user_id ?? null;
+				let userId = payload.data.metadata.user_id;
 
 				if (!userId) {
-					const { user, error } = await getUserByEmail(customerEmail);
+					const { user, error } = await getUserById(userId);
 
 					console.log("User lookup via email:", user?.id, "Error:", error);
 
