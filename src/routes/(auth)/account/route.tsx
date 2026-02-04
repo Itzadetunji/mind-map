@@ -83,6 +83,8 @@ const AccountPage = () => {
 		}
 	};
 
+	console.log(userSubscriptionQuery.data);
+
 	useEffect(() => {
 		if (dodoStatusQuery.data?.status === "active") setShowSuccessModal(true);
 	}, [search.checkout, search.subscription]);

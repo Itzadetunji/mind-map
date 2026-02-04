@@ -5,7 +5,7 @@ import {
 	TABLE_USER_SUBSCRIPTIONS,
 	TABLES,
 } from "@/lib/constants/database.constants";
-import { SubscriptionTier } from "@/lib/database.types";
+import { SubscriptionTier, SubscriptionTierType } from "@/lib/database.types";
 import { getSupabaseAdminClient } from "../../../../supabase/index";
 import {
 	apiErrorResponse,
@@ -122,6 +122,87 @@ export interface DodoWebhookPaymentIntentPayload {
 	type: DodoSubscriptionStatus;
 }
 
+const resolveTierForEvent = (
+	type: DodoSubscriptionStatus,
+	tierFromProduct: SubscriptionTierType | null,
+): SubscriptionTierType => {
+	switch (type) {
+		case "subscription.active":
+		case "subscription.renewed":
+		case "subscription.plan_changed":
+		case "subscription.updated":
+			return tierFromProduct ?? SubscriptionTier.FREE;
+		default:
+			return SubscriptionTier.FREE;
+	}
+};
+
+const resolveCancelAtPeriodEnd = (
+	type: DodoSubscriptionStatus,
+	subscription: { cancel_at_next_billing_date?: boolean | null },
+	data: DodoWebhookSubscriptionData,
+): boolean => {
+	switch (type) {
+		case "subscription.cancelled":
+		case "subscription.expired":
+		case "subscription.failed":
+			return true;
+		case "subscription.on_hold":
+			// Respect Dodo's own flag for on-hold subscriptions
+			return (
+				subscription.cancel_at_next_billing_date ??
+				data.cancel_at_next_billing_date ??
+				false
+			);
+		default:
+			return (
+				subscription.cancel_at_next_billing_date ??
+				data.cancel_at_next_billing_date ??
+				false
+			);
+	}
+};
+
+const upsertUserSubscription = async (args: {
+	supabase: ReturnType<typeof getSupabaseAdminClient>;
+	userId: string;
+	tierToSave: SubscriptionTierType;
+	payload: DodoWebhookPaymentIntentPayload;
+	subscription: {
+		next_billing_date: string | null;
+		cancel_at_next_billing_date?: boolean | null;
+	};
+}) => {
+	const { supabase, userId, tierToSave, payload, subscription } = args;
+
+	const upsertData = {
+		[TABLE_USER_SUBSCRIPTIONS.USER_ID]: userId,
+		[TABLE_USER_SUBSCRIPTIONS.TIER]: tierToSave,
+		[TABLE_USER_SUBSCRIPTIONS.DODO_CUSTOMER_ID]:
+			payload.data.customer.customer_id,
+		[TABLE_USER_SUBSCRIPTIONS.DODO_SUBSCRIPTION_ID]:
+			payload.data.subscription_id,
+		[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]: new Date().toISOString(),
+		[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_END]:
+			subscription.next_billing_date,
+		[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]: resolveCancelAtPeriodEnd(
+			payload.type,
+			subscription,
+			payload.data,
+		),
+	};
+
+	const { error: upsertError } = await supabase
+		.from(TABLES.USER_SUBSCRIPTIONS)
+		.upsert(upsertData, {
+			onConflict: TABLE_USER_SUBSCRIPTIONS.USER_ID,
+		});
+
+	if (upsertError) {
+		throw upsertError;
+	}
+};
+
 const getDodoClient = () => {
 	const bearerToken = process.env.DODO_PAYMENTS_API_KEY;
 
@@ -218,44 +299,29 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 				const tierFromProduct = resolveTierFromProductId(
 					payload.data.product_id,
 				);
-				const status = payload.data.status;
-				const isActive = status === "succeeded";
-				const tierToSave =
-					isActive && tierFromProduct ? tierFromProduct : SubscriptionTier.FREE;
+				const tierToSave = resolveTierForEvent(payload.type, tierFromProduct);
 
 				const dodoClient = getDodoClient();
 				const subscription = await dodoClient.subscriptions.retrieve(
-					payload.data.subscription_id as string,
+					payload.data.subscription_id,
 				);
 
-				const upsertData = {
-					[TABLE_USER_SUBSCRIPTIONS.USER_ID]: userId,
-					[TABLE_USER_SUBSCRIPTIONS.TIER]: tierToSave,
-					[TABLE_USER_SUBSCRIPTIONS.DODO_CUSTOMER_ID]:
-						payload.data.customer.customer_id,
-					[TABLE_USER_SUBSCRIPTIONS.DODO_SUBSCRIPTION_ID]:
-						payload.data.subscription_id,
-					[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]:
-						new Date().toISOString(),
-					[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_END]:
-						subscription.next_billing_date,
-					[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]:
-						subscription.cancel_at_next_billing_date ?? false,
-				};
-
-				const { error: upsertError } = await supabase
-					.from(TABLES.USER_SUBSCRIPTIONS)
-					.upsert(upsertData, {
-						onConflict: TABLE_USER_SUBSCRIPTIONS.USER_ID,
+				try {
+					await upsertUserSubscription({
+						supabase,
+						userId: userId as string,
+						tierToSave,
+						payload,
+						subscription,
 					});
-
-				if (upsertError) {
+				} catch (upsertError) {
 					return apiErrorResponse(
 						StatusCodes.INTERNAL_SERVER_ERROR,
-						upsertError.message,
+						upsertError instanceof Error
+							? upsertError.message
+							: "Failed to update subscription",
 					);
 				}
-				console.log(userId);
 				return apiResponse({ received: true }, "Webhook processed");
 			},
 		},
