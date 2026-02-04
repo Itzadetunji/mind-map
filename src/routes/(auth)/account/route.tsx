@@ -268,6 +268,11 @@ const AccountPage = () => {
 												<span className="text-4xl font-bold">
 													${plan.price}
 												</span>
+												{plan.id === "hobby" && (
+													<span className="text-muted-foreground line-through ml-2 text-sm">
+														$15
+													</span>
+												)}
 												{plan.id === "pro" && (
 													<span className="text-muted-foreground line-through ml-2 text-sm">
 														$30

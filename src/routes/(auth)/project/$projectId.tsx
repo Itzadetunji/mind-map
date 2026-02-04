@@ -10,10 +10,10 @@ import {
 	useMindMapProject,
 	useUpdateMindMapProject,
 } from "@/api/http/v1/mind-maps/mind-maps.hooks";
-import { MindMap } from "@/components/MindMap";
 import { ShareLinkDialog } from "@/components/ShareLinkDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MindMap } from "@/routes/(auth)/project/-components/MindMap";
 import { useProjectStore } from "@/stores/projectStore";
 
 const AUTOSAVE_DELAY = 1000; // 1s debounce

@@ -72,7 +72,7 @@ export const AdvertiseDialog = () => {
 		update();
 		media.addEventListener("change", update);
 		return () => media.removeEventListener("change", update);
-	}, [AdvertisersData.length]);
+	}, []);
 
 	const containerRef = useRef<HTMLDivElement>(null);
 	const trackRef = useRef<HTMLDivElement>(null);
@@ -222,7 +222,11 @@ export const AdvertiseDialog = () => {
 	return (
 		<>
 			<div className="flex items-center gap-2 min-w-0 flex-1 w-full">
-				{isCarousel ? carouselContent : listContent}
+				{AdvertisersData.length === 0
+					? advertiseButton
+					: isCarousel
+						? carouselContent
+						: listContent}
 			</div>
 
 			<Dialog open={open} onOpenChange={setOpen}>

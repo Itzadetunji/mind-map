@@ -25,7 +25,10 @@ import {
 	Zap,
 } from "lucide-react";
 import { useCallback, useMemo } from "react";
-import { ContextMenu, type MenuItem } from "./ui/context-menu-custom";
+import {
+	ContextMenu,
+	type MenuItem,
+} from "../../../../components/ui/context-menu-custom";
 
 interface MindMapContextMenuProps {
 	menu: {

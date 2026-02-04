@@ -3,9 +3,9 @@ import type { Edge, Node } from "@xyflow/react";
 import { useMemo } from "react";
 
 import { useSharedMindMap } from "@/api/http/v1/share-links/share-links.hooks";
-import { MindMap } from "@/components/MindMap";
 import { Button } from "@/components/ui/button";
 import type { MindMapProject } from "@/lib/database.types";
+import { MindMap } from "@/routes/(auth)/project/-components/MindMap";
 import { useAuthStore } from "@/stores/authStore";
 
 const SharedMindMapPage = () => {

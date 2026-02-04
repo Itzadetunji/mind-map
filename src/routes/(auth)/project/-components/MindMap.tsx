@@ -26,29 +26,23 @@ import {
 	Undo,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import { useGenerateDocumentation } from "@/api/http/v1/docs/docs.hooks";
 import { useHistory } from "@/api/http/v1/mind-maps/mind-maps.hooks";
 import { MindMapContext } from "@/context/MindMapContext";
 import type { MindMapProject } from "@/lib/database.types";
-import { AIChatSidebar } from "./AIChatSidebar";
-import { FloatingSearchBar } from "./FloatingSearchBar";
+import { AIChatSidebar } from "../../../../components/AIChatSidebar";
+import { FloatingSearchBar } from "../../../../components/FloatingSearchBar";
+import ConditionNode from "../../../../components/nodes/ConditionNode";
+import CoreConceptNode from "../../../../components/nodes/CoreConceptNode";
+import CustomNode from "../../../../components/nodes/CustomNode";
+import FeatureNode from "../../../../components/nodes/FeatureNode";
+import UserFlowNode from "../../../../components/nodes/UserFlowNode";
+import { ErrorDialog } from "../../../../components/shared/ErrorDialog";
+import { Button } from "../../../../components/ui/button";
+import { Tooltip } from "../../../../components/ui/tooltip-custom";
 import { MindMapContextMenu } from "./MindMapContextMenu";
-import ConditionNode from "./nodes/ConditionNode";
-import CoreConceptNode from "./nodes/CoreConceptNode";
-import CustomNode from "./nodes/CustomNode";
-import FeatureNode from "./nodes/FeatureNode";
-import UserFlowNode from "./nodes/UserFlowNode";
-import { ErrorDialog } from "./shared/ErrorDialog";
-import { Button } from "./ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "./ui/dialog";
-import { Tooltip } from "./ui/tooltip-custom";
+import { MobileExperienceDialog } from "./MobileExperienceDialog";
 
 const nodeTypes = {
 	"core-concept": CoreConceptNode,
@@ -113,7 +107,6 @@ export const MindMap = ({
 	const [showGrid, setShowGrid] = useState(true);
 	const [tool, setTool] = useState<"hand" | "select">("hand");
 	const [showChatSidebar, setShowChatSidebar] = useState(false);
-	const [showMobileDialog, setShowMobileDialog] = useState(false);
 	// Track if first prompt was just submitted in this session
 	const [hasLocalPrompt, setHasLocalPrompt] = useState(hasPrompt);
 	// Download dropdown state
@@ -133,17 +126,6 @@ export const MindMap = ({
 	const isUndoRedoRef = useRef(false);
 	// Track project ID to detect project switches
 	const currentProjectIdRef = useRef<string | null>(null);
-
-	// Show a gentle prompt on small screens to view the landing page
-	useEffect(() => {
-		const updateDialog = () => {
-			setShowMobileDialog(window.innerWidth < 1024);
-		};
-
-		updateDialog();
-		window.addEventListener("resize", updateDialog);
-		return () => window.removeEventListener("resize", updateDialog);
-	}, []);
 
 	// Update hasLocalPrompt when hasPrompt prop changes
 	useEffect(() => {
@@ -775,25 +757,7 @@ export const MindMap = ({
 					description="Failed to download image. Please try again."
 				/>
 
-				<Dialog open={showMobileDialog} onOpenChange={setShowMobileDialog}>
-					<DialogContent className="sm:max-w-md">
-						<DialogHeader>
-							<DialogTitle>Best experienced on desktop</DialogTitle>
-							<DialogDescription>
-								Mind Map editing works best on larger screens. Want to see what
-								you can create?
-							</DialogDescription>
-						</DialogHeader>
-						<DialogFooter>
-							<Button
-								variant="default"
-								onClick={() => (window.location.href = "/")}
-							>
-								See what you can create
-							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
+				<MobileExperienceDialog />
 			</div>
 		</MindMapContext.Provider>
 	);

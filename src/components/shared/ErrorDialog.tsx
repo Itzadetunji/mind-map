@@ -1,4 +1,5 @@
 import { AlertCircle } from "lucide-react";
+import { Button } from "../ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -7,7 +8,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "../ui/dialog";
-import { Button } from "../ui/button";
 
 interface ErrorDialogProps {
 	open: boolean;
@@ -16,12 +16,12 @@ interface ErrorDialogProps {
 	description: string;
 }
 
-export function ErrorDialog({
+export const ErrorDialog = ({
 	open,
 	onOpenChange,
 	title,
 	description,
-}: ErrorDialogProps) {
+}: ErrorDialogProps) => {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-md">
@@ -43,4 +43,4 @@ export function ErrorDialog({
 			</DialogContent>
 		</Dialog>
 	);
-}
+};
