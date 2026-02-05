@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
+import React from "react";
 
+import { ChangePlanModal } from "@/components/shared/ChangePlanModal";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -35,7 +37,47 @@ export const SubscriptionPlanGrid = (props: SubscriptionPlanCardProps) => {
 					: null
 			: null;
 
-	return subscriptionPlans.map((plan) => {
+	const [changePlanModal, setChangePlanModal] = React.useState<{
+		open: boolean;
+		targetTierId: string | null;
+		action: "upgrade" | "downgrade" | null;
+	}>({ open: false, targetTierId: null, action: null });
+
+	const handleUpgradeOrDowngrade = (planId: string) => {
+		const isUpgrade = currentTier === "hobby" && planId === "pro";
+		const isDowngrade = currentTier === "pro" && planId === "hobby";
+		if (isUpgrade || isDowngrade) {
+			setChangePlanModal({
+				open: true,
+				targetTierId: planId,
+				action: isUpgrade ? "upgrade" : "downgrade",
+			});
+		} else {
+			props.onSubscribe?.(planId);
+		}
+	};
+
+	const handleConfirmChangePlan = (tierId: string) => {
+		props.onSubscribe?.(tierId);
+	};
+
+	return (
+		<>
+			{isAccountMode && (
+				<ChangePlanModal
+					open={changePlanModal.open}
+					onOpenChange={(open) =>
+						setChangePlanModal((prev) =>
+							open ? prev : { open: false, targetTierId: null, action: null },
+						)
+					}
+					targetTierId={changePlanModal.targetTierId}
+					action={changePlanModal.action}
+					onConfirm={handleConfirmChangePlan}
+					isLoading={props.isLoading}
+				/>
+			)}
+			{subscriptionPlans.map((plan) => {
 		const meta = SubscriptionPricingMeta[plan.id];
 		const Icon = SubscriptionIconMap[plan.icon];
 
@@ -105,7 +147,7 @@ export const SubscriptionPlanGrid = (props: SubscriptionPlanCardProps) => {
 									? "bg-primary text-white hover:bg-primary/90"
 									: ""
 							}`}
-							onClick={() => props.onSubscribe?.(plan.id)}
+							onClick={() => handleUpgradeOrDowngrade(plan.id)}
 							disabled={
 								props.isLoading || props.isCheckingSubscription || isCurrent
 							}
@@ -135,5 +177,7 @@ export const SubscriptionPlanGrid = (props: SubscriptionPlanCardProps) => {
 				</CardFooter>
 			</Card>
 		);
-	});
+	})}
+		</>
+	);
 };

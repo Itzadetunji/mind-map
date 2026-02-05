@@ -8,6 +8,7 @@ import {
 	type SubscriptionTierType,
 } from "@/lib/database.types";
 import type { Database } from "@/lib/supabase-database.types";
+import { DodoWebhookSubscriptionData } from "@/routes/v1/dodo/subscription-webhook";
 import { getWebhookInitialCredits } from "@/server/utils";
 
 const changePlanSchema = z.object({
@@ -168,11 +169,11 @@ export const changeSubscriptionPlan = createServerFn({ method: "POST" })
 
 		try {
 			// Use DodoPayments Change Plan API
-			const result = await client.subscriptions.changePlan(subscriptionId, {
+			const result = (await client.subscriptions.changePlan(subscriptionId, {
 				product_id: productId,
 				quantity: 1,
 				proration_billing_mode: "difference_immediately",
-			});
+			})) as unknown as DodoWebhookSubscriptionData;
 
 			// Update user credits using the same logic as the webhook
 			await updateUserCreditsForPlanChange({
@@ -186,10 +187,8 @@ export const changeSubscriptionPlan = createServerFn({ method: "POST" })
 
 			return {
 				success: true,
-				subscriptionId: result.subscription_id ?? subscriptionId,
-				status: result.status ?? null,
-				invoiceId: result.invoice_id ?? null,
-				paymentId: result.payment_id ?? null,
+				subscriptionId: result.subscription_id,
+				status: result.status,
 			};
 		} catch (err) {
 			throw new Error(
