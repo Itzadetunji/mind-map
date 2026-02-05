@@ -58,3 +58,18 @@ export const getUserById = async (user_id: string) => {
 	const user = data?.user;
 	return { user, error: null };
 };
+
+export const getUserByEmail = async (email: string) => {
+	const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+
+	if (error) {
+		console.error("Error fetching users:", error);
+		return { user: null, error };
+	}
+
+	const user = data?.users?.find(
+		(u) => u.email?.toLowerCase() === email.toLowerCase(),
+	) ?? null;
+
+	return { user, error: null };
+};

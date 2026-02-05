@@ -1,20 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { z } from "zod";
-import {
-	CHAT_ROLES,
-	type ChatMessageInsert,
-	TABLE_CHAT_MESSAGES,
-	TABLE_MIND_MAPS,
-	TABLE_USER_CREDITS,
-	TABLES,
-} from "@/lib/constants/database.constants";
+
+import type { Database, Json } from "@/lib/supabase-database.types";
 
 // Server-side Supabase client
 const getSupabaseClient = () => {
 	const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
 	const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || "";
-	return createClient(supabaseUrl, supabaseAnonKey);
+	return createClient<Database>(supabaseUrl, supabaseAnonKey);
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -572,15 +566,16 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 
 	// Save user message to database (backend)
 	if (data.userId && data.projectId) {
-		const userMessage: ChatMessageInsert = {
-			[TABLE_CHAT_MESSAGES.MIND_MAP_ID]: data.projectId,
-			[TABLE_CHAT_MESSAGES.USER_ID]: data.userId,
-			[TABLE_CHAT_MESSAGES.ROLE]: CHAT_ROLES.USER,
-			[TABLE_CHAT_MESSAGES.CONTENT]: data.message,
-		};
+		const userMessage: Database["public"]["Tables"]["chat_messages"]["Insert"] =
+			{
+				mind_map_id: data.projectId,
+				user_id: data.userId,
+				role: "user",
+				content: data.message,
+			};
 		const { error: userMessageError } = await supabase
-			.from(TABLES.CHAT_MESSAGES)
-			.insert(userMessage);
+			.from("chat_messages")
+			.insert(userMessage as never);
 
 		if (userMessageError) {
 			console.error("Error saving user message:", userMessageError);
@@ -591,11 +586,16 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 	// Check credits before generation (only if user is authenticated)
 	if (data.userId) {
 		// Check user's credits
-		let { data: userCredits, error: creditsError } = await supabase
-			.from(TABLES.USER_CREDITS)
-			.select(TABLE_USER_CREDITS.CREDITS)
-			.eq(TABLE_USER_CREDITS.USER_ID, data.userId)
+		const {
+			data: userCreditsRaw,
+			error: creditsError,
+		} = await supabase
+			.from("user_credits")
+			.select("credits")
+			.eq("user_id", data.userId)
 			.single();
+
+		let userCredits = userCreditsRaw as { credits: number } | null;
 
 		if (creditsError && creditsError.code !== "PGRST116") {
 			console.error("Error checking credits:", creditsError);
@@ -608,7 +608,7 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 				"initialize_user_credits",
 				{
 					p_user_id: data.userId,
-				},
+				} as never,
 			);
 
 			if (initError) {
@@ -617,16 +617,17 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 			}
 
 			// Update userCredits with the initialized data
-			if (initializedCredits && initializedCredits.length > 0) {
+			const initializedList =
+				initializedCredits as { credits: number }[] | null;
+			if (initializedList && initializedList.length > 0) {
 				userCredits = {
-					[TABLE_USER_CREDITS.CREDITS]:
-						initializedCredits[0][TABLE_USER_CREDITS.CREDITS],
+					credits: initializedList[0].credits,
 				};
 			}
 		}
 
 		// Check if user has enough credits (1 credit per generation)
-		if (!userCredits || userCredits[TABLE_USER_CREDITS.CREDITS] < 1) {
+		if (!userCredits || userCredits.credits < 1) {
 			throw new Error("INSUFFICIENT_CREDITS");
 		}
 	}
@@ -795,11 +796,14 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 			const supabase = getSupabaseClient();
 
 			// Deduct 1 credit for this generation using RPC function
-			const { error: deductError } = await supabase.rpc("deduct_credits", {
-				p_user_id: data.userId,
-				p_amount: 1,
-				p_description: `AI chat - ${parsed.action} action`,
-			});
+			const { error: deductError } = await supabase.rpc(
+				"deduct_credits",
+				{
+					p_user_id: data.userId,
+					p_amount: 1,
+					p_description: `AI chat - ${parsed.action} action`,
+				} as never,
+			);
 
 			// If RPC doesn't exist or fails, log error but don't fail the request
 			if (deductError) {
@@ -812,37 +816,41 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 				(data.isFirstMessage || parsed.action === "generate")
 			) {
 				// First check if project already has a first_prompt
-				const { data: existingProject, error: fetchError } = await supabase
-					.from(TABLES.MIND_MAPS)
-					.select(TABLE_MIND_MAPS.FIRST_PROMPT)
-					.eq(TABLE_MIND_MAPS.ID, data.projectId)
-					.eq(TABLE_MIND_MAPS.USER_ID, data.userId)
+				const {
+					data: existingProjectRaw,
+					error: fetchError,
+				} = await supabase
+					.from("mind_maps")
+					.select("first_prompt")
+					.eq("id", data.projectId)
+					.eq("user_id", data.userId)
 					.single();
 
 				if (fetchError) {
 					console.error("Error fetching project:", fetchError);
 				}
 
+				const existingProject =
+					existingProjectRaw as { first_prompt: string | null } | null;
+
 				// Check if first_prompt is empty, null, or doesn't exist
-				const firstPrompt = existingProject?.[TABLE_MIND_MAPS.FIRST_PROMPT];
+				const firstPrompt = existingProject?.first_prompt;
 				const shouldSavePrompt =
 					!existingProject ||
 					!firstPrompt ||
 					(typeof firstPrompt === "string" && firstPrompt.trim() === "");
 
 				if (shouldSavePrompt) {
-					const updateData: {
-						[TABLE_MIND_MAPS.FIRST_PROMPT]: string;
-						[TABLE_MIND_MAPS.UPDATED_AT]: string;
-					} = {
-						[TABLE_MIND_MAPS.FIRST_PROMPT]: data.message,
-						[TABLE_MIND_MAPS.UPDATED_AT]: new Date().toISOString(),
-					};
+					const updateData: Database["public"]["Tables"]["mind_maps"]["Update"] =
+						{
+							first_prompt: data.message,
+							updated_at: new Date().toISOString(),
+						};
 					const { error: updateError } = await supabase
-						.from(TABLES.MIND_MAPS)
-						.update(updateData)
-						.eq(TABLE_MIND_MAPS.ID, data.projectId)
-						.eq(TABLE_MIND_MAPS.USER_ID, data.userId);
+						.from("mind_maps")
+						.update(updateData as never)
+						.eq("id", data.projectId)
+						.eq("user_id", data.userId);
 
 					if (updateError) {
 						console.error("Error saving first_prompt:", updateError);
@@ -853,8 +861,7 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 						);
 					}
 				} else {
-					const existingPrompt =
-						existingProject?.[TABLE_MIND_MAPS.FIRST_PROMPT];
+					const existingPrompt = existingProject?.first_prompt;
 					console.log(
 						"first_prompt already exists, skipping save:",
 						typeof existingPrompt === "string"
@@ -866,18 +873,19 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 
 			// Save AI response to database (backend)
 			if (data.userId && data.projectId) {
-				const aiMessage: ChatMessageInsert = {
-					[TABLE_CHAT_MESSAGES.MIND_MAP_ID]: data.projectId,
-					[TABLE_CHAT_MESSAGES.USER_ID]: data.userId,
-					[TABLE_CHAT_MESSAGES.ROLE]: CHAT_ROLES.AI,
-					[TABLE_CHAT_MESSAGES.CONTENT]: parsed.message,
-					...(parsed.action === "generate" || parsed.action === "modify"
-						? { [TABLE_CHAT_MESSAGES.MAP_DATA]: parsed.graphData }
-						: {}),
-				};
+				const aiMessage: Database["public"]["Tables"]["chat_messages"]["Insert"] =
+					{
+						mind_map_id: data.projectId,
+						user_id: data.userId,
+						role: "ai",
+						content: parsed.message,
+						...(parsed.action === "generate" || parsed.action === "modify"
+							? { map_data: parsed.graphData as Json }
+							: {}),
+					};
 				const { error: aiMessageError } = await supabase
-					.from(TABLES.CHAT_MESSAGES)
-					.insert(aiMessage);
+					.from("chat_messages")
+					.insert(aiMessage as never);
 
 				if (aiMessageError) {
 					console.error("Error saving AI message:", aiMessageError);

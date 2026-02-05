@@ -3,12 +3,7 @@ import {
 	useMutation,
 	useQueryClient,
 } from "@tanstack/react-query";
-import {
-	CHAT_ROLES,
-	type ChatMessageInsert,
-	TABLE_CHAT_MESSAGES,
-	TABLES,
-} from "@/lib/constants/database.constants";
+import type { Database, Json } from "@/lib/supabase-database.types";
 import type { ChatMessage } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
 
@@ -37,10 +32,10 @@ export function useChatHistory(mindMapId: string | undefined) {
 			const to = from + PAGE_SIZE - 1;
 
 			const { data, error } = await supabase
-				.from(TABLES.CHAT_MESSAGES)
+				.from("chat_messages")
 				.select("*")
-				.eq(TABLE_CHAT_MESSAGES.MIND_MAP_ID, mindMapId)
-				.order(TABLE_CHAT_MESSAGES.CREATED_AT, { ascending: false })
+				.eq("mind_map_id", mindMapId)
+				.order("created_at", { ascending: false })
 				.range(from, to);
 
 			if (error) throw error;
@@ -78,21 +73,21 @@ export function useSendChatMessage() {
 			user_id: string;
 			role: "user" | "ai";
 			content: string;
-			map_data?: unknown;
+			map_data?: Json | null;
 		}) => {
-			const insertData: ChatMessageInsert = {
-				[TABLE_CHAT_MESSAGES.MIND_MAP_ID]: message.mind_map_id,
-				[TABLE_CHAT_MESSAGES.USER_ID]: message.user_id,
-				[TABLE_CHAT_MESSAGES.ROLE]:
-					message.role as (typeof CHAT_ROLES)[keyof typeof CHAT_ROLES],
-				[TABLE_CHAT_MESSAGES.CONTENT]: message.content,
-				...(message.map_data
-					? { [TABLE_CHAT_MESSAGES.MAP_DATA]: message.map_data }
-					: {}),
-			};
+			const insertData: Database["public"]["Tables"]["chat_messages"]["Insert"] =
+				{
+					mind_map_id: message.mind_map_id,
+					user_id: message.user_id,
+					role: message.role,
+					content: message.content,
+					...(message.map_data !== undefined
+						? { map_data: message.map_data }
+						: {}),
+				};
 			const { data, error } = await supabase
-				.from(TABLES.CHAT_MESSAGES)
-				.insert(insertData)
+				.from("chat_messages")
+				.insert(insertData as never)
 				.select()
 				.single();
 

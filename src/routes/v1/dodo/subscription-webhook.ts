@@ -2,13 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { StatusCodes } from "http-status-codes";
 
 import {
-	TABLE_USER_SUBSCRIPTIONS,
-	TABLES,
-} from "@/lib/constants/database.constants";
-import {
 	SubscriptionTier,
 	type SubscriptionTierType,
 } from "@/lib/database.types";
+import type { Database } from "@/lib/supabase-database.types";
 import { getSupabaseAdminClient } from "../../../../supabase/index";
 import { apiErrorResponse, apiResponse } from "../../../server/utils";
 
@@ -173,28 +170,26 @@ const upsertUserSubscription = async (args: {
 		cancelled_at: payload.data.cancelled_at,
 	};
 
-	const upsertData = {
-		[TABLE_USER_SUBSCRIPTIONS.USER_ID]: userId,
-		[TABLE_USER_SUBSCRIPTIONS.TIER]: tierToSave,
-		[TABLE_USER_SUBSCRIPTIONS.DODO_CUSTOMER_ID]:
-			payload.data.customer.customer_id,
-		[TABLE_USER_SUBSCRIPTIONS.DODO_SUBSCRIPTION_ID]:
-			payload.data.subscription_id,
-		[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_START]: payload.data.created_at,
-		[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_END]:
-			subscription.next_billing_date ?? null,
-		[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]: resolveCancelAtPeriodEnd(
-			payload.type,
-			subscription,
-		),
-		[TABLE_USER_SUBSCRIPTIONS.CANCELLED_AT]: subscription.cancelled_at,
-	};
+	const upsertData: Database["public"]["Tables"]["user_subscriptions"]["Insert"] =
+		{
+			user_id: userId,
+			tier: tierToSave,
+			dodo_customer_id: payload.data.customer.customer_id,
+			dodo_subscription_id: payload.data.subscription_id,
+			current_period_start: payload.data.created_at,
+			current_period_end: subscription.next_billing_date ?? null,
+			cancel_at_period_end: resolveCancelAtPeriodEnd(
+				payload.type,
+				subscription,
+			),
+			cancelled_at: subscription.cancelled_at,
+		};
 
 	// Service role client bypasses RLS; if no error but 0 rows, RLS or conflict target may be wrong
 	const { data: upserted, error: upsertError } = await supabase
-		.from(TABLES.USER_SUBSCRIPTIONS)
+		.from("user_subscriptions")
 		.upsert(upsertData, {
-			onConflict: TABLE_USER_SUBSCRIPTIONS.USER_ID,
+			onConflict: "user_id",
 			ignoreDuplicates: false,
 		})
 		.select("user_id")
@@ -223,11 +218,27 @@ const resolveTierFromProductId = (productId: string | null) => {
 	const proProductId = isTest
 		? process.env.TEST_DODO_PAYMENTS_PRO_PRODUCT_ID
 		: process.env.DODO_PAYMENTS_PRO_PRODUCT_ID;
-	console.log(productId);
+
 	if (productId === hobbyProductId) return SubscriptionTier.HOBBY;
 	if (productId === proProductId) return SubscriptionTier.PRO;
 
 	return null;
+};
+
+const resolveTierFromAdvertisingProductId = (productId: string | null) => {
+	if (!productId) return null;
+
+	const isTest =
+		(process.env.DODO_PAYMENTS_ENVIRONMENT || "live_mode") === "test_mode" ||
+		process.env.NODE_ENV === "development";
+
+	const advertisingProductId = isTest
+		? process.env.TEST_DODO_PAYMENTS_ADVERTISING_PRODUCT_ID
+		: process.env.DODO_PAYMENTS_ADVERTISING_PRODUCT_ID;
+
+	if (productId === advertisingProductId) return true;
+
+	return false;
 };
 
 export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
@@ -258,6 +269,14 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 					);
 				}
 
+				const tierFromProduct = resolveTierFromProductId(
+					payload.data.product_id,
+				);
+
+				if (resolveTierFromAdvertisingProductId(payload.data.product_id)) {
+					return apiResponse({ success: true }, "Advertisement processed");
+				}
+
 				const customerEmail = payload.data.customer?.email;
 
 				if (!customerEmail) {
@@ -274,9 +293,7 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 						"No user id in metadata",
 					);
 				}
-				const tierFromProduct = resolveTierFromProductId(
-					payload.data.product_id,
-				);
+
 				const tierToSave = resolveTierForEvent(
 					payload.type,
 					tierFromProduct as SubscriptionTierType,

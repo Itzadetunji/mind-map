@@ -1,12 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Edge, Node } from "@xyflow/react";
 import { useCallback, useState } from "react";
-import {
-	type MindMapInsert,
-	type MindMapUpdate,
-	TABLE_MIND_MAPS,
-	TABLES,
-} from "@/lib/constants/database.constants";
+import type { Database } from "@/lib/supabase-database.types";
 import type { MindMapProject } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
@@ -40,10 +35,10 @@ export const useMindMapProjects = () => {
 			if (!user) return [];
 
 			const { data, error } = await supabase
-				.from(TABLES.MIND_MAPS)
+				.from("mind_maps")
 				.select("*")
-				.eq(TABLE_MIND_MAPS.USER_ID, user.id)
-				.order(TABLE_MIND_MAPS.UPDATED_AT, { ascending: false });
+				.eq("user_id", user.id)
+				.order("updated_at", { ascending: false });
 
 			if (error) throw error;
 			return data as MindMapProject[];
@@ -61,10 +56,10 @@ export const useMindMapProject = (projectId: string | null) => {
 			if (!user || !projectId) return null;
 
 			const { data, error } = await supabase
-				.from(TABLES.MIND_MAPS)
+				.from("mind_maps")
 				.select("*")
-				.eq(TABLE_MIND_MAPS.ID, projectId)
-				.eq(TABLE_MIND_MAPS.USER_ID, user.id)
+				.eq("id", projectId)
+				.eq("user_id", user.id)
 				.single();
 
 			if (error) throw error;
@@ -87,13 +82,13 @@ export const useCreateMindMapProject = () => {
 		) => {
 			if (!user) throw new Error("User not authenticated");
 
-			const insertData: MindMapInsert = {
+			const insertData: Database["public"]["Tables"]["mind_maps"]["Insert"] = {
 				...project,
-				[TABLE_MIND_MAPS.USER_ID]: user.id,
+				user_id: user.id,
 			};
 			const { data, error } = await supabase
-				.from(TABLES.MIND_MAPS)
-				.insert(insertData)
+				.from("mind_maps")
+				.insert(insertData as never)
 				.select()
 				.single();
 
@@ -120,14 +115,14 @@ export const useUpdateMindMapProject = () => {
 			id,
 			...updates
 		}: Partial<MindMapProject> & { id: string }) => {
-			const updateData: MindMapUpdate = {
+			const updateData: Database["public"]["Tables"]["mind_maps"]["Update"] = {
 				...updates,
-				[TABLE_MIND_MAPS.UPDATED_AT]: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
 			};
 			const { data, error } = await supabase
-				.from(TABLES.MIND_MAPS)
-				.update(updateData)
-				.eq(TABLE_MIND_MAPS.ID, id)
+				.from("mind_maps")
+				.update(updateData as never)
+				.eq("id", id)
 				.select()
 				.single();
 
@@ -155,10 +150,13 @@ export const useDeleteMindMapProject = () => {
 		mutationFn: async (projectId: string) => {
 			if (!user) throw new Error("User not authenticated");
 
-			const { error } = await supabase.rpc("delete_mind_map_with_chats", {
-				p_mind_map_id: projectId,
-				p_user_id: user.id,
-			});
+			const { error } = await supabase.rpc(
+				"delete_mind_map_with_chats",
+				{
+					p_mind_map_id: projectId,
+					p_user_id: user.id,
+				} as never,
+			);
 
 			if (error) throw error;
 		},

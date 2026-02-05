@@ -54,12 +54,7 @@ function PrivacyPage() {
 						Privacy Policy
 					</h1>
 					<p className="text-slate-600 dark:text-slate-400">
-						Last updated:{" "}
-						{new Date().toLocaleDateString("en-US", {
-							year: "numeric",
-							month: "long",
-							day: "numeric",
-						})}
+						Last updated: February 1, 2026
 					</p>
 				</div>
 			</section>

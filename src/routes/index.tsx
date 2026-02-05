@@ -1,20 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-
+import { SubscriptionPlanGrid } from "@/components/shared/SubscriptionPlanCard";
 import { MindMapConnectionLines } from "@/components/svg-icons/MindMapConnectionLines";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import {
-	SubscriptionIconMap,
-	SubscriptionPricingMeta,
-	subscriptionPlans,
-} from "@/lib/constants";
 import "lenis/dist/lenis.css";
 import { ReactLenis } from "lenis/react";
 import {
@@ -86,9 +73,8 @@ const LandingPage = () => {
 							{/* Badge */}
 							<div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 dark:bg-primary/20 rounded-full text-sm text-primary dark:text-[#0077B6] mb-8">
 								<Sparkles className="w-4 h-4" />
-								<span>AI-powered mind mapping for builders</span>
+								<span>Turn random ideas into clear app plans</span>
 							</div>
-
 							<h1 className="text-5xl md:text-7xl font-bold text-primary dark:text-white mb-6 leading-tight">
 								Build your ideas,
 								<br />
@@ -96,13 +82,12 @@ const LandingPage = () => {
 									visually.
 								</span>
 							</h1>
-
+							Turn random ideas into clear app plans
 							<p className="text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto">
 								Transform your product vision into structured mind maps with AI.
 								Plan features, map user flows, and generate documentation—all in
 								one place.
 							</p>
-
 							<div className="flex flex-col sm:flex-row items-center justify-center gap-4">
 								<Link to="/projects">
 									<Button
@@ -123,7 +108,6 @@ const LandingPage = () => {
 									</Button>
 								</a>
 							</div>
-
 							<p className="text-sm text-slate-500 mt-6">
 								Free to start · No credit card required
 							</p>
@@ -139,7 +123,7 @@ const LandingPage = () => {
 										<div className="w-3 h-3 rounded-full bg-green-400" />
 									</div>
 									<span className="text-xs text-slate-500 ml-2">
-										protomap.app — My Startup Idea
+										protomap.art
 									</span>
 								</div>
 								<div className="aspect-video bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-8 flex items-center justify-center">
@@ -393,73 +377,7 @@ const LandingPage = () => {
 							</div>
 
 							<div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-								{subscriptionPlans.map((plan) => {
-									const meta = SubscriptionPricingMeta[plan.id];
-									const Icon = SubscriptionIconMap[plan.icon];
-
-									return (
-										<Card
-											key={plan.id}
-											className={`flex flex-col border-2 relative ${meta.highlight ? "border-primary bg-primary/5" : ""}`}
-										>
-											{meta.badge && (
-												<div className="absolute -top-3 left-1/2 -translate-x-1/2">
-													<span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
-														{meta.badge}
-													</span>
-												</div>
-											)}
-											<CardHeader>
-												<div className="flex items-center gap-2 mb-2">
-													<Icon className="w-5 h-5 text-primary" />
-													<CardTitle className="text-xl">{plan.name}</CardTitle>
-												</div>
-												<CardDescription>{meta.description}</CardDescription>
-												<div className="mt-4">
-													<span className="text-4xl font-bold">
-														${plan.price}
-													</span>
-													{plan.id === "pro" && (
-														<span className="text-muted-foreground line-through ml-2 text-sm">
-															$40
-														</span>
-													)}
-													<span className="text-muted-foreground">/month</span>
-												</div>
-												{plan.id === "pro" && (
-													<p className="text-primary text-xs font-semibold mt-1">
-														Early deal - Limited time
-													</p>
-												)}
-											</CardHeader>
-											<CardContent className="flex-1">
-												<ul className="space-y-3">
-													{plan.features.map((feature) => (
-														<li
-															key={feature}
-															className="flex items-center gap-3 text-sm"
-														>
-															<Check className="h-4 w-4 text-green-500 shrink-0" />
-															{feature}
-														</li>
-													))}
-												</ul>
-											</CardContent>
-											<CardFooter>
-												<Link to="/projects" className="w-full">
-													<Button
-														variant={
-															plan.id === "hobby" ? "outline" : "default"
-														}
-														className={`w-full h-12 rounded-full text-base ${plan.id === "pro" ? "bg-primary text-white hover:bg-primary/90" : ""}`}
-													>
-														Start 3-day free trial
-													</Button>
-												</Link>
-											</CardFooter>
-										</Card>
-									);
-								})}
+								<SubscriptionPlanGrid mode="landing" />
 							</div>
 
 							{/* Trust badges */}
@@ -500,7 +418,7 @@ const LandingPage = () => {
 										size="lg"
 										className="bg-white text-primary hover:bg-white/90 rounded-full px-8 h-14 text-lg"
 									>
-										Get Started Free
+										Get Started
 									</Button>
 								</Link>
 							</div>

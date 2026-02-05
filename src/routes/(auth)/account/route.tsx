@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Check, Loader2, RefreshCw, User, XCircle } from "lucide-react";
+import { Loader2, RefreshCw, User, XCircle } from "lucide-react";
 import React, { useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -11,21 +11,16 @@ import {
 	useUserCredits,
 	useUserSubscription,
 } from "@/api/http/v1/credits/credits.hooks";
+import { SubscriptionPlanGrid } from "@/components/shared/SubscriptionPlanCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
 	CardDescription,
-	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import {
-	SubscriptionIconMap,
-	SubscriptionPricingMeta,
-	subscriptionPlans,
-} from "@/lib/constants";
 import {
 	SubscriptionTier,
 	type SubscriptionTierType,
@@ -234,86 +229,17 @@ const AccountPage = () => {
 							</p>
 						</div>
 						<div className="flex flex-col lg:flex-row gap-4 justify-center w-full">
-							{subscriptionPlans.map((plan) => {
-								const meta = SubscriptionPricingMeta[plan.id];
-								const Icon = SubscriptionIconMap[plan.icon];
-								const isCurrent = isCurrentTier(plan.id);
-
-								return (
-									<Card
-										key={plan.id}
-										className={`flex flex-col border-2 relative max-w-100 ${meta.highlight ? "border-primary bg-primary/5" : ""}`}
-									>
-										{isCurrent && (
-											<div className="absolute -top-3 right-4">
-												<span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-													Current Plan
-												</span>
-											</div>
-										)}
-										{meta.badge && (
-											<div className="absolute -top-3 left-1/2 -translate-x-1/2">
-												<span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
-													{meta.badge}
-												</span>
-											</div>
-										)}
-										<CardHeader>
-											<div className="flex items-center gap-2 mb-2">
-												<Icon className="w-5 h-5 text-primary" />
-												<CardTitle className="text-xl">{plan.name}</CardTitle>
-											</div>
-											<CardDescription>{meta.description}</CardDescription>
-											<div className="mt-4">
-												<span className="text-4xl font-bold">
-													${plan.price}
-												</span>
-												{plan.id === "hobby" && (
-													<span className="text-muted-foreground line-through ml-2 text-sm">
-														$15
-													</span>
-												)}
-												{plan.id === "pro" && (
-													<span className="text-muted-foreground line-through ml-2 text-sm">
-														$30
-													</span>
-												)}
-												<span className="text-muted-foreground">/month</span>
-											</div>
-											{plan.id === "pro" && (
-												<p className="text-primary text-xs font-semibold mt-1">
-													Early deal - Limited time
-												</p>
-											)}
-										</CardHeader>
-										<CardContent className="flex-1">
-											<ul className="space-y-3">
-												{plan.features.map((feature) => (
-													<li
-														key={feature}
-														className="flex items-center gap-3 text-sm"
-													>
-														<Check className="h-4 w-4 text-green-500 shrink-0" />
-														{feature}
-													</li>
-												))}
-											</ul>
-										</CardContent>
-										<CardFooter>
-											<Button
-												variant={plan.id === "hobby" ? "outline" : "default"}
-												className={`w-full h-12 rounded-full text-base ${plan.id === "pro" ? "bg-primary text-white hover:bg-primary/90" : ""}`}
-												onClick={() => handleSubscribe(plan.id)}
-												disabled={
-													isLoading || isCurrent || isCheckingSubscription
-												}
-											>
-												{isCurrent ? "Current Plan" : "Start 3-day free trial"}
-											</Button>
-										</CardFooter>
-									</Card>
-								);
-							})}
+							<SubscriptionPlanGrid
+								mode="account"
+								isCurrent={(tierId) =>
+									isCurrentTier(tierId as SubscriptionTierType)
+								}
+								isLoading={isLoading}
+								isCheckingSubscription={isCheckingSubscription}
+								onSubscribe={(tierId) =>
+									handleSubscribe(tierId as SubscriptionTierType)
+								}
+							/>
 						</div>
 					</div>
 				</div>

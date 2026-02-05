@@ -1,19 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { z } from "zod";
-import {
-	type MindMapInsert,
-	type MindMapUpdate,
-	TABLE_MIND_MAPS,
-	TABLE_USER_CREDITS,
-	TABLES,
-} from "@/lib/constants/database.constants";
+
+import type { Database, Json } from "@/lib/supabase-database.types";
 
 // Server-side Supabase client
 const getSupabaseClient = () => {
 	const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
 	const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || "";
-	return createClient(supabaseUrl, supabaseAnonKey);
+	return createClient<Database>(supabaseUrl, supabaseAnonKey);
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1031,11 +1026,16 @@ QUALITY:
 			const supabase = getSupabaseClient();
 
 			// Check user's credits
-			let { data: userCredits, error: creditsError } = await supabase
-				.from(TABLES.USER_CREDITS)
-				.select(TABLE_USER_CREDITS.CREDITS)
-				.eq(TABLE_USER_CREDITS.USER_ID, data.userId)
+			const {
+				data: userCreditsRaw,
+				error: creditsError,
+			} = await supabase
+				.from("user_credits")
+				.select("credits")
+				.eq("user_id", data.userId)
 				.single();
+
+			let userCredits = userCreditsRaw as { credits: number } | null;
 
 			if (creditsError && creditsError.code !== "PGRST116") {
 				console.error("Error checking credits:", creditsError);
@@ -1045,9 +1045,12 @@ QUALITY:
 			// If user exists but has no credits record, create one with default
 			if (creditsError?.code === "PGRST116") {
 				const { data: initializedCredits, error: initError } =
-					await supabase.rpc("initialize_user_credits", {
-						p_user_id: data.userId,
-					});
+					await supabase.rpc(
+						"initialize_user_credits",
+						{
+							p_user_id: data.userId,
+						} as never,
+					);
 
 				if (initError) {
 					console.error("Error creating credits:", initError);
@@ -1055,16 +1058,17 @@ QUALITY:
 				}
 
 				// Update userCredits with the initialized data
-				if (initializedCredits && initializedCredits.length > 0) {
+				const initializedList =
+					initializedCredits as { credits: number }[] | null;
+				if (initializedList && initializedList.length > 0) {
 					userCredits = {
-						[TABLE_USER_CREDITS.CREDITS]:
-							initializedCredits[0][TABLE_USER_CREDITS.CREDITS],
+						credits: initializedList[0].credits,
 					};
 				}
 			}
 
 			// Check if user has enough credits (1 credit per generation)
-			if (!userCredits || userCredits[TABLE_USER_CREDITS.CREDITS] < 1) {
+			if (!userCredits || userCredits.credits < 1) {
 				throw new Error("INSUFFICIENT_CREDITS");
 			}
 		}
@@ -1156,44 +1160,50 @@ QUALITY:
 			const supabase = getSupabaseClient();
 
 			// Deduct 1 credit for this generation
-			const { error: deductError } = await supabase.rpc("deduct_credits", {
-				p_user_id: data.userId,
-				p_amount: 1,
-				p_description: "AI mind map generation",
-			});
+			const { error: deductError } = await supabase.rpc(
+				"deduct_credits",
+				{
+					p_user_id: data.userId,
+					p_amount: 1,
+					p_description: "AI mind map generation",
+				} as never,
+			);
 
 			// If RPC doesn't exist, manually deduct
 			if (deductError) {
-				const { data: currentCredits } = await supabase
-					.from(TABLES.USER_CREDITS)
-					.select(TABLE_USER_CREDITS.CREDITS)
-					.eq(TABLE_USER_CREDITS.USER_ID, data.userId)
+				const { data: currentCreditsRaw } = await supabase
+					.from("user_credits")
+					.select("credits")
+					.eq("user_id", data.userId)
 					.single();
 
+				const currentCredits =
+					currentCreditsRaw as { credits: number } | null;
 				if (currentCredits) {
-					const updateData: { [TABLE_USER_CREDITS.CREDITS]: number } = {
-						[TABLE_USER_CREDITS.CREDITS]:
-							currentCredits[TABLE_USER_CREDITS.CREDITS] - 1,
-					};
+					const updateData: Database["public"]["Tables"]["user_credits"]["Update"] =
+						{
+							credits: currentCredits.credits - 1,
+						};
 					await supabase
-						.from(TABLES.USER_CREDITS)
-						.update(updateData)
-						.eq(TABLE_USER_CREDITS.USER_ID, data.userId);
+						.from("user_credits")
+						.update(updateData as never)
+						.eq("user_id", data.userId);
 				}
 			}
 
 			if (data.projectId) {
 				// Update existing project - also save prompt if this is first generation
-				const updateData: MindMapUpdate = {
-					[TABLE_MIND_MAPS.GRAPH_DATA]: graphData,
-					[TABLE_MIND_MAPS.FIRST_PROMPT]: data.prompt, // Save the prompt on updates too
-					[TABLE_MIND_MAPS.UPDATED_AT]: new Date().toISOString(),
-				};
+				const updateData: Database["public"]["Tables"]["mind_maps"]["Update"] =
+					{
+						graph_data: graphData as Json,
+						first_prompt: data.prompt,
+						updated_at: new Date().toISOString(),
+					};
 				const { error: updateError } = await supabase
-					.from(TABLES.MIND_MAPS)
-					.update(updateData)
-					.eq(TABLE_MIND_MAPS.ID, data.projectId)
-					.eq(TABLE_MIND_MAPS.USER_ID, data.userId);
+					.from("mind_maps")
+					.update(updateData as never)
+					.eq("id", data.projectId)
+					.eq("user_id", data.userId);
 
 				if (updateError) {
 					console.error("Supabase update error:", updateError);
@@ -1203,16 +1213,17 @@ QUALITY:
 			} else {
 				// Create new project
 				const title = data.title || extractTitle(data.prompt);
-				const insertData: MindMapInsert = {
-					[TABLE_MIND_MAPS.USER_ID]: data.userId,
-					[TABLE_MIND_MAPS.TITLE]: title,
-					[TABLE_MIND_MAPS.DESCRIPTION]: data.prompt.slice(0, 200),
-					[TABLE_MIND_MAPS.FIRST_PROMPT]: data.prompt,
-					[TABLE_MIND_MAPS.GRAPH_DATA]: graphData,
-				};
-				const { data: newProject, error: insertError } = await supabase
-					.from(TABLES.MIND_MAPS)
-					.insert(insertData)
+				const insertData: Database["public"]["Tables"]["mind_maps"]["Insert"] =
+					{
+						user_id: data.userId,
+						title,
+						description: data.prompt.slice(0, 200),
+						first_prompt: data.prompt,
+						graph_data: graphData as Json,
+					};
+				const { data: newProjectRaw, error: insertError } = await supabase
+					.from("mind_maps")
+					.insert(insertData as never)
 					.select()
 					.single();
 
@@ -1221,7 +1232,8 @@ QUALITY:
 					return graphData;
 				} else {
 					// Return the project ID so client can track it
-					return { ...graphData, projectId: newProject.id };
+					const newProject = newProjectRaw as { id: string } | null;
+					return { ...graphData, projectId: newProject?.id };
 				}
 			}
 		}

@@ -1,11 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-	TABLE_ADVERTISEMENTS,
-	TABLES,
-} from "@/lib/constants/database.constants";
+
 import { supabase } from "@/lib/supabase";
-import { Database } from "@/lib/database.types";
+import type { Database } from "@/lib/supabase-database.types";
 
 export const ADVERTISEMENTS_QUERY_KEY = ["advertisements"];
 
@@ -14,11 +11,11 @@ export const useGetActiveAdvertisements = () => {
 		queryKey: ADVERTISEMENTS_QUERY_KEY,
 		queryFn: async () => {
 			const { data, error } = await supabase
-				.from(TABLES.ADVERTISEMENTS)
+				.from("advertisements")
 				.select("*")
-				.eq(TABLE_ADVERTISEMENTS.STATUS, "active")
-				.eq(TABLE_ADVERTISEMENTS.APPROVED, true)
-				.order(TABLE_ADVERTISEMENTS.CREATED_AT, { ascending: false });
+				.eq("status", "active")
+				.eq("approved", true)
+				.order("created_at", { ascending: false });
 
 			if (error) {
 				console.error("Error fetching advertisements:", error);
@@ -46,14 +43,17 @@ export const useCreateAdvertisement = () => {
 			} = await supabase.auth.getSession();
 			if (!session) throw new Error("Not authenticated");
 
-			const { data, error } = await supabase
-				.from(TABLES.ADVERTISEMENTS)
-				.insert({
+			const insertData: Database["public"]["Tables"]["advertisements"]["Insert"] =
+				{
 					...ad,
 					user_id: session.user.id,
 					status: "pending",
 					approved: false,
-				})
+				};
+
+			const { data, error } = await supabase
+				.from("advertisements")
+				.insert(insertData as never)
 				.select()
 				.single();
 

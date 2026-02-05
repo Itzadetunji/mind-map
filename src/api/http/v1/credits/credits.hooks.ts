@@ -1,16 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-	TABLE_USER_CREDITS,
-	TABLE_USER_SUBSCRIPTIONS,
-	TABLES,
-	type UserCreditsUpdate,
-} from "@/lib/constants/database.constants";
+
 import type {
 	SubscriptionTierType,
 	UserCredits,
 	UserSubscription,
 } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
+import type { Database } from "@/lib/supabase-database.types";
 import { cancelSubscription } from "@/server/functions/subscriptions/cancel";
 import { getSubscription } from "@/server/functions/subscriptions/get";
 import { useAuthStore } from "@/stores/authStore";
@@ -70,15 +66,16 @@ export const useCancelDodoSubscription = () => {
 
 			const result = await cancelSubscription({ data: { subscriptionId } });
 
+			const updateData: Database["public"]["Tables"]["user_subscriptions"]["Update"] =
+				{
+					cancel_at_period_end: !!result.cancelAtPeriodEnd,
+					current_period_end: result.currentPeriodEnd,
+				};
+
 			const { error } = await supabase
-				.from(TABLES.USER_SUBSCRIPTIONS)
-				.update({
-					[TABLE_USER_SUBSCRIPTIONS.CANCEL_AT_PERIOD_END]:
-						!!result.cancelAtPeriodEnd,
-					[TABLE_USER_SUBSCRIPTIONS.CURRENT_PERIOD_END]:
-						result.currentPeriodEnd,
-				})
-				.eq(TABLE_USER_SUBSCRIPTIONS.USER_ID, user.id);
+				.from("user_subscriptions")
+				.update(updateData as never)
+				.eq("user_id", user.id);
 
 			if (error) throw error;
 
@@ -152,9 +149,9 @@ export const useUserSubscription = () => {
 			if (!user) return null;
 
 			const { data, error } = await supabase
-				.from(TABLES.USER_SUBSCRIPTIONS)
+				.from("user_subscriptions")
 				.select("*")
-				.eq(TABLE_USER_SUBSCRIPTIONS.USER_ID, user.id)
+				.eq("user_id", user.id)
 				.single();
 
 			if (error) {
@@ -176,9 +173,9 @@ export const useUserCredits = () => {
 			if (!user) return null;
 
 			const { data, error } = await supabase
-				.from(TABLES.USER_CREDITS)
+				.from("user_credits")
 				.select("*")
-				.eq(TABLE_USER_CREDITS.USER_ID, user.id)
+				.eq("user_id", user.id)
 				.single();
 
 			if (error) {
@@ -205,25 +202,29 @@ export const useDeductCredits = () => {
 		}) => {
 			if (!user) throw new Error("User not authenticated");
 
-			const { data: currentCredits, error: fetchError } = await supabase
-				.from(TABLES.USER_CREDITS)
-				.select(TABLE_USER_CREDITS.CREDITS)
-				.eq(TABLE_USER_CREDITS.USER_ID, user.id)
+			const {
+				data: currentCreditsRaw,
+				error: fetchError,
+			} = await supabase
+				.from("user_credits")
+				.select("credits")
+				.eq("user_id", user.id)
 				.single();
 
 			if (fetchError) throw fetchError;
-			if (currentCredits[TABLE_USER_CREDITS.CREDITS] < amount) {
+			const currentCredits = currentCreditsRaw as { credits: number } | null;
+			if (!currentCredits || currentCredits.credits < amount) {
 				throw new Error("Insufficient credits");
 			}
 
-			const updateData: UserCreditsUpdate = {
-				[TABLE_USER_CREDITS.CREDITS]:
-					currentCredits[TABLE_USER_CREDITS.CREDITS] - amount,
-			};
+			const updateData: Database["public"]["Tables"]["user_credits"]["Update"] =
+				{
+					credits: currentCredits.credits - amount,
+				};
 			const { error: updateError } = await supabase
-				.from(TABLES.USER_CREDITS)
-				.update(updateData)
-				.eq(TABLE_USER_CREDITS.USER_ID, user.id);
+				.from("user_credits")
+				.update(updateData as never)
+				.eq("user_id", user.id);
 
 			if (updateError) throw updateError;
 
@@ -256,22 +257,30 @@ export const useAddCredits = () => {
 		}) => {
 			if (!user) throw new Error("User not authenticated");
 
-			const { data: currentCredits, error: fetchError } = await supabase
-				.from(TABLES.USER_CREDITS)
-				.select(TABLE_USER_CREDITS.CREDITS)
-				.eq(TABLE_USER_CREDITS.USER_ID, user.id)
+			const {
+				data: currentCreditsRaw,
+				error: fetchError,
+			} = await supabase
+				.from("user_credits")
+				.select("credits")
+				.eq("user_id", user.id)
 				.single();
 
 			if (fetchError) throw fetchError;
 
-			const updateData: UserCreditsUpdate = {
-				[TABLE_USER_CREDITS.CREDITS]:
-					currentCredits[TABLE_USER_CREDITS.CREDITS] + amount,
-			};
+			const currentCredits = currentCreditsRaw as { credits: number } | null;
+			if (!currentCredits) {
+				throw new Error("Unable to fetch current credits");
+			}
+
+			const updateData: Database["public"]["Tables"]["user_credits"]["Update"] =
+				{
+					credits: currentCredits.credits + amount,
+				};
 			const { error: updateError } = await supabase
-				.from(TABLES.USER_CREDITS)
-				.update(updateData)
-				.eq(TABLE_USER_CREDITS.USER_ID, user.id);
+				.from("user_credits")
+				.update(updateData as never)
+				.eq("user_id", user.id);
 
 			if (updateError) throw updateError;
 
@@ -296,10 +305,13 @@ export const useDailyCreditsCheck = () => {
 
 			const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-			const { data, error } = await supabase.rpc("claim_daily_credits", {
-				p_user_id: user.id,
-				p_timezone: userTimezone,
-			});
+			const { data, error } = await supabase.rpc(
+				"claim_daily_credits",
+				{
+					p_user_id: user.id,
+					p_timezone: userTimezone,
+				} as never,
+			);
 
 			if (error) {
 				console.error("Error checking daily credits:", error);
@@ -314,7 +326,7 @@ export const useDailyCreditsCheck = () => {
 						if (!oldData) return oldData;
 						return {
 							...oldData,
-							[TABLE_USER_CREDITS.CREDITS]: response.new_total,
+							credits: response.new_total,
 						};
 					},
 				);
