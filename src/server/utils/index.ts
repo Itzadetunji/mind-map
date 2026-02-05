@@ -1,4 +1,5 @@
 import { StatusCodes } from "http-status-codes";
+import { SubscriptionTier, SubscriptionTierType } from "@/lib/database.types";
 import { getSupabaseAdminClient } from "../../../supabase/index";
 
 export interface ApiErrorBody {
@@ -67,9 +68,42 @@ export const getUserByEmail = async (email: string) => {
 		return { user: null, error };
 	}
 
-	const user = data?.users?.find(
-		(u) => u.email?.toLowerCase() === email.toLowerCase(),
-	) ?? null;
+	const user =
+		data?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase()) ??
+		null;
 
 	return { user, error: null };
+};
+
+export const getWebhookInitialCredits = (
+	tier: SubscriptionTierType | null,
+): number => {
+	switch (tier) {
+		case SubscriptionTier.HOBBY:
+			return 35;
+		case SubscriptionTier.PRO:
+			return 70;
+		default:
+			return 0;
+	}
+};
+
+export const resolveTierFromProductId = (productId: string | null) => {
+	if (!productId) return null;
+
+	const isTest =
+		(process.env.DODO_PAYMENTS_ENVIRONMENT || "live_mode") === "test_mode" ||
+		process.env.NODE_ENV === "development";
+
+	const hobbyProductId = isTest
+		? process.env.TEST_DODO_PAYMENTS_HOBBY_PRODUCT_ID
+		: process.env.DODO_PAYMENTS_HOBBY_PRODUCT_ID;
+	const proProductId = isTest
+		? process.env.TEST_DODO_PAYMENTS_PRO_PRODUCT_ID
+		: process.env.DODO_PAYMENTS_PRO_PRODUCT_ID;
+
+	if (productId === hobbyProductId) return SubscriptionTier.HOBBY;
+	if (productId === proProductId) return SubscriptionTier.PRO;
+
+	return null;
 };

@@ -7,7 +7,12 @@ import {
 } from "@/lib/database.types";
 import type { Database } from "@/lib/supabase-database.types";
 import { getSupabaseAdminClient } from "../../../../supabase/index";
-import { apiErrorResponse, apiResponse } from "../../../server/utils";
+import {
+	apiErrorResponse,
+	apiResponse,
+	getWebhookInitialCredits,
+	resolveTierFromProductId,
+} from "../../../server/utils";
 
 void createFileRoute;
 
@@ -205,39 +210,6 @@ const upsertUserSubscription = async (args: {
 	}
 };
 
-const getWebhookInitialCredits = (
-	tier: SubscriptionTierType | null,
-): number => {
-	switch (tier) {
-		case SubscriptionTier.HOBBY:
-			return 35;
-		case SubscriptionTier.PRO:
-			return 70;
-		default:
-			return 0;
-	}
-};
-
-const resolveTierFromProductId = (productId: string | null) => {
-	if (!productId) return null;
-
-	const isTest =
-		(process.env.DODO_PAYMENTS_ENVIRONMENT || "live_mode") === "test_mode" ||
-		process.env.NODE_ENV === "development";
-
-	const hobbyProductId = isTest
-		? process.env.TEST_DODO_PAYMENTS_HOBBY_PRODUCT_ID
-		: process.env.DODO_PAYMENTS_HOBBY_PRODUCT_ID;
-	const proProductId = isTest
-		? process.env.TEST_DODO_PAYMENTS_PRO_PRODUCT_ID
-		: process.env.DODO_PAYMENTS_PRO_PRODUCT_ID;
-
-	if (productId === hobbyProductId) return SubscriptionTier.HOBBY;
-	if (productId === proProductId) return SubscriptionTier.PRO;
-
-	return null;
-};
-
 const resolveTierFromAdvertisingProductId = (productId: string | null) => {
 	if (!productId) return null;
 
@@ -313,14 +285,12 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 
 				// Fetch the user's existing subscription tier (if any) so we can
 				// decide how to adjust credits based on the transition.
-				const {
-					data: existingSubscription,
-					error: existingSubscriptionError,
-				} = await supabase
-					.from("user_subscriptions")
-					.select("tier")
-					.eq("user_id", userId)
-					.maybeSingle();
+				const { data: existingSubscription, error: existingSubscriptionError } =
+					await supabase
+						.from("user_subscriptions")
+						.select("tier")
+						.eq("user_id", userId)
+						.maybeSingle();
 
 				if (
 					existingSubscriptionError &&
@@ -378,14 +348,12 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 						}
 
 						if (creditsDelta > 0) {
-							const {
-								data: currentCredits,
-								error: creditsError,
-							} = await supabase
-								.from("user_credits")
-								.select("credits")
-								.eq("user_id", userId)
-								.single();
+							const { data: currentCredits, error: creditsError } =
+								await supabase
+									.from("user_credits")
+									.select("credits")
+									.eq("user_id", userId)
+									.single();
 
 							// If another error occurs, don't fail the webhook – just skip
 							// credit adjustment.

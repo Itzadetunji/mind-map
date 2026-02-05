@@ -11,6 +11,7 @@ import {
 	useUserCredits,
 	useUserSubscription,
 } from "@/api/http/v1/credits/credits.hooks";
+import { useChangeSubscriptionPlan } from "@/api/http/v1/subscriptions/subscriptions.hooks";
 import { SubscriptionPlanGrid } from "@/components/shared/SubscriptionPlanCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -49,26 +50,59 @@ const AccountPage = () => {
 	const [showSuccessModal, setShowSuccessModal] = React.useState(false);
 	const [showCancelModal, setShowCancelModal] = React.useState(false);
 	const createCheckout = useCreateCheckout();
+	const changePlan = useChangeSubscriptionPlan();
 
 	const handleSubscribe = async (tier: SubscriptionTierType) => {
 		if (tier === SubscriptionTier.FREE) return;
 
-		try {
-			const { checkoutUrl } = await createCheckout.mutateAsync({ tier });
-			console.log(checkoutUrl);
-			window.location.assign(checkoutUrl);
-		} catch (error) {
-			const message =
-				error instanceof Error
-					? error.message
-					: "Unable to start Dodo checkout";
-			toast.error("Dodo checkout unavailable", {
-				description: message,
-			});
+		const hasExistingSubscription =
+			userSubscriptionQuery.data?.tier !== SubscriptionTier.FREE &&
+			userSubscriptionQuery.data?.dodo_subscription_id;
+
+		// If user has an existing subscription, use change plan API
+		// Otherwise, create a new checkout session
+		if (
+			hasExistingSubscription &&
+			userSubscriptionQuery.data?.dodo_subscription_id &&
+			user?.id
+		) {
+			try {
+				await changePlan.mutateAsync({
+					subscriptionId: userSubscriptionQuery.data.dodo_subscription_id,
+					tier: tier as "hobby" | "pro",
+					userId: user.id,
+				});
+				toast.success("Subscription plan updated", {
+					description: `Your plan has been changed to ${tier}.`,
+				});
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: "Unable to change subscription plan";
+				toast.error("Failed to change plan", {
+					description: message,
+				});
+			}
+		} else {
+			// New subscription - use checkout
+			try {
+				const { checkoutUrl } = await createCheckout.mutateAsync({ tier });
+				console.log(checkoutUrl);
+				window.location.assign(checkoutUrl);
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: "Unable to start Dodo checkout";
+				toast.error("Dodo checkout unavailable", {
+					description: message,
+				});
+			}
 		}
 	};
 
-	const isLoading = createCheckout.isPending;
+	const isLoading = createCheckout.isPending || changePlan.isPending;
 
 	const currentTier = userSubscriptionQuery.data?.tier || null;
 
