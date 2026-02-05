@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader2, RefreshCw, User, XCircle } from "lucide-react";
+import { Loader2, User, XCircle } from "lucide-react";
 import React, { useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
