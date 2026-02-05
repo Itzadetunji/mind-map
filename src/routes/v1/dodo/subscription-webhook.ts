@@ -273,9 +273,8 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 					payload.data.product_id,
 				);
 
-				if (resolveTierFromAdvertisingProductId(payload.data.product_id)) {
+				if (resolveTierFromAdvertisingProductId(payload.data.product_id))
 					return apiResponse({ success: true }, "Advertisement processed");
-				}
 
 				const customerEmail = payload.data.customer?.email;
 
