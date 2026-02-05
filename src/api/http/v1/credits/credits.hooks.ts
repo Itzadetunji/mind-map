@@ -33,6 +33,35 @@ export interface DailyCreditsResponse {
 	message?: string;
 }
 
+const LAST_CLAIMED_DAILY_CREDITS_KEY = "LAST_CLAIMED_DAILY_CREDITS";
+
+const getLastClaimedDate = (userId: string): string | null => {
+	if (typeof window === "undefined") return null;
+	const stored = localStorage.getItem(`${LAST_CLAIMED_DAILY_CREDITS_KEY}_${userId}`);
+	return stored;
+};
+
+const setLastClaimedDate = (userId: string, date: string): void => {
+	if (typeof window === "undefined") return;
+	localStorage.setItem(`${LAST_CLAIMED_DAILY_CREDITS_KEY}_${userId}`, date);
+};
+
+const isDifferentDay = (userId: string): boolean => {
+	if (typeof window === "undefined") return true;
+	const lastClaimed = getLastClaimedDate(userId);
+	if (!lastClaimed) return true;
+
+	const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+	const lastDate = new Date(lastClaimed);
+	const today = new Date();
+
+	// Compare dates in user's timezone
+	const lastDateStr = lastDate.toLocaleDateString("en-US", { timeZone: userTimezone });
+	const todayStr = today.toLocaleDateString("en-US", { timeZone: userTimezone });
+
+	return lastDateStr !== todayStr;
+};
+
 export function useDodoSubscriptionStatus(options?: {
 	enabled?: boolean;
 	refetchInterval?: number | false;
@@ -335,9 +364,14 @@ export const useDailyCreditsCheck = () => {
 				});
 			}
 
+			// Store the current date as ISO string on success
+			if (!error) {
+				setLastClaimedDate(user.id, new Date().toISOString());
+			}
+
 			return data;
 		},
-		enabled: !!user,
+		enabled: !!user && (user.id ? isDifferentDay(user.id) : false),
 		refetchOnWindowFocus: false,
 		staleTime: Infinity,
 	});
