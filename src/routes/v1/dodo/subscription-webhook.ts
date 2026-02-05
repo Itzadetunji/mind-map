@@ -205,6 +205,19 @@ const upsertUserSubscription = async (args: {
 	}
 };
 
+const getWebhookInitialCredits = (
+	tier: SubscriptionTierType | null,
+): number => {
+	switch (tier) {
+		case SubscriptionTier.HOBBY:
+			return 35;
+		case SubscriptionTier.PRO:
+			return 70;
+		default:
+			return 0;
+	}
+};
+
 const resolveTierFromProductId = (productId: string | null) => {
 	if (!productId) return null;
 
@@ -298,6 +311,30 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 					tierFromProduct as SubscriptionTierType,
 				);
 
+				// Fetch the user's existing subscription tier (if any) so we can
+				// decide how to adjust credits based on the transition.
+				const {
+					data: existingSubscription,
+					error: existingSubscriptionError,
+				} = await supabase
+					.from("user_subscriptions")
+					.select("tier")
+					.eq("user_id", userId)
+					.maybeSingle();
+
+				if (
+					existingSubscriptionError &&
+					existingSubscriptionError.code !== "PGRST116"
+				) {
+					return apiErrorResponse(
+						StatusCodes.INTERNAL_SERVER_ERROR,
+						"Failed to read existing subscription",
+					);
+				}
+
+				const previousTier =
+					(existingSubscription?.tier as SubscriptionTierType | null) ?? null;
+
 				try {
 					await upsertUserSubscription({
 						supabase,
@@ -305,6 +342,109 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 						tierToSave,
 						payload,
 					});
+
+					// After the subscription is upserted, update the user's credits
+					// based on the subscription change.
+					//
+					// Case 1: User subscribes to Hobby/Pro from Free/none
+					//   → add 35 (Hobby) or 70 (Pro) credits (additive).
+					// Case 2: User upgrades from Hobby → Pro
+					//   → add 35 credits, but cap total at 150.
+					// Case 3: User downgrades from Pro → Hobby
+					//   → leave credits unchanged.
+
+					// Do not modify credits when resulting tier is FREE.
+					if (tierToSave !== SubscriptionTier.FREE) {
+						let creditsDelta = 0;
+
+						const isNewPaidSubscription =
+							!previousTier || previousTier === SubscriptionTier.FREE;
+						const isUpgradeToPro =
+							previousTier === SubscriptionTier.HOBBY &&
+							tierToSave === SubscriptionTier.PRO;
+						const isDowngradeToHobby =
+							previousTier === SubscriptionTier.PRO &&
+							tierToSave === SubscriptionTier.HOBBY;
+
+						if (isNewPaidSubscription) {
+							// Case 1
+							creditsDelta = getWebhookInitialCredits(tierToSave);
+						} else if (isUpgradeToPro) {
+							// Case 2
+							creditsDelta = 35;
+						} else if (isDowngradeToHobby) {
+							// Case 3 → no change
+							creditsDelta = 0;
+						}
+
+						if (creditsDelta > 0) {
+							const {
+								data: currentCredits,
+								error: creditsError,
+							} = await supabase
+								.from("user_credits")
+								.select("credits")
+								.eq("user_id", userId)
+								.single();
+
+							// If another error occurs, don't fail the webhook – just skip
+							// credit adjustment.
+							if (creditsError && creditsError.code !== "PGRST116") {
+								// eslint-disable-next-line no-console
+								console.error(
+									"Error reading user credits for subscription webhook:",
+									creditsError,
+								);
+							} else if (creditsError?.code === "PGRST116") {
+								// No credits row exists yet – create one with the initial credits.
+								const insertData: Database["public"]["Tables"]["user_credits"]["Insert"] =
+									{
+										user_id: userId,
+										credits: creditsDelta,
+										monthly_credits_remaining: creditsDelta,
+									};
+
+								const { error: insertError } = await supabase
+									.from("user_credits")
+									.insert(insertData as never);
+
+								if (insertError) {
+									// eslint-disable-next-line no-console
+									console.error(
+										"Error initializing user credits for subscription webhook:",
+										insertError,
+									);
+								}
+							} else if (currentCredits) {
+								const existingCredits = currentCredits.credits;
+
+								let updatedCredits = existingCredits + creditsDelta;
+
+								// Apply the 150-credit cap only for the Hobby → Pro upgrade case.
+								if (isUpgradeToPro && updatedCredits > 150) {
+									updatedCredits = 150;
+								}
+
+								const updateData: Database["public"]["Tables"]["user_credits"]["Update"] =
+									{
+										credits: updatedCredits,
+									};
+
+								const { error: updateError } = await supabase
+									.from("user_credits")
+									.update(updateData as never)
+									.eq("user_id", userId);
+
+								if (updateError) {
+									// eslint-disable-next-line no-console
+									console.error(
+										"Error updating user credits for subscription webhook:",
+										updateError,
+									);
+								}
+							}
+						}
+					}
 				} catch (upsertError) {
 					return apiErrorResponse(
 						StatusCodes.INTERNAL_SERVER_ERROR,

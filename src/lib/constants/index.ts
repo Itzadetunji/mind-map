@@ -29,7 +29,7 @@ export const subscriptionPlans: {
 		features: [
 			"20 Projects",
 			"35 credits a month",
-			"5 daily credits (up to 150/month)",
+			"5 daily credits (up to 100/month)",
 			"Unlimited document export",
 			"Unlimited photo exports",
 			"Share documents",
@@ -40,12 +40,13 @@ export const subscriptionPlans: {
 	{
 		id: "pro",
 		name: "Pro",
-		price: 24.99,
+		price: 19.99,
 		initialCredits: 70,
 		monthlyCredits: 150,
 		dailyCredits: 5,
 		features: [
 			"Everything in Hobby",
+			"5 daily credits (up to 150/month)",
 			"Unlimited projects",
 			"70 credits + 5 everyday",
 			"Team collaboration (coming soon)",

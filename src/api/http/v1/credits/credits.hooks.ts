@@ -10,6 +10,7 @@ import type { Database } from "@/lib/supabase-database.types";
 import { cancelSubscription } from "@/server/functions/subscriptions/cancel";
 import { getSubscription } from "@/server/functions/subscriptions/get";
 import { useAuthStore } from "@/stores/authStore";
+
 export const creditsQueryKeys = {
 	all: ["credits"] as const,
 	user: (userId?: string) => [...creditsQueryKeys.all, userId] as const,
@@ -37,7 +38,9 @@ const LAST_CLAIMED_DAILY_CREDITS_KEY = "LAST_CLAIMED_DAILY_CREDITS";
 
 const getLastClaimedDate = (userId: string): string | null => {
 	if (typeof window === "undefined") return null;
-	const stored = localStorage.getItem(`${LAST_CLAIMED_DAILY_CREDITS_KEY}_${userId}`);
+	const stored = localStorage.getItem(
+		`${LAST_CLAIMED_DAILY_CREDITS_KEY}_${userId}`,
+	);
 	return stored;
 };
 
@@ -56,8 +59,12 @@ const isDifferentDay = (userId: string): boolean => {
 	const today = new Date();
 
 	// Compare dates in user's timezone
-	const lastDateStr = lastDate.toLocaleDateString("en-US", { timeZone: userTimezone });
-	const todayStr = today.toLocaleDateString("en-US", { timeZone: userTimezone });
+	const lastDateStr = lastDate.toLocaleDateString("en-US", {
+		timeZone: userTimezone,
+	});
+	const todayStr = today.toLocaleDateString("en-US", {
+		timeZone: userTimezone,
+	});
 
 	return lastDateStr !== todayStr;
 };
@@ -126,44 +133,9 @@ export const getTierMonthlyCredits = (
 ): number => {
 	switch (tier) {
 		case "hobby":
-			return 150;
+			return 100;
 		case "pro":
 			return 150;
-		default:
-			return 0;
-	}
-};
-
-export const getTierPrice = (tier: SubscriptionTierType | null): number => {
-	switch (tier) {
-		case "hobby":
-			return 9.99;
-		case "pro":
-			return 24.99;
-		default:
-			return 0;
-	}
-};
-
-export const getTierTopUpBonus = (
-	tier: SubscriptionTierType | null,
-): number => {
-	switch (tier) {
-		case "pro":
-			return 0.2;
-		default:
-			return 0;
-	}
-};
-
-export const getTierInitialCredits = (
-	tier: SubscriptionTierType | null,
-): number => {
-	switch (tier) {
-		case "hobby":
-			return 35;
-		case "pro":
-			return 70;
 		default:
 			return 0;
 	}
@@ -231,10 +203,7 @@ export const useDeductCredits = () => {
 		}) => {
 			if (!user) throw new Error("User not authenticated");
 
-			const {
-				data: currentCreditsRaw,
-				error: fetchError,
-			} = await supabase
+			const { data: currentCreditsRaw, error: fetchError } = await supabase
 				.from("user_credits")
 				.select("credits")
 				.eq("user_id", user.id)
@@ -286,10 +255,7 @@ export const useAddCredits = () => {
 		}) => {
 			if (!user) throw new Error("User not authenticated");
 
-			const {
-				data: currentCreditsRaw,
-				error: fetchError,
-			} = await supabase
+			const { data: currentCreditsRaw, error: fetchError } = await supabase
 				.from("user_credits")
 				.select("credits")
 				.eq("user_id", user.id)
@@ -334,13 +300,10 @@ export const useDailyCreditsCheck = () => {
 
 			const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-			const { data, error } = await supabase.rpc(
-				"claim_daily_credits",
-				{
-					p_user_id: user.id,
-					p_timezone: userTimezone,
-				} as never,
-			);
+			const { data, error } = await supabase.rpc("claim_daily_credits", {
+				p_user_id: user.id,
+				p_timezone: userTimezone,
+			} as never);
 
 			if (error) {
 				console.error("Error checking daily credits:", error);
