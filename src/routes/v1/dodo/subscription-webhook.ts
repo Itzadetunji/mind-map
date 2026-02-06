@@ -6,7 +6,6 @@ import {
 	type SubscriptionTierType,
 } from "@/lib/database.types";
 import type { Database } from "@/lib/supabase-database.types";
-import { sendSubscriptionReceiptEmail } from "@/server/functions/emails/send-subscription-receipt";
 import { getSupabaseAdminClient } from "../../../../supabase/index";
 import {
 	apiErrorResponse,
@@ -468,21 +467,6 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 						tierToSave,
 						payload,
 					});
-
-					try {
-						await sendSubscriptionReceiptEmail({
-							customerEmail,
-							customerName: payload.data.customer?.name,
-							tierToSave,
-							payload,
-						});
-					} catch (emailError) {
-						// eslint-disable-next-line no-console
-						console.error(
-							"Failed to send subscription receipt email:",
-							emailError,
-						);
-					}
 				} catch (upsertError) {
 					return apiErrorResponse(
 						StatusCodes.INTERNAL_SERVER_ERROR,
