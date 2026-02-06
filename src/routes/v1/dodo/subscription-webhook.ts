@@ -260,8 +260,6 @@ const adjustSubscriptionCredits = async (args: {
 		return;
 	}
 
-	console.log("Adjusting credits for user:", userId);
-
 	// After the subscription is upserted, update the user's credits
 	// based on the subscription change.
 	//
@@ -291,21 +289,18 @@ const adjustSubscriptionCredits = async (args: {
 		(isRecoveredFromFailedPayment && previousTier === SubscriptionTier.FREE)
 	) {
 		// Case 1
-		console.log("New paid subscription");
 		creditsDelta = getWebhookInitialCredits(tierToSave);
 	} else if (
 		isUpgradeToPro ||
 		(isRecoveredFromFailedPayment && previousTier === SubscriptionTier.HOBBY)
 	) {
 		// Case 2
-		console.log("35 credits for Hobby → Pro upgrade");
 		creditsDelta = 35;
 	} else if (
 		isDowngradeToHobby ||
 		(isRecoveredFromFailedPayment && previousTier === SubscriptionTier.PRO)
 	) {
 		// Case 3 → no change
-		console.log("no credit change");
 		creditsDelta = 0;
 	}
 
@@ -334,7 +329,6 @@ const adjustSubscriptionCredits = async (args: {
 			credits: creditsDelta,
 			monthly_credits_remaining: creditsDelta,
 		};
-		console.log(insertData);
 		const { error: insertError } = await supabase
 			.from("user_credits")
 			.insert(insertData as never);
@@ -367,7 +361,6 @@ const adjustSubscriptionCredits = async (args: {
 		.from("user_credits")
 		.update(updateData as never)
 		.eq("user_id", userId);
-	console.log(updateData);
 	if (updateError) {
 		// eslint-disable-next-line no-console
 		console.error(

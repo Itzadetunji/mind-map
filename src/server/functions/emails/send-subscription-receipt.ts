@@ -52,7 +52,7 @@ export const sendSubscriptionReceiptEmail = async (
 	if (tierToSave === SubscriptionTier.FREE) return;
 	if (!shouldSendReceipt(payload)) return;
 
-	const fromAddress = process.env.PROTOMAP_RESEND_FROM_EMAIL;
+	const fromAddress = "Protomap <hello@protomap.art>";
 	if (!fromAddress) {
 		throw new Error("Missing PROTOMAP_RESEND_FROM_EMAIL environment variable");
 	}
@@ -71,6 +71,14 @@ export const sendSubscriptionReceiptEmail = async (
 		nextBillingDate: payload.data.next_billing_date,
 		subscriptionId: payload.data.subscription_id,
 	});
+
+	console.log(
+		"Resending subscription receipt email with the following details:",
+		{
+			customerEmail,
+			subject,
+		},
+	);
 
 	await resend.emails.send({
 		from: fromAddress,
