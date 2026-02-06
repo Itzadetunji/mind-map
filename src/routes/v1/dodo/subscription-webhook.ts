@@ -73,6 +73,14 @@ export interface DodoWebhookCustomFieldResponse {
 	value: string;
 }
 
+export const DodoSubscriptionDataStatuses = {
+	ACTIVE: "active",
+	FAILED: "failed",
+} as const;
+
+export type DodoSubscriptionDataStatus =
+	(typeof DodoSubscriptionDataStatuses)[keyof typeof DodoSubscriptionDataStatuses];
+
 export const DodoSubscriptionStatuses = {
 	ACTIVE: "subscription.active",
 	CANCELLED: "subscription.cancelled",
@@ -111,7 +119,7 @@ export interface DodoWebhookSubscriptionData {
 	product_id: string;
 	quantity: number;
 	recurring_pre_tax_amount: number;
-	status: DodoSubscriptionStatus;
+	status: DodoSubscriptionDataStatus;
 	subscription_id: string;
 	subscription_period_count: number;
 	subscription_period_interval: string;
@@ -238,12 +246,7 @@ const adjustSubscriptionCredits = async (args: {
 	// Do not modify credits when resulting tier is FREE.
 	if (tierToSave === SubscriptionTier.FREE) return;
 
-	if (
-		payload.data.status === DodoSubscriptionStatuses.FAILED ||
-		payload.data.status === DodoSubscriptionStatuses.CANCELLED ||
-		payload.data.status === DodoSubscriptionStatuses.EXPIRED
-	)
-		return;
+	if (payload.data.status === DodoSubscriptionDataStatuses.FAILED) return;
 
 	// After the subscription is upserted, update the user's credits
 	// based on the subscription change.
@@ -424,8 +427,6 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 				const previousTier =
 					(existingSubscription?.tier as SubscriptionTierType | null) ?? null;
 
-				if (payload.data.status === DodoSubscriptionStatuses.FAILED) {
-				}
 				try {
 					await upsertUserSubscription({
 						supabase,

@@ -27,6 +27,7 @@ import {
 	type SubscriptionTierType,
 } from "@/lib/database.types";
 import { CancelSubscriptionModal } from "@/routes/(auth)/account/-components/CancelSubscriptionModal";
+import { SubscriptionFailedModal } from "@/routes/(auth)/projects/-components/SubscriptionFailedModal";
 import { SubscriptionSuccessModal } from "@/routes/(auth)/projects/-components/SubscriptionSuccessModal";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -48,6 +49,7 @@ const AccountPage = () => {
 	});
 
 	const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+	const [showFailedModal, setShowFailedModal] = React.useState(false);
 	const [showCancelModal, setShowCancelModal] = React.useState(false);
 	const createCheckout = useCreateCheckout();
 	const changePlan = useChangeSubscriptionPlan();
@@ -113,7 +115,8 @@ const AccountPage = () => {
 		hasActiveSubscription && userSubscriptionQuery.data?.cancel_at_period_end;
 	const isCheckingSubscription = dodoStatusQuery.isFetching;
 
-	const handleSuccessModalChange = (open: boolean) => {
+	const handleModalChange = (open: boolean) => {
+		setShowFailedModal(false);
 		setShowSuccessModal(false);
 
 		if (!open) {
@@ -124,6 +127,12 @@ const AccountPage = () => {
 	useEffect(() => {
 		if (dodoStatusQuery.data?.status === "active" && isCheckoutSuccessful) {
 			setShowSuccessModal(true);
+		}
+	}, [dodoStatusQuery.data?.status, isCheckoutSuccessful]);
+
+	useEffect(() => {
+		if (dodoStatusQuery.data?.status === "failed" && isCheckoutSuccessful) {
+			setShowFailedModal(true);
 		}
 	}, [dodoStatusQuery.data?.status, isCheckoutSuccessful]);
 
@@ -279,8 +288,13 @@ const AccountPage = () => {
 
 			<SubscriptionSuccessModal
 				open={showSuccessModal}
-				onOpenChange={handleSuccessModalChange}
+				onOpenChange={handleModalChange}
 				subscriptionTier={search.subscription as SubscriptionTierType}
+			/>
+
+			<SubscriptionFailedModal
+				open={showFailedModal}
+				onOpenChange={handleModalChange}
 			/>
 
 			<CancelSubscriptionModal
