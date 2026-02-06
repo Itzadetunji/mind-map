@@ -1,6 +1,6 @@
 import { Crown, Star } from "lucide-react";
 import {
-	Database,
+	type Database,
 	SubscriptionTier,
 	type SubscriptionTierType,
 } from "../database.types";

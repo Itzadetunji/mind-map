@@ -142,7 +142,7 @@ export const SubscriptionPlanGrid = (props: SubscriptionPlanCardProps) => {
 							{isAccountMode ? (
 								<Button
 									variant={plan.id === "hobby" ? "outline" : "default"}
-									className={`w-full h-12 rounded-full text-base ${
+									className={`w-full h-12 rounded-full text-base cursor-pointer ${
 										plan.id === "pro"
 											? "bg-primary text-white hover:bg-primary/90"
 											: ""
@@ -163,7 +163,7 @@ export const SubscriptionPlanGrid = (props: SubscriptionPlanCardProps) => {
 							) : props.onSubscribe ? (
 								<Button
 									variant={plan.id === "hobby" ? "outline" : "default"}
-									className={`w-full h-12 rounded-full text-base ${
+									className={`w-full h-12 rounded-full text-base cursor-pointer ${
 										plan.id === "pro"
 											? "bg-primary text-white hover:bg-primary/90"
 											: ""
@@ -173,10 +173,10 @@ export const SubscriptionPlanGrid = (props: SubscriptionPlanCardProps) => {
 									Start 3-day free trial
 								</Button>
 							) : (
-								<Link to="/projects" className="w-full">
+								<Link to="/projects" className="w-full cursor-pointer">
 									<Button
 										variant={plan.id === "hobby" ? "outline" : "default"}
-										className={`w-full h-12 rounded-full text-base ${
+										className={`w-full h-12 rounded-full text-base cursor-pointer ${
 											plan.id === "pro"
 												? "bg-primary text-white hover:bg-primary/90"
 												: ""

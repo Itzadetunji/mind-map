@@ -82,19 +82,18 @@ const LandingPage = () => {
 									visually.
 								</span>
 							</h1>
-							Turn random ideas into clear app plans
 							<p className="text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto">
 								Transform your product vision into structured mind maps with AI.
-								Plan features, map user flows, and generate documentation—all in
-								one place.
+								Plan features, map user flows, and generate documentation, all
+								in one place.
 							</p>
 							<div className="flex flex-col sm:flex-row items-center justify-center gap-4">
 								<Link to="/projects">
 									<Button
 										size="lg"
-										className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-14 text-lg gap-2"
+										className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-14 text-lg gap-2 cursor-pointer"
 									>
-										Start Building Free
+										Get Started
 										<ArrowRight className="w-5 h-5" />
 									</Button>
 								</Link>
@@ -108,9 +107,6 @@ const LandingPage = () => {
 									</Button>
 								</a>
 							</div>
-							<p className="text-sm text-slate-500 mt-6">
-								Free to start · No credit card required
-							</p>
 						</div>
 
 						{/* Hero Image/Demo Preview */}
@@ -510,7 +506,15 @@ const LandingPage = () => {
 							<div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-slate-200 dark:border-slate-800 text-sm text-slate-500">
 								<p>© 2026 ProtoMap. All rights reserved.</p>
 								<p className="mt-2 md:mt-0">
-									Designed with ❤️ for builders everywhere.
+									Built with ❤️ by{" "}
+									<a
+										href="https://contra.com/itzadetunji"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="font-bold"
+									>
+										Adetunji
+									</a>
 								</p>
 							</div>
 						</div>
