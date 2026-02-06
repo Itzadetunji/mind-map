@@ -10,6 +10,7 @@ import {
 import type { MindMapProject } from "@/lib/database.types";
 import { SubscriptionModal } from "@/routes/(auth)/account/-components/SubscriptionModal";
 import { ProjectSelector } from "@/routes/(auth)/projects/-components/ProjectSelector";
+import { DodoSubscriptionDataStatuses } from "@/routes/v1/dodo/subscription-webhook";
 
 const ProjectsPage = () => {
 	const navigate = useNavigate();
@@ -70,18 +71,15 @@ const ProjectsPage = () => {
 				params: { projectId: newProject.id },
 			});
 		} catch (error) {
-			/* eslint-disable */ console.error(
-				...oo_tx(
-					`1504517547_73_3_73_52_11`,
-					"Failed to create project:",
-					error,
-				),
-			);
+			console.error("Error creating project:", error);
 		}
 	};
 
 	useLayoutEffect(() => {
-		if (userSubscriptionQuery.data?.tier === "free") {
+		if (
+			userSubscriptionQuery.data?.dodo_status !==
+			DodoSubscriptionDataStatuses.ACTIVE
+		) {
 			setShowSubscriptionModal(true);
 		}
 	}, [userSubscriptionQuery.data]);

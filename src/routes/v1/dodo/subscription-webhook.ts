@@ -239,10 +239,18 @@ const adjustSubscriptionCredits = async (args: {
 	supabase: ReturnType<typeof getSupabaseAdminClient>;
 	userId: string;
 	previousTier: SubscriptionTierType | null;
+	previousStatus: DodoSubscriptionDataStatus | null;
 	tierToSave: SubscriptionTierType;
 	payload: DodoWebhookPaymentIntentPayload;
 }) => {
-	const { supabase, userId, previousTier, tierToSave, payload } = args;
+	const {
+		supabase,
+		userId,
+		previousTier,
+		previousStatus,
+		tierToSave,
+		payload,
+	} = args;
 
 	// Do not modify credits when resulting tier is FREE.
 	if (tierToSave === SubscriptionTier.FREE) return;
@@ -250,6 +258,8 @@ const adjustSubscriptionCredits = async (args: {
 	if (payload.data.status === DodoSubscriptionDataStatuses.FAILED) {
 		return;
 	}
+
+	console.log("Adjusting credits for user:", userId);
 
 	// After the subscription is upserted, update the user's credits
 	// based on the subscription change.
@@ -262,6 +272,9 @@ const adjustSubscriptionCredits = async (args: {
 	//   → leave credits unchanged.
 
 	let creditsDelta = 0;
+	const isRecoveredFromFailedPayment =
+		previousStatus === DodoSubscriptionDataStatuses.FAILED &&
+		payload.data.status === DodoSubscriptionDataStatuses.ACTIVE;
 
 	const isNewPaidSubscription =
 		!previousTier || previousTier === SubscriptionTier.FREE;
@@ -272,14 +285,26 @@ const adjustSubscriptionCredits = async (args: {
 		previousTier === SubscriptionTier.PRO &&
 		tierToSave === SubscriptionTier.HOBBY;
 
-	if (isNewPaidSubscription) {
+	if (
+		isNewPaidSubscription ||
+		(isRecoveredFromFailedPayment && previousTier === SubscriptionTier.FREE)
+	) {
 		// Case 1
+		console.log("New paid subscription");
 		creditsDelta = getWebhookInitialCredits(tierToSave);
-	} else if (isUpgradeToPro) {
+	} else if (
+		isUpgradeToPro ||
+		(isRecoveredFromFailedPayment && previousTier === SubscriptionTier.HOBBY)
+	) {
 		// Case 2
+		console.log("35 credits for Hobby → Pro upgrade");
 		creditsDelta = 35;
-	} else if (isDowngradeToHobby) {
+	} else if (
+		isDowngradeToHobby ||
+		(isRecoveredFromFailedPayment && previousTier === SubscriptionTier.PRO)
+	) {
 		// Case 3 → no change
+		console.log("no credit change");
 		creditsDelta = 0;
 	}
 
@@ -308,7 +333,7 @@ const adjustSubscriptionCredits = async (args: {
 			credits: creditsDelta,
 			monthly_credits_remaining: creditsDelta,
 		};
-
+		console.log(insertData);
 		const { error: insertError } = await supabase
 			.from("user_credits")
 			.insert(insertData as never);
@@ -341,7 +366,7 @@ const adjustSubscriptionCredits = async (args: {
 		.from("user_credits")
 		.update(updateData as never)
 		.eq("user_id", userId);
-
+	console.log(updateData);
 	if (updateError) {
 		// eslint-disable-next-line no-console
 		console.error(
@@ -413,7 +438,7 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 				const { data: existingSubscription, error: existingSubscriptionError } =
 					await supabase
 						.from("user_subscriptions")
-						.select("tier")
+						.select("tier, dodo_status")
 						.eq("user_id", userId)
 						.maybeSingle();
 
@@ -429,6 +454,9 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 
 				const previousTier =
 					(existingSubscription?.tier as SubscriptionTierType | null) ?? null;
+				const previousStatus =
+					(existingSubscription?.dodo_status as DodoSubscriptionDataStatus | null) ??
+					null;
 
 				try {
 					await upsertUserSubscription({
@@ -442,6 +470,7 @@ export const Route = createFileRoute("/v1/dodo/subscription-webhook")({
 						supabase,
 						userId: userId as string,
 						previousTier,
+						previousStatus,
 						tierToSave,
 						payload,
 					});

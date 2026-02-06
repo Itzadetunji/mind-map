@@ -16,10 +16,10 @@ interface SubscriptionModalProps {
 	onOpenChange: (open: boolean) => void;
 }
 
-export function SubscriptionModal({
+export const SubscriptionModal = ({
 	open,
 	onOpenChange,
-}: SubscriptionModalProps) {
+}: SubscriptionModalProps) => {
 	const navigate = useNavigate();
 	const signOut = useAuthStore((state) => state.signOut);
 
@@ -70,4 +70,4 @@ export function SubscriptionModal({
 			</DialogContent>
 		</Dialog>
 	);
-}
+};

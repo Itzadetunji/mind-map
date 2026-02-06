@@ -161,9 +161,15 @@ export const SubscriptionPlanGrid = (props: SubscriptionPlanCardProps) => {
 								>
 									{isCurrent
 										? "Current Plan"
-										: currentTier === "pro" && plan.id === "hobby"
+										: currentTier === "pro" &&
+												plan.id === "hobby" &&
+												userSubscriptionQuery.data?.dodo_status ===
+													DodoSubscriptionDataStatuses.ACTIVE
 											? "Downgrade"
-											: currentTier === "hobby" && plan.id === "pro"
+											: currentTier === "hobby" &&
+													plan.id === "pro" &&
+													userSubscriptionQuery.data?.dodo_status ===
+														DodoSubscriptionDataStatuses.ACTIVE
 												? "Upgrade"
 												: "Start 3-day free trial"}
 								</Button>
