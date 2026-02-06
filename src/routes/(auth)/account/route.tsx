@@ -29,6 +29,7 @@ import {
 import { CancelSubscriptionModal } from "@/routes/(auth)/account/-components/CancelSubscriptionModal";
 import { SubscriptionFailedModal } from "@/routes/(auth)/projects/-components/SubscriptionFailedModal";
 import { SubscriptionSuccessModal } from "@/routes/(auth)/projects/-components/SubscriptionSuccessModal";
+import { DodoSubscriptionDataStatuses } from "@/routes/v1/dodo/subscription-webhook";
 import { useAuthStore } from "@/stores/authStore";
 
 const AccountPage = () => {
@@ -59,14 +60,18 @@ const AccountPage = () => {
 
 		const hasExistingSubscription =
 			userSubscriptionQuery.data?.tier !== SubscriptionTier.FREE &&
-			userSubscriptionQuery.data?.dodo_subscription_id;
+			userSubscriptionQuery.data?.dodo_subscription_id &&
+			userSubscriptionQuery.data?.dodo_status ===
+				DodoSubscriptionDataStatuses.ACTIVE;
 
 		// If user has an existing subscription, use change plan API
 		// Otherwise, create a new checkout session
+
 		if (
 			hasExistingSubscription &&
 			userSubscriptionQuery.data?.dodo_subscription_id &&
-			user?.id
+			user?.id &&
+			!userSubscriptionQuery.data?.cancel_at_period_end
 		) {
 			try {
 				await changePlan.mutateAsync({
@@ -74,6 +79,7 @@ const AccountPage = () => {
 					tier: tier as "hobby" | "pro",
 					userId: user.id,
 				});
+				console.log("Plan change successful");
 				toast.success("Subscription plan updated", {
 					description: `Your plan has been changed to ${tier}.`,
 				});
@@ -109,7 +115,9 @@ const AccountPage = () => {
 	const currentTier = userSubscriptionQuery.data?.tier || null;
 
 	const hasActiveSubscription =
-		userSubscriptionQuery.data?.tier !== SubscriptionTier.FREE;
+		userSubscriptionQuery.data?.tier !== SubscriptionTier.FREE &&
+		userSubscriptionQuery.data?.dodo_status ===
+			DodoSubscriptionDataStatuses.ACTIVE;
 	const isCurrentTier = (tier: SubscriptionTierType) => currentTier === tier;
 	const isCancelledAndActive =
 		hasActiveSubscription && userSubscriptionQuery.data?.cancel_at_period_end;
@@ -125,7 +133,10 @@ const AccountPage = () => {
 	};
 
 	useEffect(() => {
-		if (dodoStatusQuery.data?.status === "active" && isCheckoutSuccessful) {
+		if (
+			dodoStatusQuery.data?.status === DodoSubscriptionDataStatuses.ACTIVE &&
+			isCheckoutSuccessful
+		) {
 			setShowSuccessModal(true);
 		}
 	}, [dodoStatusQuery.data?.status, isCheckoutSuccessful]);

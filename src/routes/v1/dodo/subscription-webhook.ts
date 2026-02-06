@@ -196,6 +196,7 @@ const upsertUserSubscription = async (args: {
 				subscription,
 			),
 			cancelled_at: subscription.cancelled_at,
+			dodo_status: payload.data.status,
 		};
 
 	// Service role client bypasses RLS; if no error but 0 rows, RLS or conflict target may be wrong
@@ -246,7 +247,9 @@ const adjustSubscriptionCredits = async (args: {
 	// Do not modify credits when resulting tier is FREE.
 	if (tierToSave === SubscriptionTier.FREE) return;
 
-	if (payload.data.status === DodoSubscriptionDataStatuses.FAILED) return;
+	if (payload.data.status === DodoSubscriptionDataStatuses.FAILED) {
+		return;
+	}
 
 	// After the subscription is upserted, update the user's credits
 	// based on the subscription change.

@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
-import React from "react";
-
+import React, { use } from "react";
+import { useUserSubscription } from "@/api/http/v1/credits/credits.hooks";
 import { ChangePlanModal } from "@/components/shared/ChangePlanModal";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,7 @@ import {
 	SubscriptionPricingMeta,
 	subscriptionPlans,
 } from "@/lib/constants";
+import { DodoSubscriptionDataStatuses } from "@/routes/v1/dodo/subscription-webhook";
 
 interface SubscriptionPlanCardProps {
 	mode: "landing" | "account";
@@ -27,6 +28,7 @@ interface SubscriptionPlanCardProps {
 }
 
 export const SubscriptionPlanGrid = (props: SubscriptionPlanCardProps) => {
+	const userSubscriptionQuery = useUserSubscription();
 	const isAccountMode = props.mode === "account";
 	const currentTier: string | null =
 		isAccountMode && props.isCurrent
@@ -82,7 +84,12 @@ export const SubscriptionPlanGrid = (props: SubscriptionPlanCardProps) => {
 				const Icon = SubscriptionIconMap[plan.icon];
 
 				const isCurrent =
-					isAccountMode && props.isCurrent ? props.isCurrent(plan.id) : false;
+					userSubscriptionQuery.data?.dodo_status ===
+						DodoSubscriptionDataStatuses.ACTIVE &&
+					isAccountMode &&
+					props.isCurrent
+						? props.isCurrent(plan.id)
+						: false;
 
 				const cardClasses = `flex flex-col border-2 relative ${
 					meta.highlight ? "border-primary bg-primary/5" : ""
