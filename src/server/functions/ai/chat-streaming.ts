@@ -9,7 +9,7 @@ export const chatWithAIStreaming = createServerFn({ method: "POST" })
 	.handler(async ({ data }) => {
 		try {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			return (await chatWithAIStreamingHandler(data)) as any;
+			return await chatWithAIStreamingHandler(data);
 		} catch (err) {
 			const message = err instanceof Error ? err.message : "Chat failed";
 			throw new Error(message);

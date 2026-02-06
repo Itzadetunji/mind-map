@@ -77,8 +77,9 @@ const ProjectsPage = () => {
 
 	useLayoutEffect(() => {
 		if (
-			userSubscriptionQuery.data?.dodo_status !==
-			DodoSubscriptionDataStatuses.ACTIVE
+			userSubscriptionQuery.data &&
+			userSubscriptionQuery.data.dodo_status !==
+				DodoSubscriptionDataStatuses.ACTIVE
 		) {
 			setShowSubscriptionModal(true);
 		}

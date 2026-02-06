@@ -20,6 +20,7 @@ import { useGenerateDocumentation } from "@/api/http/v1/docs/docs.hooks";
 import { useHistory } from "@/api/http/v1/mind-maps/mind-maps.hooks";
 import { MindMapContext } from "@/context/MindMapContext";
 import type { MindMapProject } from "@/lib/database.types";
+import { writeMindMapClipboard } from "@/lib/mindmap-clipboard";
 import { AIChatSidebar } from "../../../../components/AIChatSidebar";
 import { FloatingSearchBar } from "../../../../components/FloatingSearchBar";
 import { MindMapToolbar } from "../../../../components/MindMapToolbar";
@@ -134,10 +135,7 @@ export const MindMap = ({
 			) {
 				setShowDownloadMenu(false);
 			}
-			if (
-				shareMenuRef.current &&
-				!shareMenuRef.current.contains(target)
-			) {
+			if (shareMenuRef.current && !shareMenuRef.current.contains(target)) {
 				setShowShareMenu(false);
 			}
 		};
@@ -420,15 +418,55 @@ export const MindMap = ({
 		onEdgesChangeCallback,
 	]);
 
+	const handleCopySelection = useCallback(async () => {
+		const selectedNodes = nodes.filter((node) => node.selected);
+		if (selectedNodes.length === 0) return;
+
+		const selectedIds = new Set(selectedNodes.map((node) => node.id));
+		const selectedEdges = edges.filter(
+			(edge) => selectedIds.has(edge.source) && selectedIds.has(edge.target),
+		);
+
+		await writeMindMapClipboard({
+			nodes: selectedNodes.map((node) => ({
+				id: node.id,
+				type: node.type,
+				position: node.position,
+				data: node.data,
+			})),
+			edges: selectedEdges.map((edge) => ({
+				id: edge.id,
+				source: edge.source,
+				target: edge.target,
+				label: typeof edge.label === "string" ? edge.label : undefined,
+				sourceHandle: edge.sourceHandle,
+			})),
+			timestamp: Date.now(),
+		});
+	}, [nodes, edges]);
+
 	// Keyboard shortcuts
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			const isEditableTarget = Boolean(
+				target &&
+					(target.isContentEditable ||
+						["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)),
+			);
 			// Tool selection
 			if (e.key.toLowerCase() === "h" && !e.ctrlKey && !e.metaKey) {
 				setTool("hand");
 			}
 			if (e.key.toLowerCase() === "v" && !e.ctrlKey && !e.metaKey) {
 				setTool("select");
+			}
+
+			if (isEditableTarget) return;
+
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "c") {
+				e.preventDefault();
+				handleCopySelection();
 			}
 
 			if ((e.metaKey || e.ctrlKey) && e.key === "z") {
@@ -447,7 +485,7 @@ export const MindMap = ({
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [handleUndo, handleRedo]);
+	}, [handleUndo, handleRedo, handleCopySelection]);
 
 	const onConnect = useCallback(
 		(params: Edge | Connection) => {
@@ -600,7 +638,9 @@ export const MindMap = ({
 							canRedo={canRedo}
 							nodesLength={nodes.length}
 							showDownloadMenu={showDownloadMenu}
-							onDownloadMenuToggle={() => setShowDownloadMenu(!showDownloadMenu)}
+							onDownloadMenuToggle={() =>
+								setShowDownloadMenu(!showDownloadMenu)
+							}
 							isDownloading={isDownloading}
 							onDownloadImage={handleDownloadImage}
 							onDownload={handleDownload}
@@ -622,7 +662,6 @@ export const MindMap = ({
 								document.documentElement.classList.toggle("dark")
 							}
 							onBeforeAction={onBeforeMenuAction}
-							onDownloadImage={handleDownloadImage}
 						/>
 					)}
 				</ReactFlow>

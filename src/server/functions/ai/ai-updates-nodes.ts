@@ -1,14 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { z } from "zod";
 
 import type { Database, Json } from "@/lib/supabase-database.types";
+import {
+	buildChatMessages,
+	createSupabaseClientFromEnv,
+	extractJsonObject,
+	parseJsonWithTrailingCommaFix,
+	stripMarkdownCodeFence,
+} from "@/server/utils";
 
 // Server-side Supabase client
 const getSupabaseClient = () => {
-	const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
-	const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || "";
-	return createClient<Database>(supabaseUrl, supabaseAnonKey);
+	return createSupabaseClientFromEnv();
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -405,19 +409,11 @@ export async function chatWithAIHandler(data: ChatInput) {
 		? getFirstMessageSystemPrompt(data.projectContext)
 		: getChatSystemPrompt(data.projectContext);
 
-	const messages: Array<{
-		role: "system" | "user" | "assistant";
-		content: string;
-	}> = [{ role: "system", content: systemMessage }];
-
-	// Add chat history (last 10 messages)
-	if (data.chatHistory) {
-		for (const msg of data.chatHistory.slice(-10)) {
-			messages.push({ role: msg.role, content: msg.content });
-		}
-	}
-
-	messages.push({ role: "user", content: data.message });
+	const messages = buildChatMessages(
+		systemMessage,
+		data.chatHistory,
+		data.message,
+	);
 
 	const response = await openai.chat.completions.create({
 		model: "gpt-4o-2024-08-06",
@@ -586,10 +582,7 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 	// Check credits before generation (only if user is authenticated)
 	if (data.userId) {
 		// Check user's credits
-		const {
-			data: userCreditsRaw,
-			error: creditsError,
-		} = await supabase
+		const { data: userCreditsRaw, error: creditsError } = await supabase
 			.from("user_credits")
 			.select("credits")
 			.eq("user_id", data.userId)
@@ -617,8 +610,9 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 			}
 
 			// Update userCredits with the initialized data
-			const initializedList =
-				initializedCredits as { credits: number }[] | null;
+			const initializedList = initializedCredits as
+				| { credits: number }[]
+				| null;
 			if (initializedList && initializedList.length > 0) {
 				userCredits = {
 					credits: initializedList[0].credits,
@@ -642,18 +636,11 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 		? getFirstMessageSystemPrompt(data.projectContext)
 		: getChatSystemPrompt(data.projectContext);
 
-	const messages: Array<{
-		role: "system" | "user" | "assistant";
-		content: string;
-	}> = [{ role: "system", content: systemMessage }];
-
-	if (data.chatHistory) {
-		for (const msg of data.chatHistory.slice(-10)) {
-			messages.push({ role: msg.role, content: msg.content });
-		}
-	}
-
-	messages.push({ role: "user", content: data.message });
+	const messages = buildChatMessages(
+		systemMessage,
+		data.chatHistory,
+		data.message,
+	);
 
 	// Use streaming to get real-time content
 	const stream = await openai.chat.completions.create({
@@ -710,30 +697,8 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 
 	// Parse the final JSON
 	try {
-		// Clean up the content if it has markdown code blocks
-		let cleanContent = fullContent.trim();
-
-		// Remove markdown code block wrappers
-		if (cleanContent.startsWith("```json")) {
-			cleanContent = cleanContent.slice(7);
-		} else if (cleanContent.startsWith("```")) {
-			cleanContent = cleanContent.slice(3);
-		}
-		if (cleanContent.endsWith("```")) {
-			cleanContent = cleanContent.slice(0, -3);
-		}
-		cleanContent = cleanContent.trim();
-
-		// Try to extract JSON if there's extra text
-		let jsonContent = cleanContent;
-
-		// Find the first { and last } to extract JSON object
-		const firstBrace = cleanContent.indexOf("{");
-		const lastBrace = cleanContent.lastIndexOf("}");
-
-		if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-			jsonContent = cleanContent.substring(firstBrace, lastBrace + 1);
-		}
+		const cleanContent = stripMarkdownCodeFence(fullContent);
+		let jsonContent = extractJsonObject(cleanContent);
 
 		type ParsedResponse = {
 			isOffTopic?: boolean;
@@ -759,21 +724,13 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 
 		let parsed: ParsedResponse;
 		try {
-			parsed = JSON.parse(jsonContent) as ParsedResponse;
-		} catch {
-			// Try to fix common JSON issues
-			// Remove trailing commas
-			jsonContent = jsonContent.replace(/,(\s*[}\]])/g, "$1");
-			// Try parsing again
-			try {
-				parsed = JSON.parse(jsonContent) as ParsedResponse;
-			} catch (retryError) {
-				console.error("Failed to parse JSON:", retryError);
-				console.error("Content received:", fullContent.substring(0, 500));
-				throw new Error(
-					"Invalid JSON response from AI. Please try again or rephrase your request.",
-				);
-			}
+			parsed = parseJsonWithTrailingCommaFix<ParsedResponse>(jsonContent);
+		} catch (retryError) {
+			console.error("Failed to parse JSON:", retryError);
+			console.error("Content received:", fullContent.substring(0, 500));
+			throw new Error(
+				"Invalid JSON response from AI. Please try again or rephrase your request.",
+			);
 		}
 
 		// Validate required fields
@@ -796,14 +753,11 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 			const supabase = getSupabaseClient();
 
 			// Deduct 1 credit for this generation using RPC function
-			const { error: deductError } = await supabase.rpc(
-				"deduct_credits",
-				{
-					p_user_id: data.userId,
-					p_amount: 1,
-					p_description: `AI chat - ${parsed.action} action`,
-				} as never,
-			);
+			const { error: deductError } = await supabase.rpc("deduct_credits", {
+				p_user_id: data.userId,
+				p_amount: 1,
+				p_description: `AI chat - ${parsed.action} action`,
+			} as never);
 
 			// If RPC doesn't exist or fails, log error but don't fail the request
 			if (deductError) {
@@ -816,10 +770,7 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 				(data.isFirstMessage || parsed.action === "generate")
 			) {
 				// First check if project already has a first_prompt
-				const {
-					data: existingProjectRaw,
-					error: fetchError,
-				} = await supabase
+				const { data: existingProjectRaw, error: fetchError } = await supabase
 					.from("mind_maps")
 					.select("first_prompt")
 					.eq("id", data.projectId)
@@ -830,8 +781,9 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 					console.error("Error fetching project:", fetchError);
 				}
 
-				const existingProject =
-					existingProjectRaw as { first_prompt: string | null } | null;
+				const existingProject = existingProjectRaw as {
+					first_prompt: string | null;
+				} | null;
 
 				// Check if first_prompt is empty, null, or doesn't exist
 				const firstPrompt = existingProject?.first_prompt;
@@ -857,7 +809,7 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 					} else {
 						console.log(
 							"first_prompt saved successfully:",
-							data.message.substring(0, 50) + "...",
+							`${data.message.substring(0, 50)}...`,
 						);
 					}
 				} else {
@@ -865,7 +817,7 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 					console.log(
 						"first_prompt already exists, skipping save:",
 						typeof existingPrompt === "string"
-							? existingPrompt.substring(0, 50) + "..."
+							? `${existingPrompt.substring(0, 50)}...`
 							: "null/undefined",
 					);
 				}

@@ -1,13 +1,11 @@
 import { addEdge, type Node, useReactFlow } from "@xyflow/react";
 import dagre from "dagre";
-import { toPng } from "html-to-image";
 import {
 	Calendar,
 	CheckSquare,
 	Copy,
 	Cpu,
 	Edit,
-	Eye,
 	GitBranch,
 	GitCommitVertical,
 	Grid,
@@ -18,17 +16,20 @@ import {
 	Maximize,
 	Move,
 	Plus,
-	Smartphone,
 	Sparkles,
 	Trash,
 	Unlock,
 	Zap,
 } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	ContextMenu,
 	type MenuItem,
 } from "../../../../components/ui/context-menu-custom";
+import {
+	hasMindMapClipboard,
+	readMindMapClipboard,
+} from "../../../../lib/mindmap-clipboard";
 
 interface MindMapContextMenuProps {
 	menu: {
@@ -42,7 +43,6 @@ interface MindMapContextMenuProps {
 	onToggleGrid?: () => void;
 	onToggleTheme?: () => void;
 	onBeforeAction?: () => void;
-	onDownloadImage?: () => void;
 }
 
 export function MindMapContextMenu({
@@ -51,7 +51,6 @@ export function MindMapContextMenu({
 	onToggleGrid,
 	onToggleTheme,
 	onBeforeAction,
-	onDownloadImage,
 }: MindMapContextMenuProps) {
 	const {
 		getNodes,
@@ -63,6 +62,13 @@ export function MindMapContextMenu({
 		setViewport,
 		screenToFlowPosition,
 	} = useReactFlow();
+
+	const [hasClipboard, setHasClipboard] = useState(false);
+
+	useEffect(() => {
+		if (!menu) return;
+		setHasClipboard(hasMindMapClipboard());
+	}, [menu]);
 
 	const handleAction = useCallback(
 		async (actionName: string) => {
@@ -77,6 +83,7 @@ export function MindMapContextMenu({
 					"layout-auto",
 					"delete",
 					"duplicate",
+					"paste",
 					"lock",
 					"add-child",
 					"add-sibling",
@@ -138,6 +145,65 @@ export function MindMapContextMenu({
 						position,
 						data: { label: "Custom Node", description: "" },
 					});
+					break;
+				}
+				case "paste": {
+					const clipboard = await readMindMapClipboard();
+					if (!clipboard || clipboard.nodes.length === 0) break;
+
+					const pastePosition = screenToFlowPosition({
+						x: menu.left,
+						y: menu.top,
+					});
+
+					const minX = Math.min(
+						...clipboard.nodes.map((node) => node.position?.x ?? 0),
+					);
+					const minY = Math.min(
+						...clipboard.nodes.map((node) => node.position?.y ?? 0),
+					);
+
+					const idMap = new Map<string, string>();
+					const newNodes = clipboard.nodes.map((node) => {
+						const newId = crypto.randomUUID();
+						idMap.set(node.id, newId);
+						return {
+							...node,
+							id: newId,
+							position: {
+								x: node.position.x - minX + pastePosition.x,
+								y: node.position.y - minY + pastePosition.y,
+							},
+							selected: true,
+						};
+					});
+
+					const newEdges = clipboard.edges
+						.filter((edge) => idMap.has(edge.source) && idMap.has(edge.target))
+						.map((edge) => {
+							const newSource = idMap.get(edge.source) ?? edge.source;
+							const newTarget = idMap.get(edge.target) ?? edge.target;
+							let sourceHandle = edge.sourceHandle;
+							if (sourceHandle?.startsWith(`${edge.source}-`)) {
+								sourceHandle = sourceHandle.replace(
+									`${edge.source}-`,
+									`${newSource}-`,
+								);
+							}
+							return {
+								...edge,
+								id: crypto.randomUUID(),
+								source: newSource,
+								target: newTarget,
+								sourceHandle,
+							};
+						});
+
+					setNodes((nodes) => [
+						...nodes.map((node) => ({ ...node, selected: false })),
+						...newNodes,
+					]);
+					setEdges((edges) => [...edges, ...newEdges]);
 					break;
 				}
 				case "add-condition-node": {
@@ -702,7 +768,7 @@ export function MindMapContextMenu({
 				{
 					label: "Paste",
 					action: () => handleAction("paste"),
-					disabled: true, // Check clipboard
+					disabled: !hasClipboard,
 				},
 			];
 		}
@@ -900,7 +966,7 @@ export function MindMapContextMenu({
 		}
 
 		return [];
-	}, [menu, handleAction]);
+	}, [menu, handleAction, hasClipboard]);
 
 	if (!menu) return null;
 

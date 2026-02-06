@@ -1,15 +1,15 @@
-import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { z } from "zod";
 
 import type { Database, Json } from "@/lib/supabase-database.types";
+import {
+	createSupabaseClientFromEnv,
+	extractJsonObject,
+	stripMarkdownCodeFence,
+} from "@/server/utils";
 
 // Server-side Supabase client
-const getSupabaseClient = () => {
-	const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
-	const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || "";
-	return createClient<Database>(supabaseUrl, supabaseAnonKey);
-};
+const getSupabaseClient = () => createSupabaseClientFromEnv();
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Off-topic detection is now handled by the AI itself
@@ -29,31 +29,25 @@ export const generateMindMapInputSchema = z.object({
 		.optional(),
 });
 
-export async function generateMindMapHandler(
-	data: z.infer<typeof generateMindMapInputSchema>,
-) {
-	const apiKey = process.env.OPENAI_API_KEY;
-
-	if (!apiKey) {
-		throw new Error("Missing OPENAI_API_KEY in environment variables");
+const buildCanvasContext = (currentCanvas?: {
+	nodes?: unknown[];
+	edges?: unknown[];
+}) => {
+	if (!currentCanvas?.nodes || currentCanvas.nodes.length === 0) {
+		return "";
 	}
 
-	const openai = new OpenAI({ apiKey });
-
-	// Build context for existing canvas data if provided
-	const canvasContext =
-		data.currentCanvas?.nodes && data.currentCanvas.nodes.length > 0
-			? `
+	return `
 ═══════════════════════════════════════════════════════════════════════════════
 ⚠️ CRITICAL: EXISTING CANVAS DATA - DO NOT REPLACE!
 ═══════════════════════════════════════════════════════════════════════════════
 The user already has work on their canvas. You MUST preserve their work!
 
-Current Nodes (${data.currentCanvas.nodes.length}):
-${JSON.stringify(data.currentCanvas.nodes, null, 2)}
+Current Nodes (${currentCanvas.nodes.length}):
+${JSON.stringify(currentCanvas.nodes, null, 2)}
 
-Current Edges (${data.currentCanvas.edges?.length || 0}):
-${JSON.stringify(data.currentCanvas.edges || [], null, 2)}
+Current Edges (${currentCanvas.edges?.length || 0}):
+${JSON.stringify(currentCanvas.edges || [], null, 2)}
 
 ═══════════════════════════════════════════════════════════════════════════════
 REQUIRED STRATEGY FOR EXISTING CANVAS:
@@ -70,15 +64,14 @@ REQUIRED STRATEGY FOR EXISTING CANVAS:
 EXAMPLE: If existing nodes have x positions [0, 700], your new content goes at x = 1400
 
 YOUR OUTPUT MUST CONTAIN:
-- ALL ${data.currentCanvas.nodes.length} existing nodes (unchanged)
-- ALL ${data.currentCanvas.edges?.length || 0} existing edges (unchanged)
+- ALL ${currentCanvas.nodes.length} existing nodes (unchanged)
+- ALL ${currentCanvas.edges?.length || 0} existing edges (unchanged)
 - PLUS your new nodes and edges for the user's request
 ═══════════════════════════════════════════════════════════════════════════════
-`
-			: "";
+`;
+};
 
-	// ── 7-Step Exhaustive Extraction System Prompt ─────
-	const systemPrompt = `
+const buildSystemPrompt = (canvasContext: string) => `
 You are an expert UX/product designer, technical architect, and requirements analyst. Your mission is to generate comprehensive mind maps for ANY type of application, product, or idea the user describes.
 ${canvasContext}
 
@@ -927,7 +920,23 @@ QUALITY:
 □ An intermediate developer could start implementing from this
 □ Feature arrays are EXHAUSTIVE (not summarized)
 □ No arbitrary node limits - map is as detailed as the spec requires
-    `;
+`;
+
+export async function generateMindMapHandler(
+	data: z.infer<typeof generateMindMapInputSchema>,
+) {
+	const apiKey = process.env.OPENAI_API_KEY;
+
+	if (!apiKey) {
+		throw new Error("Missing OPENAI_API_KEY in environment variables");
+	}
+
+	const openai = new OpenAI({ apiKey });
+
+	const canvasContext = buildCanvasContext(data.currentCanvas);
+
+	// ── 7-Step Exhaustive Extraction System Prompt ─────
+	const systemPrompt = buildSystemPrompt(canvasContext);
 
 	// Define JSON Schema for Structured Outputs with reasoning field
 	const jsonSchema = {
@@ -1026,10 +1035,7 @@ QUALITY:
 			const supabase = getSupabaseClient();
 
 			// Check user's credits
-			const {
-				data: userCreditsRaw,
-				error: creditsError,
-			} = await supabase
+			const { data: userCreditsRaw, error: creditsError } = await supabase
 				.from("user_credits")
 				.select("credits")
 				.eq("user_id", data.userId)
@@ -1045,12 +1051,9 @@ QUALITY:
 			// If user exists but has no credits record, create one with default
 			if (creditsError?.code === "PGRST116") {
 				const { data: initializedCredits, error: initError } =
-					await supabase.rpc(
-						"initialize_user_credits",
-						{
-							p_user_id: data.userId,
-						} as never,
-					);
+					await supabase.rpc("initialize_user_credits", {
+						p_user_id: data.userId,
+					} as never);
 
 				if (initError) {
 					console.error("Error creating credits:", initError);
@@ -1058,8 +1061,9 @@ QUALITY:
 				}
 
 				// Update userCredits with the initialized data
-				const initializedList =
-					initializedCredits as { credits: number }[] | null;
+				const initializedList = initializedCredits as
+					| { credits: number }[]
+					| null;
 				if (initializedList && initializedList.length > 0) {
 					userCredits = {
 						credits: initializedList[0].credits,
@@ -1112,27 +1116,7 @@ QUALITY:
 
 		let graphData: GraphData;
 		try {
-			// Clean up content if needed
-			let cleanContent = content.trim();
-
-			// Remove markdown code blocks if present
-			if (cleanContent.startsWith("```json")) {
-				cleanContent = cleanContent.slice(7);
-			} else if (cleanContent.startsWith("```")) {
-				cleanContent = cleanContent.slice(3);
-			}
-			if (cleanContent.endsWith("```")) {
-				cleanContent = cleanContent.slice(0, -3);
-			}
-			cleanContent = cleanContent.trim();
-
-			// Extract JSON if there's extra text
-			const firstBrace = cleanContent.indexOf("{");
-			const lastBrace = cleanContent.lastIndexOf("}");
-			if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-				cleanContent = cleanContent.substring(firstBrace, lastBrace + 1);
-			}
-
+			const cleanContent = extractJsonObject(stripMarkdownCodeFence(content));
 			graphData = JSON.parse(cleanContent) as GraphData;
 		} catch (parseError) {
 			console.error("JSON parse error:", parseError);
@@ -1155,19 +1139,16 @@ QUALITY:
 			throw new Error("Invalid response: missing or invalid 'edges' array");
 		}
 
-		// Deduct credits and save to user's project if authenticated
-		if (data.userId) {
-			const supabase = getSupabaseClient();
+		const supabase = getSupabaseClient();
 
+		// Deduct credits if authenticated
+		if (data.userId) {
 			// Deduct 1 credit for this generation
-			const { error: deductError } = await supabase.rpc(
-				"deduct_credits",
-				{
-					p_user_id: data.userId,
-					p_amount: 1,
-					p_description: "AI mind map generation",
-				} as never,
-			);
+			const { error: deductError } = await supabase.rpc("deduct_credits", {
+				p_user_id: data.userId,
+				p_amount: 1,
+				p_description: "AI mind map generation",
+			} as never);
 
 			// If RPC doesn't exist, manually deduct
 			if (deductError) {
@@ -1177,8 +1158,7 @@ QUALITY:
 					.eq("user_id", data.userId)
 					.single();
 
-				const currentCredits =
-					currentCreditsRaw as { credits: number } | null;
+				const currentCredits = currentCreditsRaw as { credits: number } | null;
 				if (currentCredits) {
 					const updateData: Database["public"]["Tables"]["user_credits"]["Update"] =
 						{
@@ -1190,52 +1170,78 @@ QUALITY:
 						.eq("user_id", data.userId);
 				}
 			}
+		}
 
-			if (data.projectId) {
-				// Update existing project - also save prompt if this is first generation
-				const updateData: Database["public"]["Tables"]["mind_maps"]["Update"] =
-					{
-						graph_data: graphData as Json,
-						first_prompt: data.prompt,
-						updated_at: new Date().toISOString(),
-					};
-				const { error: updateError } = await supabase
-					.from("mind_maps")
-					.update(updateData as never)
-					.eq("id", data.projectId)
-					.eq("user_id", data.userId);
-
-				if (updateError) {
-					console.error("Supabase update error:", updateError);
-				}
-
-				return { ...graphData, projectId: data.projectId };
-			} else {
-				// Create new project
-				const title = data.title || extractTitle(data.prompt);
-				const insertData: Database["public"]["Tables"]["mind_maps"]["Insert"] =
-					{
-						user_id: data.userId,
-						title,
-						description: data.prompt.slice(0, 200),
-						first_prompt: data.prompt,
-						graph_data: graphData as Json,
-					};
-				const { data: newProjectRaw, error: insertError } = await supabase
-					.from("mind_maps")
-					.insert(insertData as never)
-					.select()
-					.single();
-
-				if (insertError) {
-					console.error("Supabase insert error:", insertError);
-					return graphData;
-				} else {
-					// Return the project ID so client can track it
-					const newProject = newProjectRaw as { id: string } | null;
-					return { ...graphData, projectId: newProject?.id };
-				}
+		if (data.projectId) {
+			const projectQuery = supabase
+				.from("mind_maps")
+				.select("first_prompt")
+				.eq("id", data.projectId);
+			if (data.userId) {
+				projectQuery.eq("user_id", data.userId);
 			}
+
+			const { data: existingProjectRaw, error: fetchError } =
+				await projectQuery.maybeSingle();
+
+			if (fetchError && fetchError.code !== "PGRST116") {
+				console.error("Error fetching project prompt:", fetchError);
+			}
+
+			const existingProject = existingProjectRaw as {
+				first_prompt: string | null;
+			} | null;
+			const existingPrompt = existingProject?.first_prompt;
+			const shouldSavePrompt =
+				!existingPrompt ||
+				(typeof existingPrompt === "string" && existingPrompt.trim() === "");
+
+			const updateData: Database["public"]["Tables"]["mind_maps"]["Update"] = {
+				graph_data: graphData as Json,
+				updated_at: new Date().toISOString(),
+				...(shouldSavePrompt ? { first_prompt: data.prompt } : {}),
+			};
+
+			let updateQuery = supabase
+				.from("mind_maps")
+				.update(updateData as never)
+				.eq("id", data.projectId);
+			if (data.userId) {
+				updateQuery = updateQuery.eq("user_id", data.userId);
+			}
+
+			const { error: updateError } = await updateQuery;
+
+			if (updateError) {
+				console.error("Supabase update error:", updateError);
+			}
+
+			return { ...graphData, projectId: data.projectId };
+		}
+
+		if (data.userId) {
+			// Create new project
+			const title = data.title || extractTitle(data.prompt);
+			const insertData: Database["public"]["Tables"]["mind_maps"]["Insert"] = {
+				user_id: data.userId,
+				title,
+				description: data.prompt.slice(0, 200),
+				first_prompt: data.prompt,
+				graph_data: graphData as Json,
+			};
+			const { data: newProjectRaw, error: insertError } = await supabase
+				.from("mind_maps")
+				.insert(insertData as never)
+				.select()
+				.single();
+			console.log(insertData);
+			if (insertError) {
+				console.error("Supabase insert error:", insertError);
+				return graphData;
+			}
+			// Return the project ID so client can track it
+			const newProject = newProjectRaw as { id: string } | null;
+			return { ...graphData, projectId: newProject?.id };
 		}
 
 		return graphData;

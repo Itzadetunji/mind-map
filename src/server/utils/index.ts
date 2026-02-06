@@ -1,5 +1,7 @@
+import { createClient } from "@supabase/supabase-js";
 import { StatusCodes } from "http-status-codes";
 import { SubscriptionTier, SubscriptionTierType } from "@/lib/database.types";
+import type { Database } from "@/lib/supabase-database.types";
 import { getSupabaseAdminClient } from "../../../supabase/index";
 
 export interface ApiErrorBody {
@@ -106,4 +108,67 @@ export const resolveTierFromProductId = (productId: string | null) => {
 	if (productId === proProductId) return SubscriptionTier.PRO;
 
 	return null;
+};
+
+export const createSupabaseClientFromEnv = () => {
+	const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
+	const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+	return createClient<Database>(supabaseUrl, supabaseKey);
+};
+
+export const buildChatMessages = (
+	systemMessage: string,
+	chatHistory:
+		| Array<{ role: "user" | "assistant"; content: string }>
+		| undefined,
+	userMessage: string,
+) => {
+	const messages: Array<{
+		role: "system" | "user" | "assistant";
+		content: string;
+	}> = [{ role: "system", content: systemMessage }];
+
+	if (chatHistory) {
+		for (const msg of chatHistory.slice(-10)) {
+			messages.push({ role: msg.role, content: msg.content });
+		}
+	}
+
+	messages.push({ role: "user", content: userMessage });
+	return messages;
+};
+
+export const stripMarkdownCodeFence = (content: string) => {
+	let cleanContent = content.trim();
+
+	if (cleanContent.startsWith("```json")) {
+		cleanContent = cleanContent.slice(7);
+	} else if (cleanContent.startsWith("```")) {
+		cleanContent = cleanContent.slice(3);
+	}
+	if (cleanContent.endsWith("```")) {
+		cleanContent = cleanContent.slice(0, -3);
+	}
+
+	return cleanContent.trim();
+};
+
+export const extractJsonObject = (content: string) => {
+	const firstBrace = content.indexOf("{");
+	const lastBrace = content.lastIndexOf("}");
+
+	if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+		return content.substring(firstBrace, lastBrace + 1);
+	}
+
+	return content;
+};
+
+export const parseJsonWithTrailingCommaFix = <T>(jsonContent: string): T => {
+	try {
+		return JSON.parse(jsonContent) as T;
+	} catch {
+		const cleaned = jsonContent.replace(/,(\s*[}\]])/g, "$1");
+		return JSON.parse(cleaned) as T;
+	}
 };

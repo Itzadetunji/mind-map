@@ -50,6 +50,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	}),
 
 	component: RootComponent,
+	notFoundComponent: NotFoundComponent,
 });
 
 function RootComponent() {
@@ -77,5 +78,20 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<Scripts />
 			</body>
 		</html>
+	);
+}
+
+function NotFoundComponent() {
+	return (
+		<div className="flex flex-1 items-center justify-center p-6">
+			<div className="text-center">
+				<h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+					Page not found
+				</h1>
+				<p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+					The page you are looking for does not exist.
+				</p>
+			</div>
+		</div>
 	);
 }
