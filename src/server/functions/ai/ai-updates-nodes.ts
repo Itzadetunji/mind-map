@@ -203,6 +203,17 @@ EDGE RULES - CRITICAL
 4. All edges should have descriptive labels
 
 ═══════════════════════════════════════════════════════════════════════════════
+CONNECTIVITY RULES - NO ISOLATED NODES
+═══════════════════════════════════════════════════════════════════════════════
+
+⚠️ CRITICAL: The graph must be fully connected and follow a single flow.
+- Every node must be reachable from the root through edges (no islands)
+- Every non-terminal node MUST have at least one outgoing edge
+- Terminal nodes (end states) must be explicitly labeled as end states
+- Condition nodes MUST have BOTH TRUE and FALSE outgoing edges
+- Do a final pass to verify there are zero orphan nodes
+
+═══════════════════════════════════════════════════════════════════════════════
 QUALITY CHECKLIST
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -213,6 +224,7 @@ QUALITY CHECKLIST
 □ Loading states are included for async operations
 □ Empty states are considered
 □ Edge labels describe user actions
+□ All nodes are connected and reachable from the root (no isolated nodes)
 `;
 
 // Get the full system prompt for first message (same as generate-mind-map)
