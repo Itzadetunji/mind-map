@@ -12,7 +12,7 @@ const productTierSchema = z.enum([
 ]);
 const createCheckoutSchema = z.object({
 	tier: productTierSchema,
-	email: z.string().email(),
+	email: z.email(),
 	name: z.string().min(1),
 	userId: z.string().min(1).optional(),
 });
@@ -33,15 +33,18 @@ export const createCheckout = createServerFn({ method: "POST" })
 		if (!bearerToken) {
 			throw new Error("Missing DODO_PAYMENTS_API_KEY environment variable");
 		}
+
 		const productId = getProductIdForTier(data.tier);
 		if (!productId) {
 			throw new Error("Missing Dodo product ID for selected tier");
 		}
-		const environment = (process.env.DODO_PAYMENTS_ENVIRONMENT ||
-			"live_mode") as "test_mode" | "live_mode";
+
+		const environment = (process.env.DODO_PAYMENTS_ENVIRONMENT ??
+			"test_mode") as "test_mode" | "live_mode";
 		const client = new DodoPayments({ bearerToken, environment });
 		const appUrl = process.env.VITE_APP_URL || "http://localhost:7000";
 		const returnUrl = `${appUrl}/account?checkout=complete&subscription=${data.tier}`;
+
 		try {
 			const session = await client.checkoutSessions.create({
 				product_cart: [{ product_id: productId, quantity: 1 }],

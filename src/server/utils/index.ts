@@ -93,9 +93,7 @@ export const getWebhookInitialCredits = (
 export const resolveTierFromProductId = (productId: string | null) => {
 	if (!productId) return null;
 
-	const isTest =
-		(process.env.DODO_PAYMENTS_ENVIRONMENT || "live_mode") === "test_mode" ||
-		process.env.NODE_ENV === "development";
+	const isTest = process.env.DODO_PAYMENTS_ENVIRONMENT === "test_mode";
 
 	const hobbyProductId = isTest
 		? process.env.TEST_DODO_PAYMENTS_HOBBY_PRODUCT_ID
