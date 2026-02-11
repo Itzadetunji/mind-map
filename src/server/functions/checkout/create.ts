@@ -18,7 +18,7 @@ const createCheckoutSchema = z.object({
 });
 
 const getProductIdForTier = (tier: SubscriptionTierType) =>
-	process.env.NODE_ENV === "development"
+	process.env.DODO_PAYMENTS_ENVIRONMENT === "test_mode"
 		? tier === SubscriptionTier.HOBBY
 			? process.env.TEST_DODO_PAYMENTS_HOBBY_PRODUCT_ID
 			: process.env.TEST_DODO_PAYMENTS_PRO_PRODUCT_ID
