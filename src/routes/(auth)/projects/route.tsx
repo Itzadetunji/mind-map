@@ -7,6 +7,7 @@ import {
 	useCreateMindMapProject,
 	useMindMapProjects,
 } from "@/api/http/v1/mind-maps/mind-maps.hooks";
+import { FREE_TIER_MAX_PROJECTS } from "@/lib/constants";
 import type { MindMapProject } from "@/lib/database.types";
 import { SubscriptionModal } from "@/routes/(auth)/account/-components/SubscriptionModal";
 import { ProjectSelector } from "@/routes/(auth)/projects/-components/ProjectSelector";
@@ -24,20 +25,18 @@ const ProjectsPage = () => {
 	};
 
 	const handleNewProject = async () => {
-		// Check subscription status
-		const isSubscribed =
-			userSubscriptionQuery.data?.tier &&
-			userSubscriptionQuery.data.tier !== "free";
+		const tier = userSubscriptionQuery.data?.tier ?? "free";
+		const isFreeTier = tier === "free";
+		const isPro = tier === "pro";
+		const projectCount = projects?.length ?? 0;
 
-		if (!isSubscribed) {
+		// Free tier: max 3 projects
+		if (isFreeTier && projectCount >= FREE_TIER_MAX_PROJECTS) {
 			setShowSubscriptionModal(true);
 			return;
 		}
 
-		// Check subscription limits
-		const isPro = userSubscriptionQuery.data?.tier === "pro";
-		const projectCount = projects?.length ?? 0;
-
+		// Hobby: max 20 projects
 		if (!isPro && projectCount >= 20) {
 			toast.error("Project limit reached", {
 				description:
@@ -85,12 +84,26 @@ const ProjectsPage = () => {
 		}
 	}, [userSubscriptionQuery.data]);
 
+	const isFreeTier =
+		!userSubscriptionQuery.data?.tier ||
+		userSubscriptionQuery.data.tier === "free";
+	const projectCount = projects?.length ?? 0;
+	const freeTierAtLimit =
+		isFreeTier && projectCount >= FREE_TIER_MAX_PROJECTS;
+	const canCreateNewProject = !freeTierAtLimit;
+
 	return (
 		<>
 			<ProjectSelector
 				onSelectProject={handleSelectProject}
 				onNewProject={handleNewProject}
 				isCreating={createMutation.isPending}
+				canCreateNewProject={canCreateNewProject}
+				createLimitMessage={
+					freeTierAtLimit
+						? `Free tier is limited to ${FREE_TIER_MAX_PROJECTS} projects. Upgrade to create more.`
+						: undefined
+				}
 			/>
 			<SubscriptionModal
 				open={showSubscriptionModal}

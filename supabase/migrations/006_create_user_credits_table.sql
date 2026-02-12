@@ -102,9 +102,9 @@ BEGIN
     VALUES (NEW.id, 'free')
     ON CONFLICT (user_id) DO NOTHING;
     
-    -- Create credits with free tier default (30 credits)
+    -- Create credits with free tier default (5 credits)
     INSERT INTO public.user_credits (user_id, credits, monthly_credits_remaining)
-    VALUES (NEW.id, 30, 30)
+    VALUES (NEW.id, 5, 5)
     ON CONFLICT (user_id) DO NOTHING;
     
     RETURN NEW;

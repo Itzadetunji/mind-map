@@ -7,9 +7,9 @@ RETURNS SETOF public.user_credits AS $$
 DECLARE
     v_result public.user_credits%ROWTYPE;
 BEGIN
-    -- Try to insert credits with free tier default (30 credits)
+    -- Try to insert credits with free tier default (5 credits)
     INSERT INTO public.user_credits (user_id, credits, monthly_credits_remaining)
-    VALUES (p_user_id, 30, 30)
+    VALUES (p_user_id, 5, 5)
     ON CONFLICT (user_id) DO NOTHING
     RETURNING * INTO v_result;
     

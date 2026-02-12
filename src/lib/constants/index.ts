@@ -5,6 +5,9 @@ import {
 	type SubscriptionTierType,
 } from "../database.types";
 
+/** Maximum projects allowed on the free tier */
+export const FREE_TIER_MAX_PROJECTS = 3;
+
 type PlanTier = Exclude<SubscriptionTierType, typeof SubscriptionTier.FREE>;
 
 // Subscription plans - Only Hobby and Pro

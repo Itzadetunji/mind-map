@@ -24,18 +24,31 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "../../../../components/ui/popover";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "../../../../components/ui/tooltip";
 
 interface ProjectSelectorProps {
 	onSelectProject: (project: MindMapProject) => void;
 	onNewProject: () => void;
 	isCreating?: boolean;
+	/** When false, the New Project button is disabled (e.g. free tier at 3 projects) */
+	canCreateNewProject?: boolean;
+	/** Message shown when canCreateNewProject is false (e.g. upgrade prompt) */
+	createLimitMessage?: string;
 }
 
 export function ProjectSelector({
 	onSelectProject,
 	onNewProject,
 	isCreating = false,
+	canCreateNewProject = true,
+	createLimitMessage,
 }: ProjectSelectorProps) {
+	const isNewProjectDisabled = isCreating || !canCreateNewProject;
 	const { data: projects, isLoading } = useMindMapProjects();
 	const deleteMutation = useDeleteMindMapProject();
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -56,18 +69,32 @@ export function ProjectSelector({
 							Select a project to continue or create a new one
 						</p>
 					</div>
-					<Button
-						onClick={onNewProject}
-						disabled={isCreating}
-						className="bg-primary hover:bg-[#023E8A] text-white dark:bg-[#0077B6] dark:hover:bg-[#0096C7]"
-					>
-						{isCreating ? (
-							<Loader2 className="w-4 h-4 animate-spin" />
-						) : (
-							<Plus className="w-4 h-4" />
-						)}
-						{isCreating ? "Creating..." : "New Project"}
-					</Button>
+					<TooltipProvider>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span className="inline-flex">
+									<Button
+										onClick={onNewProject}
+										disabled={isNewProjectDisabled}
+										className="bg-primary hover:bg-[#023E8A] text-white dark:bg-[#0077B6] dark:hover:bg-[#0096C7]"
+									>
+										{isCreating ? (
+											<Loader2 className="w-4 h-4 animate-spin" />
+										) : (
+											<Plus className="w-4 h-4" />
+										)}
+										{isCreating ? "Creating..." : "New Project"}
+									</Button>
+								</span>
+							</TooltipTrigger>
+							<TooltipContent>
+								<p>
+									{createLimitMessage ??
+										(isCreating ? "Creating project..." : "Create a new project")}
+								</p>
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
 				</div>
 
 				{isLoading ? (
@@ -185,13 +212,28 @@ export function ProjectSelector({
 								Create your first mind map to get started
 							</p>
 						</div>
-						<Button
-							onClick={onNewProject}
-							className="bg-primary hover:bg-[#023E8A] text-white dark:bg-[#0077B6] dark:hover:bg-[#0096C7]"
-						>
-							<Plus className="w-4 h-4" />
-							Create Mind Map
-						</Button>
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<span className="inline-flex">
+										<Button
+											onClick={onNewProject}
+											disabled={isNewProjectDisabled}
+											className="bg-primary hover:bg-[#023E8A] text-white dark:bg-[#0077B6] dark:hover:bg-[#0096C7]"
+										>
+											<Plus className="w-4 h-4" />
+											Create Mind Map
+										</Button>
+									</span>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>
+										{createLimitMessage ??
+											"Create your first mind map to get started"}
+									</p>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
 					</div>
 				)}
 			</div>
