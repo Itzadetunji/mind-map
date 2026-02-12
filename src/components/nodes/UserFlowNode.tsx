@@ -26,7 +26,7 @@ export default function UserFlowNode({
 	data,
 }: NodeProps<UserFlowNodeData>) {
 	const { updateNodeData } = useReactFlow();
-	const { openAddMenu, takeSnapshotForUndo } = useMindMapContext();
+	const { openAddMenu, takeSnapshotForUndo, readOnly } = useMindMapContext();
 
 	const updateLabel = useCallback(
 		(evt: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -62,16 +62,18 @@ export default function UserFlowNode({
 			)}
 
 			<Card className="border-slate-400 shadow-md bg-white dark:bg-slate-900 border-2 relative overflow-hidden">
-				<div
-					className={cn(
-						`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
-						{
-							hidden: data.locked,
-						},
-					)}
-				>
-					<GripVertical className="size-3.5 text-slate-400" />
-				</div>
+				{!readOnly && (
+					<div
+						className={cn(
+							`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
+							{
+								hidden: data.locked,
+							},
+						)}
+					>
+						<GripVertical className="size-3.5 text-slate-400" />
+					</div>
+				)}
 				<CardHeader className="flex flex-row space-y-0 gap-2 p-3 bg-slate-100 dark:bg-slate-800">
 					<div className="mt-0.75">
 						<Workflow className="w-4 h-4 text-slate-900 dark:text-slate-100" />
@@ -82,6 +84,7 @@ export default function UserFlowNode({
 						onChange={updateLabel}
 						onFocus={handleFocus}
 						minRows={1}
+						readOnly={readOnly}
 					/>
 				</CardHeader>
 				<CardContent className="p-3">
@@ -92,25 +95,28 @@ export default function UserFlowNode({
 						onFocus={handleFocus}
 						placeholder="Describe the user journey..."
 						minRows={3}
+						readOnly={readOnly}
 					/>
 					<p className="text-[10px] text-muted-foreground mt-2 uppercase select-none">
 						User Journey
 					</p>
 				</CardContent>
 			</Card>
-			<div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						openAddMenu(id, e.clientX, e.clientY);
-					}}
-					className="bg-blue-500 rounded-full p-0.5 text-white hover:bg-blue-600 shadow-sm cursor-pointer"
-					title="Add Child Node"
-				>
-					<Plus size={12} />
-				</button>
-			</div>
+			{!readOnly && (
+				<div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							openAddMenu(id, e.clientX, e.clientY);
+						}}
+						className="bg-blue-500 rounded-full p-0.5 text-white hover:bg-blue-600 shadow-sm cursor-pointer"
+						title="Add Child Node"
+					>
+						<Plus size={12} />
+					</button>
+				</div>
+			)}
 			<Handle
 				type="source"
 				position={Position.Bottom}

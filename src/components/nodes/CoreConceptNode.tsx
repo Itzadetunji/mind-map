@@ -25,7 +25,7 @@ export default function CoreConceptNode({
 	data,
 }: NodeProps<CoreConceptNodeData>) {
 	const { updateNodeData } = useReactFlow();
-	const { openAddMenu, takeSnapshotForUndo } = useMindMapContext();
+	const { openAddMenu, takeSnapshotForUndo, readOnly } = useMindMapContext();
 
 	const updateLabel = useCallback(
 		(evt: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -41,19 +41,21 @@ export default function CoreConceptNode({
 
 	return (
 		<div className="min-w-60 group">
-			<div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						openAddMenu(id, e.clientX, e.clientY);
-					}}
-					className="bg-blue-500 rounded-full p-0.5 text-white hover:bg-blue-600 shadow-sm cursor-pointer"
-					title="Add Child Node"
-				>
-					<Plus size={12} />
-				</button>
-			</div>
+			{!readOnly && (
+				<div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							openAddMenu(id, e.clientX, e.clientY);
+						}}
+						className="bg-blue-500 rounded-full p-0.5 text-white hover:bg-blue-600 shadow-sm cursor-pointer"
+						title="Add Child Node"
+					>
+						<Plus size={12} />
+					</button>
+				</div>
+			)}
 			<Handle
 				type="source"
 				position={Position.Bottom}
@@ -67,16 +69,18 @@ export default function CoreConceptNode({
 			)}
 
 			<Card className="border-2 border-slate-900 shadow-xl bg-white dark:bg-slate-900 dark:border-slate-100 relative">
-				<div
-					className={cn(
-						`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
-						{
-							hidden: data.locked,
-						},
-					)}
-				>
-					<GripVertical size={20} className=" size-3.5 text-slate-400" />
-				</div>
+				{!readOnly && (
+					<div
+						className={cn(
+							`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
+							{
+								hidden: data.locked,
+							},
+						)}
+					>
+						<GripVertical size={20} className=" size-3.5 text-slate-400" />
+					</div>
+				)}
 				<CardHeader className="flex flex-row gap-2 p-4 pb-2 space-y-0 items-start">
 					<div className="mt-0.75">
 						<Brain className="size-6 text-slate-900 dark:text-slate-100" />
@@ -87,6 +91,7 @@ export default function CoreConceptNode({
 						onChange={updateLabel}
 						onFocus={handleFocus}
 						rows={1}
+						readOnly={readOnly}
 					/>
 				</CardHeader>
 				<CardContent className="p-4 pt-2">

@@ -577,7 +577,11 @@ export const MindMap = ({
 
 	return (
 		<MindMapContext.Provider
-			value={{ openAddMenu: handleOpenAddMenu, takeSnapshotForUndo }}
+			value={{
+				openAddMenu: handleOpenAddMenu,
+				takeSnapshotForUndo,
+				readOnly,
+			}}
 		>
 			<div style={{ width: "100%", height: "100%" }}>
 				<ReactFlow

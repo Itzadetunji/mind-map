@@ -3,7 +3,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { Edge, Node } from "@xyflow/react";
 import { useCallback, useEffect, useRef } from "react";
 
-import { useUserSubscription } from "@/api/http/v1/credits/credits.hooks";
 import {
 	mindMapsQueryKeys,
 	useMindMapProject,
@@ -19,7 +18,6 @@ const ProjectPage = () => {
 	const { projectId } = Route.useParams();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
-	const { data: subscription } = useUserSubscription();
 	const { projectTitle, setProjectTitle } = useProjectStore();
 
 	// Fetch project from Supabase
@@ -212,7 +210,6 @@ const ProjectPage = () => {
 
 	// Determine if project has a prompt (first AI interaction done)
 	const hasPrompt = Boolean(project.first_prompt?.trim());
-	const isReadOnly = !subscription?.tier || subscription.tier === "free";
 
 	return (
 		<main className="w-full flex-1 relative">
@@ -231,7 +228,6 @@ const ProjectPage = () => {
 					onChange={(e) => setProjectTitle(e.target.value)}
 					className="h-auto border-none shadow-none bg-transparent text-sm font-medium max-w-50 truncate hover:bg-slate-100 dark:hover:bg-slate-800 px-2 py-0.5 rounded transition-colors w-fit focus-visible:ring-0"
 					placeholder="Project name..."
-					disabled={isReadOnly}
 				/>
 				{updateMutation.isPending && (
 					<span className="text-xs text-slate-400">Saving...</span>
@@ -243,7 +239,6 @@ const ProjectPage = () => {
 				onEdgesChange={handleEdgesChange}
 				hasPrompt={hasPrompt}
 				onPromptSubmitted={handlePromptSubmitted}
-				readOnly={isReadOnly}
 			/>
 		</main>
 	);

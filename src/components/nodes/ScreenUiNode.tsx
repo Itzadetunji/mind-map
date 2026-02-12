@@ -37,7 +37,7 @@ export default function ScreenUiNode({
 	data,
 }: NodeProps<ScreenUiNodeData>) {
 	const { updateNodeData } = useReactFlow();
-	const { openAddMenu, takeSnapshotForUndo } = useMindMapContext();
+	const { openAddMenu, takeSnapshotForUndo, readOnly } = useMindMapContext();
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isUploading, setIsUploading] = useState(false);
 	const [isImageLoading, setIsImageLoading] = useState(true);
@@ -122,16 +122,18 @@ export default function ScreenUiNode({
 			)}
 
 			<Card className="border-slate-500 overflow-hidden shadow-md bg-white dark:bg-slate-900 border-2 relative">
-				<div
-					className={cn(
-						`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
-						{
-							hidden: data.locked,
-						},
-					)}
-				>
-					<GripVertical className="size-3.5 text-slate-400" />
-				</div>
+				{!readOnly && (
+					<div
+						className={cn(
+							`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
+							{
+								hidden: data.locked,
+							},
+						)}
+					>
+						<GripVertical className="size-3.5 text-slate-400" />
+					</div>
+				)}
 				<CardHeader className="flex flex-row space-y-0 gap-2 p-3 bg-slate-100 dark:bg-slate-800">
 					<div className="mt-0.75">
 						<Layout className="w-4 h-4 text-slate-900 dark:text-slate-100" />
@@ -142,6 +144,7 @@ export default function ScreenUiNode({
 						onChange={updateLabel}
 						onFocus={handleFocus}
 						rows={1}
+						readOnly={readOnly}
 					/>
 				</CardHeader>
 				<CardContent className="p-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center min-h-30 relative group/image">
@@ -164,18 +167,20 @@ export default function ScreenUiNode({
 								)}
 								onLoad={() => setIsImageLoading(false)}
 							/>
-							<Button
-								type="button"
-								variant="destructive"
-								size="icon"
-								onClick={handleDeleteImage}
-								className="absolute top-2 right-2 h-6 w-6 rounded-full opacity-0 group-hover/image:opacity-100 transition-all z-10 shadow-sm"
-								title="Remove image"
-							>
-								<Trash2 className="h-3 w-3" />
-							</Button>
+							{!readOnly && (
+								<Button
+									type="button"
+									variant="destructive"
+									size="icon"
+									onClick={handleDeleteImage}
+									className="absolute top-2 right-2 h-6 w-6 rounded-full opacity-0 group-hover/image:opacity-100 transition-all z-10 shadow-sm"
+									title="Remove image"
+								>
+									<Trash2 className="h-3 w-3" />
+								</Button>
+							)}
 						</div>
-					) : (
+					) : !readOnly ? (
 						<div className="flex flex-col items-center gap-2 text-slate-400 p-4">
 							<Button
 								variant="ghost"
@@ -194,23 +199,25 @@ export default function ScreenUiNode({
 								onChange={handleImageUpload}
 							/>
 						</div>
-					)}
+					) : null}
 				</CardContent>
 			</Card>
-			<div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
-				<Button
-					size="icon"
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						openAddMenu(id, e.clientX, e.clientY);
-					}}
-					className="h-6 w-6 rounded-full bg-blue-500 hover:bg-blue-600 shadow-sm"
-					title="Add Child Node"
-				>
-					<Plus className="h-3 w-3" />
-				</Button>
-			</div>
+			{!readOnly && (
+				<div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+					<Button
+						size="icon"
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							openAddMenu(id, e.clientX, e.clientY);
+						}}
+						className="h-6 w-6 rounded-full bg-blue-500 hover:bg-blue-600 shadow-sm"
+						title="Add Child Node"
+					>
+						<Plus className="h-3 w-3" />
+					</Button>
+				</div>
+			)}
 			<Handle
 				type="source"
 				position={Position.Bottom}

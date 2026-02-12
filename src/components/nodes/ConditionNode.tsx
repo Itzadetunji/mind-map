@@ -24,7 +24,7 @@ export default function ConditionNode({
 	data,
 }: NodeProps<ConditionNodeData>) {
 	const { updateNodeData } = useReactFlow();
-	const { openAddMenu, takeSnapshotForUndo } = useMindMapContext();
+	const { openAddMenu, takeSnapshotForUndo, readOnly } = useMindMapContext();
 
 	const updateLabel = useCallback(
 		(evt: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -52,18 +52,20 @@ export default function ConditionNode({
 				</div>
 			)}
 
-			<div className="absolute -right-12 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-				<div
-					className={cn(
-						`bg-slate-100 dark:bg-slate-800 rounded-full p-1 cursor-grab active:cursor-grabbing border shadow-sm`,
-						{
-							hidden: data.locked,
-						},
-					)}
-				>
-					<GripVertical size={16} className="text-slate-400" />
+			{!readOnly && (
+				<div className="absolute -right-12 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+					<div
+						className={cn(
+							`bg-slate-100 dark:bg-slate-800 rounded-full p-1 cursor-grab active:cursor-grabbing border shadow-sm`,
+							{
+								hidden: data.locked,
+							},
+						)}
+					>
+						<GripVertical size={16} className="text-slate-400" />
+					</div>
 				</div>
-			</div>
+			)}
 
 			{/* Diamond Shape using rotation */}
 			<div className="w-32 h-32 flex items-center justify-center relative">
@@ -77,22 +79,25 @@ export default function ConditionNode({
 						onFocus={handleFocus}
 						minRows={1}
 						placeholder="Condition?"
+						readOnly={readOnly}
 					/>
 				</div>
 			</div>
-			<div className="absolute -bottom-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						openAddMenu(id, e.clientX, e.clientY);
-					}}
-					className="bg-blue-500 rounded-full p-0.5 text-white hover:bg-blue-600 shadow-sm cursor-pointer"
-					title="Add Child Node"
-				>
-					<Plus size={12} />
-				</button>
-			</div>
+			{!readOnly && (
+				<div className="absolute -bottom-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							openAddMenu(id, e.clientX, e.clientY);
+						}}
+						className="bg-blue-500 rounded-full p-0.5 text-white hover:bg-blue-600 shadow-sm cursor-pointer"
+						title="Add Child Node"
+					>
+						<Plus size={12} />
+					</button>
+				</div>
+			)}
 
 			{/* Output Handles */}
 			<div className="absolute -bottom-2 -left-4 flex items-center gap-1">

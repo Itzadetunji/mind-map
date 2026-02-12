@@ -62,11 +62,13 @@ function SortableFeatureItem({
 	index,
 	updateFeature,
 	removeFeature,
+	readOnly,
 }: {
 	feature: FeatureItem;
 	index: number;
 	updateFeature: (index: number, value: string) => void;
 	removeFeature: (index: number) => void;
+	readOnly?: boolean;
 }) {
 	const {
 		attributes,
@@ -75,7 +77,7 @@ function SortableFeatureItem({
 		transform,
 		transition,
 		isDragging,
-	} = useSortable({ id: feature.id });
+	} = useSortable({ id: feature.id, disabled: readOnly });
 	const { zoom } = useViewport();
 
 	const style = {
@@ -99,32 +101,37 @@ function SortableFeatureItem({
 			style={style}
 			className="flex items-center gap-2 relative bg-white dark:bg-slate-900"
 		>
-			<div
-				{...attributes}
-				{...listeners}
-				className="nodrag cursor-grab text-slate-400 hover:text-slate-600 focus:outline-none shrink-0 flex items-center justify-center h-7 w-5"
-			>
-				<GripVertical size={14} />
-			</div>
+			{!readOnly && (
+				<div
+					{...attributes}
+					{...listeners}
+					className="nodrag cursor-grab text-slate-400 hover:text-slate-600 focus:outline-none shrink-0 flex items-center justify-center h-7 w-5"
+				>
+					<GripVertical size={14} />
+				</div>
+			)}
 			<input
 				className="nodrag flex h-7 w-full bg-transparent py-1 text-xs transition-colors focus:outline-none focus:ring-0 focus-visible:ring-0"
 				value={feature.label}
 				onChange={(e) => updateFeature(index, e.target.value)}
+				readOnly={readOnly}
 			/>
-			<button
-				onClick={() => removeFeature(index)}
-				className="nodrag p-1 hover:bg-red-100 text-slate-400 hover:text-red-500 rounded transition-colors cursor-pointer"
-				type="button"
-			>
-				<X size={12} />
-			</button>
+			{!readOnly && (
+				<button
+					onClick={() => removeFeature(index)}
+					className="nodrag p-1 hover:bg-red-100 text-slate-400 hover:text-red-500 rounded transition-colors cursor-pointer"
+					type="button"
+				>
+					<X size={12} />
+				</button>
+			)}
 		</div>
 	);
 }
 
 export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 	const { updateNodeData } = useReactFlow();
-	const { openAddMenu, takeSnapshotForUndo } = useMindMapContext();
+	const { openAddMenu, takeSnapshotForUndo, readOnly } = useMindMapContext();
 	const features = data.features || [];
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isUploading, setIsUploading] = useState(false);
@@ -259,16 +266,18 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 				</div>
 			)}
 			<Card className="border-slate-300 shadow-sm bg-white dark:bg-slate-900 border relative">
-				<div
-					className={cn(
-						`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
-						{
-							hidden: data.locked,
-						},
-					)}
-				>
-					<GripVertical size={20} className=" size-3.5 text-slate-400" />
-				</div>
+				{!readOnly && (
+					<div
+						className={cn(
+							`absolute right-0 top-0 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing`,
+							{
+								hidden: data.locked,
+							},
+						)}
+					>
+						<GripVertical size={20} className=" size-3.5 text-slate-400" />
+					</div>
+				)}
 				<CardHeader className="flex flex-row gap-2 p-3 border-b space-y-0">
 					<div className="mt-0.75">
 						<Zap className="w-4 h-4 text-slate-700 dark:text-slate-300" />
@@ -279,6 +288,7 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 						onChange={updateLabel}
 						onFocus={handleFocus}
 						rows={1}
+						readOnly={readOnly}
 					/>
 				</CardHeader>
 				<CardContent className="p-3 space-y-3">
@@ -303,18 +313,20 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 									)}
 									onLoad={() => setIsImageLoading(false)}
 								/>
-								<Button
-									type="button"
-									variant="destructive"
-									size="icon"
-									onClick={handleDeleteImage}
-									className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-0 group-hover/image:opacity-100 transition-all z-10 shadow-sm"
-									title="Remove image"
-								>
-									<Trash2 className="h-3 w-3" />
-								</Button>
+								{!readOnly && (
+									<Button
+										type="button"
+										variant="destructive"
+										size="icon"
+										onClick={handleDeleteImage}
+										className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-0 group-hover/image:opacity-100 transition-all z-10 shadow-sm"
+										title="Remove image"
+									>
+										<Trash2 className="h-3 w-3" />
+									</Button>
+								)}
 							</div>
-						) : (
+						) : !readOnly ? (
 							<button
 								type="button"
 								onClick={triggerFileInput}
@@ -323,14 +335,16 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 								<ImageIcon className="w-4 h-4" />
 								<span className="text-xs">Add Preview</span>
 							</button>
+						) : null}
+						{!readOnly && (
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept="image/*"
+								className="hidden"
+								onChange={handleImageUpload}
+							/>
 						)}
-						<input
-							ref={fileInputRef}
-							type="file"
-							accept="image/*"
-							className="hidden"
-							onChange={handleImageUpload}
-						/>
 					</div>
 
 					{/* Features List */}
@@ -351,35 +365,40 @@ export default function FeatureNode({ id, data }: NodeProps<FeatureNodeData>) {
 										index={i}
 										updateFeature={updateFeature}
 										removeFeature={removeFeature}
+										readOnly={readOnly}
 									/>
 								))}
 							</div>
 						</SortableContext>
 					</DndContext>
 
-					<button
-						onClick={addFeature}
-						className="nodrag flex items-center gap-1 text-xs font-medium text-black dark:text-white hover:text-black w-full justify-center p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded border cursor-pointer border-dashed border-slate-400 dark:border-slate-500 transition-colors"
-						type="button"
-					>
-						<Plus size={12} />
-						Add Feature
-					</button>
+					{!readOnly && (
+						<button
+							onClick={addFeature}
+							className="nodrag flex items-center gap-1 text-xs font-medium text-black dark:text-white hover:text-black w-full justify-center p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded border cursor-pointer border-dashed border-slate-400 dark:border-slate-500 transition-colors"
+							type="button"
+						>
+							<Plus size={12} />
+							Add Feature
+						</button>
+					)}
 				</CardContent>
 			</Card>
-			<div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						openAddMenu(id, e.clientX, e.clientY);
-					}}
-					className="bg-blue-500 rounded-full p-0.5 text-white hover:bg-blue-600 shadow-sm cursor-pointer"
-					title="Add Child Node"
-				>
-					<Plus size={12} />
-				</button>
-			</div>
+			{!readOnly && (
+				<div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							openAddMenu(id, e.clientX, e.clientY);
+						}}
+						className="bg-blue-500 rounded-full p-0.5 text-white hover:bg-blue-600 shadow-sm cursor-pointer"
+						title="Add Child Node"
+					>
+						<Plus size={12} />
+					</button>
+				</div>
+			)}
 			<Handle
 				type="source"
 				position={Position.Bottom}
