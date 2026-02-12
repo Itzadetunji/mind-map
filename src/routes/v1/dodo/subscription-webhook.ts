@@ -222,9 +222,7 @@ const upsertUserSubscription = async (args: {
 const resolveTierFromAdvertisingProductId = (productId: string | null) => {
 	if (!productId) return null;
 
-	const isTest =
-		(process.env.DODO_PAYMENTS_ENVIRONMENT || "live_mode") === "test_mode" ||
-		process.env.NODE_ENV === "development";
+	const isTest = process.env.DODO_PAYMENTS_ENVIRONMENT === "test_mode";
 
 	const advertisingProductId = isTest
 		? process.env.TEST_DODO_PAYMENTS_ADVERTISING_PRODUCT_ID
