@@ -155,7 +155,7 @@ export const AnimatedCarousel: FC = () => {
 	];
 
 	return (
-		<div className="h-100 sm:min-h-150 flex flex-row max-w-7xl relative">
+		<div className="h-100 sm:min-h-150 flex flex-row max-w-7xl relative bg-linear-to-b from-black/5 to-slate-100 ">
 			<div className="absolute h-full w-7xl flex gap-x-100 items-center overflow-hidden">
 				<VerticalMarqueeColumn
 					initialItems={firstColumn}
