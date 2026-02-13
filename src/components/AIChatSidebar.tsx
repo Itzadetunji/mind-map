@@ -88,6 +88,7 @@ export const AIChatSidebar = ({
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
+	const cancelledRef = useRef(false);
 	const projectTitleId = useId();
 
 	// Intersection observer for load more
@@ -158,6 +159,7 @@ export const AIChatSidebar = ({
 			content: m.content,
 		}));
 
+		cancelledRef.current = false;
 		chatMutation.mutate(
 			{
 				message: msg,
@@ -174,6 +176,10 @@ export const AIChatSidebar = ({
 			},
 			{
 				onSuccess: (data: ChatResponse) => {
+					if (cancelledRef.current) {
+						cancelledRef.current = false;
+						return;
+					}
 					if (!project?.id || !user?.id) return;
 
 					if (data.action === "generate" || data.action === "modify") {
@@ -418,13 +424,22 @@ export const AIChatSidebar = ({
 							disabled={chatMutation.isPending}
 						/>
 						<Button
-							type="submit"
+							type={chatMutation.isPending ? "button" : "submit"}
 							size="icon"
-							disabled={!input.trim() || chatMutation.isPending}
+							disabled={!chatMutation.isPending && !input.trim()}
 							className="rounded-full grid place-content-center"
+							onClick={
+								chatMutation.isPending
+									? () => {
+											cancelledRef.current = true;
+											chatMutation.reset();
+										}
+									: undefined
+							}
+							title={chatMutation.isPending ? "Stop" : "Send"}
 						>
 							{chatMutation.isPending ? (
-								<Loader2 className="w-4 h-4 animate-spin" />
+								<span className="w-3.5 h-3.5 bg-white rounded-sm block" />
 							) : (
 								<Send className="w-4 h-4" />
 							)}

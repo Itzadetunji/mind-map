@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useReactFlow } from "@xyflow/react";
 import { Brain, Loader2, Send, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
 	creditsQueryKeys,
@@ -27,6 +27,7 @@ export function FloatingSearchBar({
 	const [showCreditsModal, setShowCreditsModal] = useState(false);
 	const [showErrorDialog, setShowErrorDialog] = useState(false);
 	const [showOffTopicDialog, setShowOffTopicDialog] = useState(false);
+	const cancelledRef = useRef(false);
 	const { setNodes, setEdges, fitView } = useReactFlow();
 	const user = useAuthStore((state) => state.user);
 	const { data: credits } = useUserCredits();
@@ -35,10 +36,15 @@ export function FloatingSearchBar({
 	const mutation = useGenerateMindMap();
 
 	const mutateWithCallbacks = () => {
+		cancelledRef.current = false;
 		mutation.mutate(
 			{ prompt, userId: user?.id, projectId },
 			{
 				onSuccess: (data) => {
+					if (cancelledRef.current) {
+						cancelledRef.current = false;
+						return;
+					}
 					queryClient.invalidateQueries({
 						queryKey: creditsQueryKeys.balance(user?.id),
 					});
@@ -134,13 +140,26 @@ export function FloatingSearchBar({
 					disabled={mutation.isPending}
 				/>
 				<Button
-					type="submit"
-					disabled={!prompt.trim() || mutation.isPending}
+					type={mutation.isPending ? "button" : "submit"}
+					disabled={!mutation.isPending && !prompt.trim()}
 					variant="ghost"
 					size="icon"
 					className="mr-1.5 rounded-full hover:bg-primary hover:text-white dark:hover:bg-[#0077B6] dark:hover:text-white"
+					onClick={
+						mutation.isPending
+							? () => {
+									cancelledRef.current = true;
+									mutation.reset();
+								}
+							: undefined
+					}
+					title={mutation.isPending ? "Stop" : "Send"}
 				>
-					<Send className="w-4 h-4" />
+					{mutation.isPending ? (
+						<span className="w-3.5 h-3.5 bg-white rounded-sm block" />
+					) : (
+						<Send className="w-4 h-4" />
+					)}
 				</Button>
 			</form>
 

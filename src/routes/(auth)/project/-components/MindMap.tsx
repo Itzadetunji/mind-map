@@ -1,5 +1,6 @@
 import {
 	addEdge,
+	applyNodeChanges,
 	Background,
 	type Connection,
 	Controls,
@@ -7,6 +8,7 @@ import {
 	getNodesBounds,
 	MiniMap,
 	type Node,
+	type NodeChange,
 	Panel,
 	ReactFlow,
 	SelectionMode,
@@ -17,6 +19,7 @@ import { toPng } from "html-to-image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useGenerateDocumentation } from "@/api/http/v1/docs/docs.hooks";
+import { useUserSubscription } from "@/api/http/v1/credits/credits.hooks";
 import { useHistory } from "@/api/http/v1/mind-maps/mind-maps.hooks";
 import { MindMapContext } from "@/context/MindMapContext";
 import type { MindMapProject } from "@/lib/database.types";
@@ -86,6 +89,9 @@ export const MindMap = ({
 		nodes,
 		edges,
 	);
+	const { data: subscription } = useUserSubscription();
+	const isFreeUser =
+		!subscription?.tier || subscription.tier === "free";
 
 	const [menu, setMenu] = useState<{
 		id: string;
@@ -97,6 +103,29 @@ export const MindMap = ({
 	const [showGrid, setShowGrid] = useState(true);
 	const [tool, setTool] = useState<"hand" | "select">("hand");
 	const [showChatSidebar, setShowChatSidebar] = useState(false);
+	const shiftKeyRef = useRef(false);
+	const [isShiftPressed, setIsShiftPressed] = useState(false);
+	// Track Shift key for multi-select (shift+click adds to selection)
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Shift") {
+				shiftKeyRef.current = true;
+				setIsShiftPressed(true);
+			}
+		};
+		const handleKeyUp = (e: KeyboardEvent) => {
+			if (e.key === "Shift") {
+				shiftKeyRef.current = false;
+				setIsShiftPressed(false);
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("keyup", handleKeyUp);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("keyup", handleKeyUp);
+		};
+	}, []);
 	// Track if first prompt was just submitted in this session
 	const [hasLocalPrompt, setHasLocalPrompt] = useState(hasPrompt);
 	// Download dropdown state
@@ -487,6 +516,28 @@ export const MindMap = ({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [handleUndo, handleRedo, handleCopySelection]);
 
+	// Shift+click: add clicked node to selection instead of replacing
+	const handleNodesChange = useCallback(
+		(changes: NodeChange[]) => {
+			const hasSelect = changes.some((c) => c.type === "select");
+			if (hasSelect && shiftKeyRef.current && !readOnly) {
+				setNodes((nds) => {
+					const prevSelected = new Set(
+						nds.filter((n) => n.selected).map((n) => n.id),
+					);
+					const next = applyNodeChanges(changes, nds);
+					return next.map((n) => ({
+						...n,
+						selected: prevSelected.has(n.id) || n.selected === true,
+					}));
+				});
+			} else {
+				onNodesChange(changes);
+			}
+		},
+		[onNodesChange, setNodes, readOnly],
+	);
+
 	const onConnect = useCallback(
 		(params: Edge | Connection) => {
 			if (readOnly) return;
@@ -588,7 +639,7 @@ export const MindMap = ({
 					nodes={nodes}
 					edges={edges}
 					nodeTypes={nodeTypes}
-					onNodesChange={onNodesChange}
+					onNodesChange={handleNodesChange}
 					onEdgesChange={onEdgesChange}
 					onNodeClick={onNodeClick}
 					onConnect={readOnly ? undefined : onConnect}
@@ -631,6 +682,15 @@ export const MindMap = ({
 							</Button>
 						</Panel>
 					)}
+					{/* Show multi-select indicator when Shift is pressed */}
+					{!readOnly && isShiftPressed && tool === "select" && (
+						<Panel position="top-center" className="mt-2">
+							<div className="px-3 py-1.5 bg-primary/90 dark:bg-[#0077B6]/90 text-white text-xs font-medium rounded-md shadow-md flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+								<span>⇧</span>
+								<span>Multi-select mode</span>
+							</div>
+						</Panel>
+					)}
 					{!readOnly && <Controls />}
 					{!readOnly && (
 						<MindMapToolbar
@@ -653,6 +713,7 @@ export const MindMap = ({
 							showShareMenu={showShareMenu}
 							onShareMenuToggle={() => setShowShareMenu(!showShareMenu)}
 							shareMenuRef={shareMenuRef}
+							isFreeUser={isFreeUser}
 						/>
 					)}
 					<MiniMap />

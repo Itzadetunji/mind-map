@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SubscriptionPlanGrid } from "@/components/shared/SubscriptionPlanCard";
-import { MindMapConnectionLines } from "@/components/svg-icons/MindMapConnectionLines";
 import { Button } from "@/components/ui/button";
+import { AnimatedCarousel } from "@/routes/-components/AnimatedCarousel";
 import "lenis/dist/lenis.css";
 import { ReactLenis } from "lenis/react";
 import {
@@ -110,7 +110,7 @@ const LandingPage = () => {
 						</div>
 
 						{/* Hero Image/Demo Preview */}
-						<div className="max-w-6xl mx-auto mt-16 relative">
+						<div className="max-w-7xl mx-auto mt-16 relative">
 							<div className="bg-linear-to-b from-slate-100 to-white dark:from-slate-900 dark:to-black rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
 								<div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
 									<div className="flex gap-1.5">
@@ -122,38 +122,7 @@ const LandingPage = () => {
 										protomap.art
 									</span>
 								</div>
-								<div className="aspect-video bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-8 flex items-center justify-center">
-									{/* Mind map preview illustration */}
-									<div className="relative w-full max-w-4xl h-full min-h-75">
-										{/* Center node */}
-										<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-white px-6 py-3 rounded-xl shadow-lg font-medium z-10">
-											🚀 My SaaS App
-										</div>
-
-										{/* Connected nodes */}
-										<div className="absolute top-[15%] left-[15%] bg-white dark:bg-slate-800 px-4 py-2 rounded-lg shadow-md text-sm border border-slate-200 dark:border-slate-700">
-											<span className="text-blue-600">📱</span> User Dashboard
-										</div>
-										<div className="absolute top-[15%] right-[15%] bg-white dark:bg-slate-800 px-4 py-2 rounded-lg shadow-md text-sm border border-slate-200 dark:border-slate-700">
-											<span className="text-green-600">💳</span> Payments
-										</div>
-										<div className="absolute bottom-[20%] left-[10%] bg-white dark:bg-slate-800 px-4 py-2 rounded-lg shadow-md text-sm border border-slate-200 dark:border-slate-700">
-											<span className="text-purple-600">🔐</span> Authentication
-										</div>
-										<div className="absolute bottom-[20%] right-[10%] bg-white dark:bg-slate-800 px-4 py-2 rounded-lg shadow-md text-sm border border-slate-200 dark:border-slate-700">
-											<span className="text-orange-600">📊</span> Analytics
-										</div>
-										<div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 px-4 py-2 rounded-lg shadow-md text-sm border border-slate-200 dark:border-slate-700">
-											<span className="text-pink-600">⚡</span> API Layer
-										</div>
-
-										{/* Connection lines (simplified) */}
-										<MindMapConnectionLines
-											className="absolute inset-0 w-full h-full pointer-events-none"
-											style={{ zIndex: 0 }}
-										/>
-									</div>
-								</div>
+								<AnimatedCarousel />
 							</div>
 						</div>
 					</section>

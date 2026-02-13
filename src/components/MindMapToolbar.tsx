@@ -155,6 +155,8 @@ export interface MindMapToolbarProps {
 	showShareMenu: boolean;
 	onShareMenuToggle: () => void;
 	shareMenuRef: RefObject<HTMLDivElement | null>;
+	/** When true, only README and image export are allowed (free tier). */
+	isFreeUser?: boolean;
 }
 
 export function MindMapToolbar({
@@ -175,6 +177,7 @@ export function MindMapToolbar({
 	showShareMenu,
 	onShareMenuToggle,
 	shareMenuRef,
+	isFreeUser = false,
 }: MindMapToolbarProps) {
 	return (
 		<Panel
@@ -269,19 +272,43 @@ export function MindMapToolbar({
 										</div>
 									</div>
 								</button>
-								<button
-									type="button"
-									onClick={() => onDownload("prd")}
-									className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-								>
-									<FileText className="w-4 h-4 text-primary dark:text-[#0077B6]" />
-									<div>
-										<div className="font-medium">PRD Document</div>
-										<div className="text-xs text-slate-500">
-											For Stakeholders
+								<div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
+								{isFreeUser ? (
+									<Tooltip
+										content="PRD export is for paid users. Upgrade to unlock."
+										side="right"
+									>
+										<span className="block w-full">
+											<button
+												type="button"
+												disabled
+												className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left opacity-50 cursor-not-allowed"
+											>
+											<FileText className="w-4 h-4 text-primary dark:text-[#0077B6]" />
+											<div>
+												<div className="font-medium">PRD Document</div>
+												<div className="text-xs text-slate-500">
+													For Stakeholders
+												</div>
+											</div>
+											</button>
+										</span>
+									</Tooltip>
+								) : (
+									<button
+										type="button"
+										onClick={() => onDownload("prd")}
+										className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+									>
+										<FileText className="w-4 h-4 text-primary dark:text-[#0077B6]" />
+										<div>
+											<div className="font-medium">PRD Document</div>
+											<div className="text-xs text-slate-500">
+												For Stakeholders
+											</div>
 										</div>
-									</div>
-								</button>
+									</button>
+								)}
 							</div>
 						)}
 					</div>

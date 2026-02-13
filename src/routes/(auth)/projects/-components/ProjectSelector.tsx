@@ -41,13 +41,13 @@ interface ProjectSelectorProps {
 	createLimitMessage?: string;
 }
 
-export function ProjectSelector({
+export const ProjectSelector = ({
 	onSelectProject,
 	onNewProject,
 	isCreating = false,
 	canCreateNewProject = true,
 	createLimitMessage,
-}: ProjectSelectorProps) {
+}: ProjectSelectorProps) => {
 	const isNewProjectDisabled = isCreating || !canCreateNewProject;
 	const { data: projects, isLoading } = useMindMapProjects();
 	const deleteMutation = useDeleteMindMapProject();
@@ -90,7 +90,9 @@ export function ProjectSelector({
 							<TooltipContent>
 								<p>
 									{createLimitMessage ??
-										(isCreating ? "Creating project..." : "Create a new project")}
+										(isCreating
+											? "Creating project..."
+											: "Create a new project")}
 								</p>
 							</TooltipContent>
 						</Tooltip>
@@ -287,4 +289,4 @@ export function ProjectSelector({
 			)}
 		</section>
 	);
-}
+};
