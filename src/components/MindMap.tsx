@@ -363,11 +363,13 @@ export const MindMap = ({
 	const handleOpenAddMenu = useCallback(
 		(nodeId: string, x: number, y: number) => {
 			const node = nodes.find((n) => n.id === nodeId);
+
 			if (node) {
 				setMenu({
 					id: "add-child-menu",
 					top: y,
 					left: x,
+
 					type: "add-child-menu",
 					node,
 				});

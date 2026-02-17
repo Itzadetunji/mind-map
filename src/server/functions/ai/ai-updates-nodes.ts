@@ -15,6 +15,64 @@ const getSupabaseClient = () => {
 	return createSupabaseClientFromEnv();
 };
 
+// Memory configuration: cap full graph in prompt at 40 nodes; use last 10 messages as short-term
+const MAX_NODES_FULL_GRAPH = 40;
+const SHORT_TERM_WINDOW = 10;
+
+/** Build a text summary of the graph when node count exceeds MAX_NODES_FULL_GRAPH */
+function buildGraphSummary(nodes: unknown[], edges: unknown[]): string {
+	const nodeList = nodes as Array<{ id?: string; type?: string; data?: { label?: string } }>;
+	const byType: Record<string, string[]> = {};
+	for (const n of nodeList) {
+		const t = n.type ?? "unknown";
+		if (!byType[t]) byType[t] = [];
+		byType[t].push(n.data?.label ?? n.id ?? "?");
+	}
+	const lines: string[] = [
+		`Total: ${nodeList.length} nodes, ${(edges as unknown[]).length} edges.`,
+		"Nodes by type:",
+		...Object.entries(byType).map(
+			([type, labels]) => `  - ${type}: ${labels.slice(0, 15).join(", ")}${labels.length > 15 ? ` (+${labels.length - 15} more)` : ""}`,
+		),
+	];
+	return lines.join("\n");
+}
+
+/** Build the project context block for system prompt: full graph if <= maxNodes, else summary */
+function buildProjectContextBlock(
+	projectContext: { title: string; prompt: string; nodes: unknown[]; edges: unknown[] },
+	maxNodes: number = MAX_NODES_FULL_GRAPH,
+): string {
+	if (projectContext.nodes.length <= maxNodes) {
+		return `Current Structure: ${projectContext.nodes.length} nodes, ${projectContext.edges.length} edges
+Current Nodes: ${JSON.stringify(projectContext.nodes, null, 2)}
+Current Edges: ${JSON.stringify(projectContext.edges, null, 2)}`;
+	}
+	const summary = buildGraphSummary(projectContext.nodes, projectContext.edges);
+	return `Current Structure (summary only - graph has more than ${maxNodes} nodes): ${projectContext.nodes.length} nodes, ${projectContext.edges.length} edges
+Graph Summary:
+${summary}
+
+⚠️ When modifying, you MUST load the FULL current graph from the conversation context (e.g. "current state" or last assistant message). Include ALL existing nodes and edges in your output; only add, update, or remove what the user asks.`;
+}
+
+/** Build a short heuristic summary of older conversation (messages before the last SHORT_TERM_WINDOW) */
+export function buildOlderConversationSummary(
+	messages: Array<{ role: string; content: string; actionSummary?: string | null }>,
+): string {
+	if (messages.length <= SHORT_TERM_WINDOW) return "";
+	const older = messages.slice(0, -SHORT_TERM_WINDOW);
+	const bullets = older
+		.map((m) => {
+			const preview = m.content.slice(0, 80).replace(/\n/g, " ");
+			const who = m.role === "user" ? "User" : "Assistant";
+			const change = m.role === "assistant" && m.actionSummary ? ` [Changes: ${m.actionSummary.slice(0, 60)}…]` : "";
+			return `• ${who}: ${preview}${preview.length >= 80 ? "…" : ""}${change}`;
+		})
+		.slice(-12); // last 12 older turns to stay within ~300 words
+	return `Earlier conversation (${older.length} turns):\n${bullets.join("\n")}`;
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // Off-topic detection is now handled by the AI itself
 // ══════════════════════════════════════════════════════════════════════════════
@@ -228,51 +286,44 @@ QUALITY CHECKLIST
 `;
 
 // Get the full system prompt for first message (same as generate-mind-map)
-const getFirstMessageSystemPrompt = (projectContext?: {
-	title: string;
-	prompt: string;
-	nodes: unknown[];
-	edges: unknown[];
-}) => `
+const getFirstMessageSystemPrompt = (
+	projectContext?: {
+		title: string;
+		prompt: string;
+		nodes: unknown[];
+		edges: unknown[];
+	},
+	options?: { olderConversationSummary?: string },
+) => {
+	const contextBlock = projectContext
+		? buildProjectContextBlock(projectContext)
+		: "";
+	return `
 ${mindMapSystemPrompt}
+
+═══════════════════════════════════════════════════════════════════════════════
+LONG-TERM MEMORY (preserve the goal of the application)
+═══════════════════════════════════════════════════════════════════════════════
+Use this to keep the user's overall goal consistent. Do not drift from it unless the user explicitly asks.
+
+${
+	projectContext
+		? `Project: "${projectContext.title}"
+Original / current goal: "${projectContext.prompt}"
+
+${projectContext.nodes.length > 1 ? `EXISTING CANVAS (DO NOT REPLACE!):\n${contextBlock}\n\nSTRATEGY: PRESERVE all existing nodes and edges; add a NEW user-flow in an empty column (rightmost x + 700px). Include ALL existing nodes/edges in your output.` : "The user is starting fresh. Create a complete mind map from scratch."}`
+		: "No existing project - user is starting fresh."
+}
+${options?.olderConversationSummary ? `
+═══════════════════════════════════════════════════════════════════════════════
+SHORT-TERM MEMORY (recent conversation - use for consistent modifications)
+═══════════════════════════════════════════════════════════════════════════════
+${options.olderConversationSummary}
+` : ""}
 
 ═══════════════════════════════════════════════════════════════════════════════
 CHAT MODE - FIRST MESSAGE INSTRUCTIONS
 ═══════════════════════════════════════════════════════════════════════════════
-
-${
-	projectContext && projectContext.nodes.length > 1
-		? `⚠️ IMPORTANT: The user already has existing work on their canvas!
-
-═══════════════════════════════════════════════════════════════════════════════
-EXISTING CANVAS DATA (DO NOT REPLACE!)
-═══════════════════════════════════════════════════════════════════════════════
-Project: "${projectContext.title}"
-Original Prompt: "${projectContext.prompt}"
-Current Structure: ${projectContext.nodes.length} nodes, ${projectContext.edges.length} edges
-Current Nodes: ${JSON.stringify(projectContext.nodes, null, 2)}
-Current Edges: ${JSON.stringify(projectContext.edges, null, 2)}
-
-STRATEGY FOR EXISTING CANVAS:
-1. PRESERVE all existing nodes and edges exactly as they are
-2. Create a NEW user-flow node as a parent for your AI-generated content
-3. Position your new flow in an empty column (check existing x positions and use a new column)
-4. Label your user-flow clearly (e.g., "AI: [User's Request]")
-5. Connect your new flow to the existing root node
-
-POSITION CALCULATION:
-- Find the rightmost existing node's x position
-- Add 700px to create your new column
-- If no clear rightmost, use x = 1400 or higher
-
-YOUR RESPONSE MUST:
-- Include ALL existing nodes unchanged in the output
-- Include ALL existing edges unchanged in the output
-- ADD your new nodes with unique IDs (prefix with "ai_")
-- ADD edges connecting your new content`
-		: `The user is starting fresh with a new project. Create a complete mind map from scratch.`
-}
-
 YOUR RESPONSE FORMAT:
 
 ⚠️ CRITICAL: You MUST respond with VALID JSON ONLY. No markdown, no code blocks, no explanations outside the JSON structure!
@@ -299,33 +350,49 @@ Output ONLY this JSON structure (no other text before or after):
 ⚠️ DO NOT add any text before or after the JSON
 ⚠️ Output must be parseable JSON.parse() directly
 `;
+};
 
 // Chat-specific system prompt for conversational AI (subsequent messages)
-const getChatSystemPrompt = (projectContext?: {
-	title: string;
-	prompt: string;
-	nodes: unknown[];
-	edges: unknown[];
-}) => `
+const getChatSystemPrompt = (
+	projectContext?: {
+		title: string;
+		prompt: string;
+		nodes: unknown[];
+		edges: unknown[];
+	},
+	options?: { olderConversationSummary?: string },
+) => {
+	const contextBlock = projectContext
+		? buildProjectContextBlock(projectContext)
+		: "";
+	return `
 You are an AI assistant helping users build and refine their mind map designs.
 
 ${mindMapSystemPrompt}
 
+═══════════════════════════════════════════════════════════════════════════════
+LONG-TERM MEMORY (preserve the goal of the application)
+═══════════════════════════════════════════════════════════════════════════════
+Use this to keep the user's overall goal consistent. Retain when making modifications.
+
 ${
 	projectContext
-		? `═══════════════════════════════════════════════════════════════════════════════
-CURRENT PROJECT CONTEXT (PRESERVE THIS!)
-═══════════════════════════════════════════════════════════════════════════════
-Project: "${projectContext.title}"
-Original Prompt: "${projectContext.prompt}"
-Current Structure: ${projectContext.nodes.length} nodes, ${projectContext.edges.length} edges
-Current Nodes: ${JSON.stringify(projectContext.nodes, null, 2)}
-Current Edges: ${JSON.stringify(projectContext.edges, null, 2)}
+		? `Project: "${projectContext.title}"
+Original / current goal: "${projectContext.prompt}"
+
+Current structure:
+${contextBlock}
 
 ⚠️ CRITICAL: When modifying, you MUST include ALL existing nodes and edges in your output!
 Only add, update, or remove what the user explicitly asks for.`
 		: `No existing project - user is starting fresh.`
 }
+${options?.olderConversationSummary ? `
+═══════════════════════════════════════════════════════════════════════════════
+SHORT-TERM MEMORY (recent conversation - use for consistent modifications)
+═══════════════════════════════════════════════════════════════════════════════
+${options.olderConversationSummary}
+` : ""}
 
 ═══════════════════════════════════════════════════════════════════════════════
 RESPONSE FORMAT - JSON ONLY!
@@ -336,31 +403,21 @@ RESPONSE FORMAT - JSON ONLY!
 Output ONLY this JSON structure (no other text before or after):
 
 {
-  "thinking": {
-    "task": "What does the user want?",
-    "context": "Domain knowledge and patterns",
-    "references": "Apps/patterns I'm drawing from",
-    "evaluation": "How this improves the design",
-    "iteration": "Alternatives considered"
-  },
+  "thinking": { ... },
   "message": "Your conversational response explaining what you did",
   "action": "generate" | "modify" | "none",
-  "graphData": {
-    "nodes": [...],  // FULL list of nodes (existing + new/modified)
-    "edges": [...]   // FULL list of edges (existing + new/modified)
-  } | null
+  "graphData": { "nodes": [...], "edges": [...] } | null,
+  "actionSummary": "1-2 sentence summary of what you changed (e.g. Added nodes: X, Y; edges: ...). Set to null when action is none.",
+  "updatedFirstPrompt": "When the user's request significantly refines the project goal, set this to the updated one-sentence goal. Otherwise omit or null."
 }
 
 ⚠️ DO NOT wrap in markdown code blocks (no \`\`\`json)
-⚠️ DO NOT add any text before or after the JSON
 ⚠️ Output must be parseable JSON.parse() directly
-⚠️ All strings must be properly escaped
-⚠️ All arrays and objects must be properly formatted
 
 ACTION TYPES:
 - "generate": Create a complete mind map from scratch (for empty canvas or full rebuild)
 - "modify": Update the existing mind map - ADD new nodes while PRESERVING existing ones
-- "none": Just answering a question, no graph changes (set graphData to null)
+- "none": Just answering a question, no graph changes (set graphData to null, actionSummary to null)
 
 WHEN USING "modify" ACTION:
 1. Start with ALL existing nodes and edges exactly as they are
@@ -368,6 +425,9 @@ WHEN USING "modify" ACTION:
 3. Position new content in an unused column (rightmost x + 700px)
 4. Only REMOVE nodes if user explicitly asks
 5. Only UPDATE node data if user explicitly asks to change something
+6. Always set "actionSummary" to a short description of what you added/changed (e.g. "Added nodes: Login Form, Valid Credentials?; edges from Auth to Login Form.")
+
+When the user significantly refines or changes the project direction, set "updatedFirstPrompt" to the new one-sentence goal so we can remember it. Otherwise omit or null.
 
 POSITIONING NEW NODES:
 1. Calculate: rightmost_x = max(existing node x positions)
@@ -375,9 +435,10 @@ POSITIONING NEW NODES:
 3. user-flow at y = 250, children increment by 350
 
 FOR "none" ACTION:
-- Set graphData to null
+- Set graphData to null, actionSummary to null
 - Just provide a helpful message answering the question
 `;
+};
 
 // Chat-specific server function for conversational AI
 export const chatInputSchema = z.object({
@@ -413,18 +474,30 @@ export async function chatWithAIHandler(data: ChatInput) {
 
 	const openai = new OpenAI({ apiKey });
 
-	// Use full system prompt for first message, otherwise use chat prompt
-	// Only treat as first message if explicitly marked OR if there's truly no chat history
+	// Sliding window + older summary when client sends history
 	const hasExistingHistory = data.chatHistory && data.chatHistory.length > 0;
 	const isFirstMessage = data.isFirstMessage === true && !hasExistingHistory;
+	const olderSummary = buildOlderConversationSummary(
+		(data.chatHistory ?? []).map((m) => ({
+			role: m.role,
+			content: m.content,
+			actionSummary: undefined,
+		})),
+	);
 	const systemMessage = isFirstMessage
-		? getFirstMessageSystemPrompt(data.projectContext)
-		: getChatSystemPrompt(data.projectContext);
+		? getFirstMessageSystemPrompt(data.projectContext, {
+				olderConversationSummary: olderSummary || undefined,
+		  })
+		: getChatSystemPrompt(data.projectContext, {
+				olderConversationSummary: olderSummary || undefined,
+		  });
 
+	const recent = (data.chatHistory ?? []).slice(-SHORT_TERM_WINDOW);
 	const messages = buildChatMessages(
 		systemMessage,
-		data.chatHistory,
+		recent,
 		data.message,
+		SHORT_TERM_WINDOW,
 	);
 
 	const response = await openai.chat.completions.create({
@@ -544,8 +617,17 @@ export async function chatWithAIHandler(data: ChatInput) {
 							required: ["nodes", "edges"],
 							additionalProperties: false,
 						},
+						actionSummary: { type: ["string", "null"] },
+						updatedFirstPrompt: { type: ["string", "null"] },
 					},
-					required: ["thinking", "message", "action", "graphData"],
+					required: [
+						"thinking",
+						"message",
+						"action",
+						"graphData",
+						"actionSummary",
+						"updatedFirstPrompt",
+					],
 					additionalProperties: false,
 				},
 			},
@@ -640,18 +722,57 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 
 	const openai = new OpenAI({ apiKey });
 
-	// Use full system prompt for first message
-	// Only treat as first message if explicitly marked OR if there's truly no chat history
-	const hasExistingHistory = data.chatHistory && data.chatHistory.length > 0;
-	const isFirstMessage = data.isFirstMessage === true && !hasExistingHistory;
+	// Fetch chat history from DB (source of truth; includes action_summary for assistant messages)
+	type DbMessage = {
+		role: string;
+		content: string;
+		action_summary?: string | null;
+	};
+	let allMessages: DbMessage[] = [];
+	if (data.projectId) {
+		const { data: historyRows, error: historyError } = await supabase
+			.from("chat_messages")
+			.select("role, content, action_summary")
+			.eq("mind_map_id", data.projectId)
+			.order("created_at", { ascending: true });
+
+		if (!historyError) {
+			allMessages = (historyRows ?? []) as DbMessage[];
+		}
+	}
+
+	// Sliding window: older conversation summary + last 10 full messages (with action summaries)
+	const messagesForSummary = allMessages.map((m) => ({
+		role: m.role,
+		content: m.content,
+		actionSummary: m.action_summary ?? undefined,
+	}));
+	const olderConversationSummary =
+		buildOlderConversationSummary(messagesForSummary);
+	// Exclude the current user message we just saved; take last SHORT_TERM_WINDOW before it
+	const recentFromDb = allMessages.slice(0, -1).slice(-SHORT_TERM_WINDOW);
+	const recentForBuild = recentFromDb.map((m) => ({
+		role: (m.role === "ai" ? "assistant" : "user") as "user" | "assistant",
+		content: m.content,
+		actionSummary: m.action_summary ?? undefined,
+	}));
+
+	const isFirstMessage = allMessages.length <= 1;
 	const systemMessage = isFirstMessage
-		? getFirstMessageSystemPrompt(data.projectContext)
-		: getChatSystemPrompt(data.projectContext);
+		? getFirstMessageSystemPrompt(data.projectContext, {
+				olderConversationSummary:
+					olderConversationSummary || undefined,
+		  })
+		: getChatSystemPrompt(data.projectContext, {
+				olderConversationSummary:
+					olderConversationSummary || undefined,
+		  });
 
 	const messages = buildChatMessages(
 		systemMessage,
-		data.chatHistory,
+		recentForBuild,
 		data.message,
+		SHORT_TERM_WINDOW,
 	);
 
 	// Use streaming to get real-time content
@@ -710,7 +831,7 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 	// Parse the final JSON
 	try {
 		const cleanContent = stripMarkdownCodeFence(fullContent);
-		let jsonContent = extractJsonObject(cleanContent);
+		const jsonContent = extractJsonObject(cleanContent);
 
 		type ParsedResponse = {
 			isOffTopic?: boolean;
@@ -727,6 +848,8 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 				nodes: Array<Record<string, unknown>>;
 				edges: Array<Record<string, unknown>>;
 			} | null;
+			actionSummary?: string | null;
+			updatedFirstPrompt?: string | null;
 			streamingSteps?: Array<{
 				step: string;
 				content: string;
@@ -835,7 +958,7 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 				}
 			}
 
-			// Save AI response to database (backend)
+			// Save AI response to database (backend), including action_summary for short-term memory
 			if (data.userId && data.projectId) {
 				const aiMessage: Database["public"]["Tables"]["chat_messages"]["Insert"] =
 					{
@@ -846,6 +969,9 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 						...(parsed.action === "generate" || parsed.action === "modify"
 							? { map_data: parsed.graphData as Json }
 							: {}),
+						...(parsed.actionSummary != null
+							? { action_summary: parsed.actionSummary }
+							: {}),
 					};
 				const { error: aiMessageError } = await supabase
 					.from("chat_messages")
@@ -854,6 +980,27 @@ export async function chatWithAIStreamingHandler(data: ChatInput) {
 				if (aiMessageError) {
 					console.error("Error saving AI message:", aiMessageError);
 					// Don't fail the request, but log the error
+				}
+			}
+
+			// When the AI indicates an important goal change, update first_prompt (long-term memory)
+			if (
+				parsed.updatedFirstPrompt != null &&
+				parsed.updatedFirstPrompt.trim() !== "" &&
+				data.projectId &&
+				data.userId
+			) {
+				const { error: updatePromptError } = await supabase
+					.from("mind_maps")
+					.update({
+						first_prompt: parsed.updatedFirstPrompt.trim(),
+						updated_at: new Date().toISOString(),
+					} as never)
+					.eq("id", data.projectId)
+					.eq("user_id", data.userId);
+
+				if (updatePromptError) {
+					console.error("Error updating first_prompt:", updatePromptError);
 				}
 			}
 		}

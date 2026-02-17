@@ -1,19 +1,26 @@
 import { useQueryClient } from "@tanstack/react-query";
 import type { Edge, Node } from "@xyflow/react";
-import { Bot, Brain, Loader2, Send, X, Zap } from "lucide-react";
+import { Bot, Brain, Pencil, Send, X, Zap } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
+import { useChatWithAIStreaming } from "@/api/http/v1/ai/ai.hooks";
+import {
+	chatsQueryKeys,
+	useChatHistory,
+} from "@/api/http/v1/chats/chats.hooks";
+import {
+	creditsQueryKeys,
+	useUserCredits,
+} from "@/api/http/v1/credits/credits.hooks";
 import type { MindMapProject } from "@/lib/database.types";
 import { formatTime } from "@/lib/date-utils";
 import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { EditInitialIdeaDialog } from "./EditInitialIdeaDialog";
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
 import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
-import { useChatWithAIStreaming } from "@/api/http/v1/ai/ai.hooks";
-import { useChatHistory, chatsQueryKeys } from "@/api/http/v1/chats/chats.hooks";
-import { useUserCredits, creditsQueryKeys } from "@/api/http/v1/credits/credits.hooks";
 
 interface AIThinking {
 	task: string;
@@ -74,6 +81,7 @@ export const AIChatSidebar = ({
 	const { user } = useAuthStore();
 	const { data: credits } = useUserCredits();
 	const [showCreditsModal, setShowCreditsModal] = useState(false);
+	const [editInitialIdeaOpen, setEditInitialIdeaOpen] = useState(false);
 	const queryClient = useQueryClient();
 
 	const {
@@ -312,7 +320,27 @@ export const AIChatSidebar = ({
 						placeholder="Enter project name..."
 						className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 dark:focus:ring-[#0077B6]/50"
 					/>
+					{project?.first_prompt != null && (
+						<div className="mt-3">
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="w-full justify-start gap-2 text-slate-600 dark:text-slate-400"
+								onClick={() => setEditInitialIdeaOpen(true)}
+							>
+								<Pencil className="w-3.5 h-3.5" />
+								Edit initial idea
+							</Button>
+						</div>
+					)}
 				</div>
+
+				<EditInitialIdeaDialog
+					open={editInitialIdeaOpen}
+					onOpenChange={setEditInitialIdeaOpen}
+					project={project}
+				/>
 
 				{/* Messages */}
 				<div

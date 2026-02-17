@@ -55,6 +55,7 @@ export type Database = {
       }
       chat_messages: {
         Row: {
+          action_summary: string | null
           content: string
           created_at: string
           id: string
@@ -64,6 +65,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          action_summary?: string | null
           content: string
           created_at?: string
           id?: string
@@ -73,6 +75,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          action_summary?: string | null
           content?: string
           created_at?: string
           id?: string

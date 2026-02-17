@@ -8,6 +8,7 @@ import {
 	useUserCredits,
 } from "@/api/http/v1/credits/credits.hooks";
 import { useGenerateMindMap } from "@/api/http/v1/mind-maps/mind-maps.hooks";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal";
 import { AutoResizeTextarea } from "./shared/AutoResizeTextArea";
@@ -144,7 +145,12 @@ export function FloatingSearchBar({
 					disabled={!mutation.isPending && !prompt.trim()}
 					variant="ghost"
 					size="icon"
-					className="mr-1.5 rounded-full hover:bg-primary hover:text-white dark:hover:bg-[#0077B6] dark:hover:text-white"
+					className={cn(
+						"mr-1.5 rounded-full hover:bg-primary hover:text-white dark:hover:bg-[#0077B6] dark:hover:text-white",
+						{
+							"hover:bg-primary/30 bg-primary text-white": mutation.isPending,
+						},
+					)}
 					onClick={
 						mutation.isPending
 							? () => {
@@ -156,7 +162,7 @@ export function FloatingSearchBar({
 					title={mutation.isPending ? "Stop" : "Send"}
 				>
 					{mutation.isPending ? (
-						<span className="w-3.5 h-3.5 bg-white rounded-sm block" />
+						<span className="w-3.5 h-3.5 bg-white block" />
 					) : (
 						<Send className="w-4 h-4" />
 					)}

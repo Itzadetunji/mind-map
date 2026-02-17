@@ -117,9 +117,15 @@ export const createSupabaseClientFromEnv = () => {
 export const buildChatMessages = (
 	systemMessage: string,
 	chatHistory:
-		| Array<{ role: "user" | "assistant"; content: string }>
+		| Array<{
+				role: "user" | "assistant";
+				content: string;
+				actionSummary?: string | null;
+		  }>
 		| undefined,
 	userMessage: string,
+	/** Max number of recent messages to include (sliding window). Caller may pass already-sliced history. */
+	windowSize: number = 10,
 ) => {
 	const messages: Array<{
 		role: "system" | "user" | "assistant";
@@ -127,8 +133,13 @@ export const buildChatMessages = (
 	}> = [{ role: "system", content: systemMessage }];
 
 	if (chatHistory) {
-		for (const msg of chatHistory.slice(-10)) {
-			messages.push({ role: msg.role, content: msg.content });
+		const recent = chatHistory.slice(-windowSize);
+		for (const msg of recent) {
+			const content =
+				msg.role === "assistant" && msg.actionSummary
+					? `${msg.content}\n[Changes made: ${msg.actionSummary}]`
+					: msg.content;
+			messages.push({ role: msg.role, content });
 		}
 	}
 

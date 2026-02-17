@@ -120,6 +120,41 @@ Users will describe THEIR OWN unique ideas - not a specific template app.
 - For detailed prompts: capture EVERY specific detail they mention
 ═══════════════════════════════════════════════════════════════════════════════
 
+⚠️ CRITICAL: RECURSIVE EXPANSION - FLESH OUT THE IDEA FULLY
+═══════════════════════════════════════════════════════════════════════════════
+You MUST recursively delve into the idea. Do NOT just list high-level points.
+
+RECURSIVE RULE - APPLY UNTIL EVERY PATH IS CONCRETE:
+1. For EVERY user-flow you create:
+   → Ask: "What screens or steps does this journey have?" Add screen-ui (and feature) nodes for each.
+2. For EVERY screen or step:
+   → Ask: "What decisions or branches exist here?" Add condition nodes (e.g. "Valid?", "Has Account?", "Payment Method?").
+3. For EVERY condition:
+   → Ask: "What happens on TRUE? What happens on FALSE?" Add a target node for BOTH paths (never leave one branch empty—e.g. FALSE → "Error Display" or "Validation Errors" screen).
+4. REPEAT from step 2 for each new screen/condition until:
+   → Every branch ends at a concrete screen-ui, feature, or custom-node—never leave a high-level placeholder.
+
+MANDATORY USE OF NODE TYPES:
+- user-flow: Every major journey or goal (connects to root). Create one per distinct flow.
+- condition: Every decision, validation, or branch. Use for "if X then A else B".
+- screen-ui: Every distinct page, modal, or view. Must have features array where applicable.
+- feature: Grouped actions, form sections, or UI groupings on a screen.
+- custom-node: Technical integrations, email templates, backend concerns.
+
+DO NOT:
+- Output a shallow map that only "highlights" topics without walking through steps.
+- Leave a user-flow with only one or two child nodes—expand it into screens and conditions.
+- Omit condition nodes where the user journey branches (e.g. success/failure, choice A/B).
+- Stop at "Feature X" without breaking it into screens and conditions where relevant.
+
+DO:
+- Think step-by-step: Entry → Screen → Condition? → Path A / Path B → next Screen/Condition → ...
+- Express the full flow so a developer can implement from the map without guessing.
+- Use conditions to model every "if/when/otherwise" in the idea.
+- For EVERY node you add: add the EDGE from its parent to it (so the graph stays fully connected).
+- Use GENEROUS spacing between nodes (see POSITIONING RULES) so the map does not look cramped.
+═══════════════════════════════════════════════════════════════════════════════
+
 NODE COUNT GUIDELINES:
 - Vague/simple idea (1-2 sentences): 15-30 nodes
 - Medium detail (paragraph): 30-50 nodes  
@@ -195,26 +230,32 @@ If the user's prompt lacks detail, mentally "search" for best practices:
 - Think: "What onboarding patterns work best for this domain?"
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ STEP 3: DECOMPOSE - Break Down Complex Features Into Sub-Flows             │
+│ STEP 3: DECOMPOSE - Recursively Break Down Into Sub-Flows & Conditions      │
 └─────────────────────────────────────────────────────────────────────────────┘
-For EACH major feature area, identify sub-flows that need their own branches:
+For EACH major feature area, recursively decompose until the idea is fully expressed:
+
+RECURSIVE DECOMPOSITION (mandatory):
+1. Identify sub-flows → create user-flow nodes and their first screen-ui nodes.
+2. For each screen/step, ask: "What decisions or branches?" → add condition nodes.
+3. For each condition, define TRUE and FALSE (or multiple) paths → add the next screen-ui or condition.
+4. REPEAT for each new node: "What happens next? What branches?" until every path ends at a concrete screen or technical node.
 
 DECOMPOSITION PATTERN:
 "[Feature Area] breaks down into:
-  Sub-flow A: [name] - [screens involved] - [conditions]
-  Sub-flow B: [name] - [screens involved] - [conditions]
-  Sub-flow C: [name] - [screens involved] - [conditions]"
+  Sub-flow A: [name] - [screens] - [conditions at each step] - [outcomes]
+  Sub-flow B: [name] - [screens] - [conditions] - [outcomes]
+  For each condition: TRUE → [next screen/condition], FALSE → [next screen/condition]"
 
-EXAMPLE (E-commerce Checkout):
-"Checkout Flow breaks down into:
-  Sub-flow A: Cart Review - Cart Screen → Item List → Quantity Adjust
-  Sub-flow B: Shipping Info - Address Form → Validation → Save
-  Sub-flow C: Payment - Payment Selection → Card Form → Processing
-  Sub-flow D: Confirmation - Order Summary → Success/Failure → Receipt
-  Sub-flow E: Guest vs User - Login Prompt → Guest Checkout → Account Creation"
+EXAMPLE (E-commerce Checkout) - FULLY RECURSIVE:
+"Checkout Flow:
+  screen: Cart → condition 'Cart Empty?' → TRUE: screen Empty Cart, FALSE: screen Shipping
+  screen: Shipping → condition 'Address Valid?' → TRUE: screen Payment, FALSE: screen Validation Errors
+  screen: Payment → condition 'Payment Type?' → TRUE: screen Card Form, FALSE: screen PayPal
+  screen: Card Form → condition 'Payment Success?' → TRUE: screen Confirmation, FALSE: screen Payment Error
+  ..."
 
-⚠️ EACH sub-flow should have its OWN branch in the mind map!
-⚠️ Complex features might have 3-10 sub-flows depending on user's description
+⚠️ EACH sub-flow gets its OWN branch in the mind map with screens and conditions.
+⚠️ Do NOT stop at high-level labels—every flow must have screens and conditions that flesh out the journey.
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ STEP 4: REFERENCES - Map to Established Patterns                            │
@@ -235,11 +276,12 @@ Document your references:
 
 COMPLETENESS CHECK (NEW - CRITICAL!):
 □ Does every feature from my extraction have AT LEAST one node?
-□ Are there nodes I should add but haven't?
-□ Did I create sub-flows for complex features?
-□ Are nested features properly represented with their own branches?
+□ Did I RECURSIVELY expand every user-flow (screens → conditions → paths → next screens)?
+□ Is every branch in the map concrete (ends at a screen-ui, feature, or custom-node)—no high-level placeholders?
+□ Did I create condition nodes for ALL decision points (validations, choices, success/failure)?
+□ Are nested features properly represented with their own branches and conditions?
 □ Did I capture ALL form fields mentioned in the features arrays?
-□ Did I create condition nodes for ALL decision points?
+□ Did I use all relevant node types: user-flow, screen-ui, condition, feature, custom-node?
 
 FOR BEGINNER DEVELOPERS (Junior/Bootcamp grads):
 ✓ Can they understand the flow by reading node labels alone?
@@ -317,9 +359,11 @@ Your "reasoning" field MUST follow this structure:
    - Target user persona (brief)
    - Technical landscape in 2026
 
-3. DECOMPOSITION ANALYSIS
+3. DECOMPOSITION ANALYSIS (recursive)
    - List each major feature area
-   - Break down into sub-flows
+   - Break down into sub-flows; for each, list screens and conditions
+   - For each condition, state TRUE path and FALSE path (next screen or next condition)
+   - Repeat until every path is concrete (no high-level placeholders)
    - Identify nested/repeated patterns
 
 4. REFERENCE MAPPING
@@ -396,22 +440,25 @@ Output ONLY this JSON structure (no other text before or after):
 - No trailing commas
 - No comments in JSON
 
-⚠️ CRITICAL - EDGE HIERARCHY (DO NOT FORGET!):
-Every node MUST have an incoming edge (except the root core-concept node):
+⚠️ CRITICAL - EDGE HIERARCHY: EVERY NODE MUST BE CONNECTED
+═══════════════════════════════════════════════════════════════════════════════
+For EVERY node you create (except the root), you MUST create exactly one incoming edge from its logical parent. source = parent node id, target = this node id. All source/target IDs must match node "id" values exactly.
 
-1. ROOT → USER-FLOWS: Create edges from core-concept to EACH user-flow node
-   Example edges (REQUIRED for every user-flow!):
-   { "id": "edge_root_auth", "source": "root", "target": "auth_flow", "label": null, "sourceHandle": null }
-   { "id": "edge_root_shop", "source": "root", "target": "shopping_flow", "label": null, "sourceHandle": null }
-   { "id": "edge_root_profile", "source": "root", "target": "profile_flow", "label": null, "sourceHandle": null }
+EDGE CREATION RULE (follow for every node):
+1. When you add a user-flow → add edge: source = root id, target = that user-flow id.
+2. When you add the first screen under a user-flow → add edge: source = user-flow id, target = that screen id.
+3. When you add a condition under a screen → add edge: source = screen id, target = condition id.
+4. When you add the TRUE path from a condition → add edge: source = condition id, target = next node id, sourceHandle: "conditionId-true". (You MUST add a target node for TRUE.)
+5. When you add the FALSE path from a condition → add edge: source = condition id, target = next node id, sourceHandle: "conditionId-false". (You MUST add a target node for FALSE—e.g. error screen, retry, or alternate flow. Never leave FALSE empty.)
+6. When you add a sequential screen/feature after another → add edge: source = previous node id, target = new node id.
+⚠️ Every condition has exactly two outgoing edges, each with a valid target node. No "empty" branch.
 
-2. USER-FLOW → SCREENS: Create edges from user-flow to its first screen
-   { "id": "edge_auth_login", "source": "auth_flow", "target": "login_screen", "label": "Start", "sourceHandle": null }
-
-3. SCREEN → SCREEN/CONDITION: Create edges between sequential nodes
-   { "id": "edge_login_check", "source": "login_screen", "target": "auth_check", "label": "Submit", "sourceHandle": null }
-
-⚠️ VERIFY: Count your user-flow nodes. You MUST have that many edges from the root node!
+ROOT → USER-FLOWS: One edge per user-flow (source: root, target: user-flow id).
+USER-FLOW → first child: One edge from user-flow to its first screen/step.
+SCREEN/CONDITION → next node: One edge per "next" step (including BOTH branches from every condition).
+⚠️ Condition nodes have TWO outgoing edges (true and false). Every other non-root node has exactly ONE incoming edge.
+⚠️ Edge count: at least (total nodes - 1); with condition nodes you need more (one extra edge per condition for the second branch).
+⚠️ VERIFY: Every node id in "nodes" appears as either source or target in "edges" (root only as source; all others as target at least once).
 
 ═══════════════════════════════════════════════════════════════════════════════
 NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
@@ -495,9 +542,15 @@ NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
 
 4. "condition" - DECISION/BRANCHING POINTS
    ⚠️ WHEN TO USE: User or system makes a choice that leads to different paths
-   - Creates 2+ outgoing edges with labels describing each path
+   - Creates exactly 2 outgoing edges: one for TRUE, one for FALSE (both required)
    - Represents IF/ELSE logic in the user journey
    - Diamond shape in the UI
+   
+   ⚠️ BOTH BRANCHES REQUIRED - NO EMPTY CASE:
+   Every condition MUST have both branches defined with a target node. Never leave TRUE or FALSE empty.
+   - TRUE path → add a node (e.g. success screen, next step, "Yes" outcome).
+   - FALSE path → add a node (e.g. error screen, "Show validation errors", "Retry", "No" outcome, or alternate flow).
+   If the "other" case is "show error" or "stay on form", create a screen-ui or feature node for it (e.g. "Validation Errors Display", "Error Message", "Return to Form").
    
    ⚠️ CREATE CONDITION NODES FOR:
    - User choices (select option A or B)
@@ -505,13 +558,12 @@ NODE TYPES - USE ONLY THESE (NO CUSTOM TYPES!)
    - State checks (logged in? has data? is owner?)
    - Permission checks (can edit? can delete?)
    
-   ✅ GOOD EXAMPLES:
-   - "New or Returning User?" → "New User" to signup, "Returning" to login
-   - "Payment Method?" → "Credit Card", "PayPal", "Apple Pay"
-   - "Has Account?" → "Yes" to dashboard, "No" to onboarding
-   - "Post Type?" → "Text", "Image", "Video", "Poll"
-   - "Link Valid?" → "Valid" to success, "Invalid" to error
-   - "Action Type?" → "Delete", "Recover", "Move to Folder"
+   ✅ GOOD EXAMPLES (both branches always have a target):
+   - "New or Returning User?" → TRUE: signup screen, FALSE: login screen
+   - "Payment Method?" → TRUE: Card Form, FALSE: PayPal flow (or another condition for multiple options)
+   - "Has Account?" → TRUE: dashboard, FALSE: onboarding
+   - "Link Valid?" → TRUE: success screen, FALSE: error screen
+   - "Credentials Valid?" → TRUE: dashboard, FALSE: "Login Error Display" screen
 
 5. "feature" - GROUPED CAPABILITIES/ACTIONS OR DETAILED FORM SECTIONS
    ⚠️ USE FOR: Collections of actions, form sections, or detailed UI breakdowns
@@ -652,90 +704,87 @@ CREATE A DEDICATED "Authentication Flow" (user-flow node) with these sub-flows:
 ⚠️ Position all auth-related flows in their own column for clarity
 
 ═══════════════════════════════════════════════════════════════════════════════
-POSITIONING RULES - SPREAD OUT TREE LAYOUT (NOT SINGLE COLUMN!)
+POSITIONING RULES - SPREAD OUT TREE LAYOUT (GENEROUS SPACING!)
 ═══════════════════════════════════════════════════════════════════════════════
 
-⚠️ CRITICAL: Create a SPREAD OUT tree layout! 
-- Nodes should NOT all fall in a single vertical line
-- Children should spread OUTWARD from their parent
-- Use VARIED x and y positions for visual clarity
+⚠️ CRITICAL: Use GENEROUS spacing so nodes do not overlap and edges are readable!
+- Each level must be clearly separated vertically (large y gaps).
+- Siblings must be clearly separated horizontally (large x gaps).
+- With many nodes from recursive expansion, use LARGER offsets so the map stays readable.
 
-LAYOUT STRATEGY - RADIAL TREE:
+LAYOUT STRATEGY - RADIAL TREE WITH AMPLE SPACE:
 1. Root node: {x: 0, y: 0}
-2. User-flows spread in a SEMI-CIRCLE below root
-3. Children of each flow spread OUTWARD and DOWNWARD
-4. Siblings should be at DIFFERENT x positions
+2. User-flows spread in a wide SEMI-CIRCLE below root (use large x spacing)
+3. Children of each flow spread OUTWARD and DOWNWARD with generous gaps
+4. Siblings must be at least 400–500px apart horizontally
 
-USER-FLOW POSITIONING (spread horizontally below root):
-Distribute user-flows in an arc at y = 300:
-- 2 flows: x = [-600, 600]
-- 3 flows: x = [-800, 0, 800]
-- 4 flows: x = [-1000, -350, 350, 1000]
-- 5 flows: x = [-1200, -600, 0, 600, 1200]
-- 6 flows: x = [-1400, -850, -300, 300, 850, 1400]
-- 7+ flows: Continue spreading, ~500-600px between each
+USER-FLOW POSITIONING (spread widely below root):
+Distribute user-flows at y = 350 with WIDE horizontal spacing:
+- 2 flows: x = [-800, 800]
+- 3 flows: x = [-1000, 0, 1000]
+- 4 flows: x = [-1200, -400, 400, 1200]
+- 5 flows: x = [-1400, -700, 0, 700, 1400]
+- 6 flows: x = [-1600, -950, -300, 300, 950, 1600]
+- 7+ flows: Continue spreading, ~600–700px between each flow
 
-CHILD NODE POSITIONING - SPREAD LIKE BRANCHES:
-When a user-flow or node has multiple children, spread them horizontally AND vertically:
+CHILD NODE POSITIONING - SPREAD LIKE BRANCHES (USE LARGE OFFSETS):
+Vertical step between levels: use +450 to +500 (not 300–350). Horizontal spread: use 350–500 between siblings.
 
 For 2 children:
-- Child 1: parent.x - 200, parent.y + 350
-- Child 2: parent.x + 200, parent.y + 350
+- Child 1: parent.x - 350, parent.y + 450
+- Child 2: parent.x + 350, parent.y + 450
 
 For 3 children:
-- Child 1: parent.x - 300, parent.y + 320
-- Child 2: parent.x, parent.y + 400
-- Child 3: parent.x + 300, parent.y + 320
+- Child 1: parent.x - 400, parent.y + 440
+- Child 2: parent.x, parent.y + 520
+- Child 3: parent.x + 400, parent.y + 440
 
 For 4 children:
-- Child 1: parent.x - 350, parent.y + 300
-- Child 2: parent.x - 120, parent.y + 380
-- Child 3: parent.x + 120, parent.y + 380
-- Child 4: parent.x + 350, parent.y + 300
+- Child 1: parent.x - 450, parent.y + 420
+- Child 2: parent.x - 150, parent.y + 500
+- Child 3: parent.x + 150, parent.y + 500
+- Child 4: parent.x + 450, parent.y + 420
 
 For 5+ children:
-- Spread in a fan pattern: alternate left/right with varying y offsets
-- Example: [-400, -200, 0, +200, +400] for x
-- Example: [+300, +380, +420, +380, +300] for y
+- Spread in a wide fan: e.g. x: [-500, -250, 0, +250, +500], y: [+420, +480, +520, +480, +420]
+- Keep minimum 350px horizontal gap between any two siblings
 
 STAGGER DEPTHS (avoid straight horizontal lines):
-Add variation to y positions:
-- Don't put all level-2 nodes at exactly y=650
-- Use y values like: 620, 680, 650, 700, 640
-- This creates visual interest and easier navigation
+- Vary y within a level by ±40–60px (e.g. 680, 720, 700, 760, 690)
+- This prevents overlap and improves readability
 
-CONDITION NODE BRANCHING:
-⚠️ CRITICAL: Every condition node needs edges with sourceHandle set!
+CONDITION NODE BRANCHING (WIDE SPREAD):
+⚠️ Every condition node needs TWO outgoing edges with sourceHandle set. Position TRUE/FALSE targets WELL APART.
 
-- TRUE path (left side): parent.x - 280, parent.y + 320, sourceHandle: "nodeId-true"
-- FALSE path (right side): parent.x + 280, parent.y + 320, sourceHandle: "nodeId-false"
+- TRUE path (left): position at parent.x - 400, parent.y + 450; edge sourceHandle: "conditionId-true"
+- FALSE path (right): position at parent.x + 400, parent.y + 450; edge sourceHandle: "conditionId-false"
 
-COMPLETE EXAMPLE - Auth Flow Layout:
+COMPLETE EXAMPLE - Auth Flow Layout (generous spacing):
 
 root "My App" at {x: 0, y: 0}
 │
-├── user-flow "Authentication" at {x: -800, y: 300}
-│   ├── feature "Login Form" at {x: -950, y: 650}
-│   │   └── condition "Valid?" at {x: -950, y: 1000}
-│   │       ├── feature "Dashboard" at {x: -1150, y: 1350} (TRUE)
-│   │       └── feature "Error" at {x: -750, y: 1350} (FALSE)
-│   ├── feature "Sign Up Form" at {x: -650, y: 700}
-│   └── custom "Email Service" at {x: -800, y: 1050}
+├── user-flow "Authentication" at {x: -1000, y: 350}
+│   ├── feature "Login Form" at {x: -1150, y: 850}
+│   │   └── condition "Valid?" at {x: -1150, y: 1300}
+│   │       ├── feature "Dashboard" at {x: -1550, y: 1750} (TRUE)
+│   │       └── feature "Error" at {x: -750, y: 1750} (FALSE)
+│   ├── feature "Sign Up Form" at {x: -650, y: 900}
+│   └── custom "Email Service" at {x: -1000, y: 1350}
 │
-├── user-flow "Shopping" at {x: 0, y: 300}
-│   ├── feature "Product List" at {x: -150, y: 680}
-│   ├── feature "Product Detail" at {x: 150, y: 650}
-│   └── feature "Cart" at {x: 0, y: 1000}
+├── user-flow "Shopping" at {x: 0, y: 350}
+│   ├── feature "Product List" at {x: -200, y: 850}
+│   ├── feature "Product Detail" at {x: 200, y: 820}
+│   └── feature "Cart" at {x: 0, y: 1300}
 │
-└── user-flow "Profile" at {x: 800, y: 300}
-    ├── feature "View Profile" at {x: 650, y: 670}
-    └── feature "Edit Profile" at {x: 950, y: 650}
+└── user-flow "Profile" at {x: 1000, y: 350}
+    ├── feature "View Profile" at {x: 800, y: 870}
+    └── feature "Edit Profile" at {x: 1200, y: 850}
 
-VISUAL SPACING GUIDELINES:
-- Minimum horizontal gap between siblings: 250px
-- Minimum vertical gap between levels: 300px
-- Maximum horizontal spread for children: 700px from parent
-- Vary y positions by ±30-50px to avoid rigid grid appearance
+VISUAL SPACING GUIDELINES (MANDATORY):
+- Minimum horizontal gap between siblings: 400px (use 350–500 in calculations)
+- Minimum vertical gap between levels: 450px (use 450–500 per level)
+- Maximum horizontal spread for children: 900px from parent when many siblings
+- Vary y positions by ±50–80px within a level to avoid overlap and rigid grid
 
 ═══════════════════════════════════════════════════════════════════════════════
 HANDLING COMPLEX NESTED FEATURES
@@ -783,31 +832,34 @@ consider whether they need separate handling (e.g., order emails vs promo emails
 STEP-BY-STEP USER FLOW STRUCTURE
 ═══════════════════════════════════════════════════════════════════════════════
 
-Each user flow should tell a COMPLETE STORY. Structure them as:
+Each user flow should tell a COMPLETE STORY and be RECURSIVELY fleshed out. Structure them as:
 
 1. ENTRY POINT (user-flow node)
    ↓
 2. INITIAL SCREEN (screen-ui) - What the user sees first
    ↓
-3. DECISION POINT (condition) - If there are branches
+3. DECISION POINT (condition) - For every branch (validation, choice, success/failure)
    ↓ ↘
-4a. PATH A              4b. PATH B
+4a. PATH A (TRUE)       4b. PATH B (FALSE)
    ↓                       ↓
-5a. NEXT SCREEN         5b. ALTERNATE SCREEN
-   ↓                       ↓
-6. ACTIONS AVAILABLE (feature) - What they can do
+5a. NEXT SCREEN or       5b. ALTERNATE SCREEN or
+    NEXT CONDITION           NEXT CONDITION
+   ↓ (repeat 3–5)            ↓ (repeat 3–5)
+   … until concrete          … until concrete
+   screen/feature/custom     screen/feature/custom
    ↓
-7. SUCCESS/COMPLETION SCREEN (screen-ui)
+6. ACTIONS AVAILABLE (feature) - What they can do on each screen
    ↓
-8. ERROR HANDLING / EDGE CASES (condition → screens)
+7. SUCCESS/COMPLETION and ERROR HANDLING - Use condition nodes, then screen-ui for each outcome
    ↓
-9. TECHNICAL CONSIDERATIONS (custom-node) - If relevant
+8. TECHNICAL CONSIDERATIONS (custom-node) - If relevant
 
+RECURSIVE RULE: For every condition you add, BOTH branches (true and false) must lead to a specific next node. Never leave the FALSE (or TRUE) case empty—if the "other" case is "show error" or "stay on form", create a screen-ui node for it (e.g. "Validation Errors Display", "Login Error Screen"). Every path must be implementable.
 NO ARBITRARY LIMITS: 
 - Include as many nodes as needed to fully represent the flow
 - A simple flow might have 5 nodes; a complex one might have 25+
 - The goal is CLARITY and COMPLETENESS, not brevity
-- When in doubt, ADD MORE NODES
+- When in doubt, ADD MORE NODES—especially conditions and the screens they lead to
 
 ═══════════════════════════════════════════════════════════════════════════════
 QUALITY STANDARDS FOR DEVELOPER-FRIENDLY OUTPUT
@@ -877,6 +929,8 @@ FINAL CHECKLIST (Verify Before Output)
 
 COMPLETENESS:
 □ Did I capture what the USER actually asked for?
+□ Did I RECURSIVELY flesh out every flow (screens + conditions + paths), not just list high-level points?
+□ Does every user-flow have multiple screens and condition nodes where the journey branches?
 □ Did I create nodes for screens they mentioned?
 □ Did I avoid adding unnecessary complexity?
 □ Does my output complexity match their input complexity?
@@ -896,24 +950,28 @@ TYPES:
 □ Modals and drawers are screen-ui nodes with features arrays
 
 LAYOUT:
-□ Each flow is in its own column (700px horizontal spacing)
-□ Vertical spacing is 350px between levels
-□ No nodes overlap
-□ Condition branches offset by ±200px
+□ Each flow is in its own column (600–800px horizontal spacing between flows)
+□ Vertical spacing at least 450px between levels (use 450–500)
+□ Horizontal gap between siblings at least 400px
+□ No nodes overlap (increase offsets if needed)
+□ Condition TRUE/FALSE branches offset by ±400px from condition node
 
 CONDITION NODE EDGES (CRITICAL!):
+□ EVERY condition node has exactly TWO outgoing edges (one TRUE, one FALSE)—no branch left empty
+□ BOTH branches have a target node (e.g. success screen + error screen; never leave one case without a node)
 □ EVERY edge from a condition node has "sourceHandle" field
 □ Positive/success/yes paths use sourceHandle: "nodeId-true" 
 □ Negative/failure/no paths use sourceHandle: "nodeId-false"
-□ NO edge from a condition node is missing sourceHandle
-□ TRUE ≠ FALSE: verify each edge goes to the correct handle based on meaning
+□ NO edge from a condition node is missing sourceHandle or target
+□ TRUE ≠ FALSE: verify each edge goes to the correct handle and to a real node
 
 EDGES (MOST IMPORTANT!):
-□ ⚠️ EVERY user-flow node has an edge from the root core-concept node
-□ ⚠️ EVERY screen/condition/feature node has an incoming edge
-□ All edges have valid source/target IDs that match actual node IDs
-□ All edge labels describe actions/triggers (or null for root→user-flow edges)
-□ Edge count should be approximately: (total nodes - 1) or more
+□ ⚠️ EVERY user-flow node has an edge from the root to that user-flow (source=root, target=user-flow id)
+□ ⚠️ EVERY non-root node has exactly one incoming edge (source=parent id, target=this node id)
+□ ⚠️ EVERY condition node has exactly TWO outgoing edges (one with sourceHandle "id-true", one with "id-false")
+□ All edge source/target IDs match node "id" values exactly (no typos, no missing edges)
+□ Edge count ≥ (total nodes - 1); with C condition nodes, edge count ≥ (total nodes - 1) + C
+□ All edges have valid source/target IDs that exist in the nodes array
 
 QUALITY:
 □ A junior developer could understand the flow
@@ -953,7 +1011,7 @@ export async function generateMindMapHandler(
 				reasoning: {
 					type: "string",
 					description:
-						"Complete 7-step thought process: Exhaustive Feature Extraction (list ALL screens, features, conditions, fields, states, integrations found in the prompt), Task understanding, Context analysis, Decomposition into sub-flows, Reference mapping, Evaluation with completeness check, and Tree-of-Thoughts iteration. This should be DETAILED and include the full inventory of extracted features. If isOffTopic is true, explain that you can only help with app/product design tasks.",
+						"Complete 7-step thought process: Exhaustive Feature Extraction (list ALL screens, features, conditions, fields, states, integrations), Task understanding, Context analysis, Recursive Decomposition (for each user-flow: screens → conditions → true/false paths → next screens/conditions until every path is concrete; use user-flow, screen-ui, condition, feature, custom-node throughout), Reference mapping, Evaluation with recursive completeness check, and Tree-of-Thoughts iteration. Flesh out the idea fully—do not just highlight points; expand every flow with conditions and screens. If isOffTopic is true, explain that you can only help with app/product design tasks.",
 				},
 				nodes: {
 					type: "array",
